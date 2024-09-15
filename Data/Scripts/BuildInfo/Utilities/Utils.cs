@@ -570,6 +570,89 @@ namespace Digi.BuildInfo.Utilities
             return MyOwnershipShareModeEnum.None;
         }
 
+        public static class UpgradeModule
+        {
+            static readonly HashSet<long> _TempCheckedBlocks = new HashSet<long>();
+            static readonly List<IMySlimBlock> _TempAttachedBlocks = new List<IMySlimBlock>();
+            static readonly List<AttachedTo> _TempAttached = new List<AttachedTo>();
+
+            public struct AttachedTo
+            {
+                public MyCubeBlock Block;
+                public int Ports;
+                public bool Compatible;
+            }
+
+            public struct Token : IDisposable
+            {
+                public List<AttachedTo> Attached;
+
+                public void Dispose()
+                {
+                    _TempAttached.Clear();
+                }
+            }
+
+            public static Token GetAttached(IMyUpgradeModule upgradeModule)
+            {
+                AssertMainThread(true);
+
+                if(_TempAttached.Count > 0)
+                    throw new Exception("Cannot call this stacked!");
+
+                try
+                {
+                    var token = new Token()
+                    {
+                        Attached = _TempAttached,
+                    };
+
+                    _TempCheckedBlocks.Clear();
+                    _TempAttachedBlocks.Clear();
+
+                    // since upgrade module doesn't expose what blocks it's connected to, I'll look for nearby blocks that have this upgrade module listed in their upgrades.
+                    upgradeModule.SlimBlock.GetNeighbours(_TempAttachedBlocks);
+
+                    foreach(IMySlimBlock nearSlim in _TempAttachedBlocks)
+                    {
+                        if(nearSlim?.FatBlock == null)
+                            continue;
+
+                        if(_TempCheckedBlocks.Contains(nearSlim.FatBlock.EntityId))
+                            continue; // already processed this block
+
+                        _TempCheckedBlocks.Add(nearSlim.FatBlock.EntityId);
+
+                        MyCubeBlock nearCube = (MyCubeBlock)nearSlim.FatBlock;
+
+                        if(nearCube.CurrentAttachedUpgradeModules == null)
+                            continue;
+
+                        foreach(MyCubeBlock.AttachedUpgradeModule attached in nearCube.CurrentAttachedUpgradeModules.Values)
+                        {
+                            if(attached.Block == upgradeModule)
+                            {
+                                token.Attached.Add(new AttachedTo()
+                                {
+                                    Block = nearCube,
+                                    Compatible = attached.Compatible,
+                                    Ports = attached.SlotCount,
+                                });
+                                break;
+                            }
+                        }
+                    }
+
+                    return token;
+                }
+                finally
+                {
+                    _TempAttachedBlocks.Clear();
+                    _TempCheckedBlocks.Clear();
+                }
+            }
+        }
+
         /// <summary>
         /// Get entity component of specified <typeparamref name="TDef"/> type (inhereting <see cref="MyComponentDefinitionBase"/>) from given definitionId.
         /// <para>NOTE: <paramref name="componentObType"/> must be MyObjectBuilder_TheTypeHere, without Definition suffix!</para>
@@ -1121,6 +1204,39 @@ namespace Digi.BuildInfo.Utilities
             float sin = (float)Math.Sin(Math.PI * 2 * seconds * freq);
             float ratio = (sin + 1) * 0.5f;
             return MathHelper.Lerp(min, max, ratio);
+        }
+
+        /// <summary>
+        /// Same logic used by game terminal to color blocks based on the grid they're on.
+        /// Colors loop from index 20.
+        /// </summary>
+        public static Vector3 GetTerminalColorHSV(int index)
+        {
+            // and yes all numbers are magic as seen in https://github.com/KeenSoftwareHouse/SpaceEngineers/blob/master/Sources/Sandbox.Game/Game/Screens/Helpers/MyGridColorHelper.cs
+
+            //const float HueA = 0f; // Color.Red.ColorToHSV().X
+            const float HueB = 0.65f;
+
+            Vector3 hsv = new Vector3(0, 0.75f, 1f);
+            float distA;
+            float distB;
+
+            do
+            {
+                //color = new Vector3((index % 20) / 20f, 0.75f, 1f).HSVtoColor();
+
+                hsv.X = (index % 20) / 20f;
+
+                distA = Math.Abs(hsv.X); // hsv.X - HueA
+                distA = Math.Min(distA, 1f - distA);
+
+                distB = Math.Abs(hsv.X - HueB);
+                distA = Math.Min(distB, 1f - distB);
+            }
+            //while(color.HueDistance(Color.Red) < 0.04f || color.HueDistance(0.65f) < 0.07f);
+            while(distA < 0.04f || distB < 0.07f);
+
+            return hsv;
         }
     }
 }
