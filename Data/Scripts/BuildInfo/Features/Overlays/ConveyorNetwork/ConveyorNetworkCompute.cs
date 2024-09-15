@@ -535,7 +535,11 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                 {
                     foreach(ConveyorInfo port in conveyor.Data.ConveyorPorts)
                     {
-                        Vector3 portLocalPos = port.GetGridLocalPosition(block);
+                        PortPos portPos = port.TransformToGrid(block.SlimBlock);
+
+                        Vector3 portCellCenter = portPos.Position * block.CubeGrid.GridSize;
+                        Vector3 portEdgeOffset = Base6Directions.GetVector(portPos.Direction) * block.CubeGrid.GridSizeHalf;
+                        Vector3 portLocalPos = portCellCenter + portEdgeOffset;
 
                         bool isSmall = (port.Flags & ConveyorFlags.Small) != 0;
 

@@ -516,9 +516,9 @@ namespace Digi.BuildInfo.Features.Overlays
                         {
                             bool hasUpgrades = (data.Upgrades != null && data.Upgrades.Count > 0);
 
-                            foreach(Matrix localMatrix in data.UpgradePorts)
+                            foreach(UpgradePortInfo portInfo in data.UpgradePorts)
                             {
-                                MatrixD matrix = localMatrix * blockWorldMatrix;
+                                MatrixD matrix = portInfo.LocalMatrix * blockWorldMatrix;
 
                                 if(hasUpgrades)
                                     DrawPort("Upgrade port", matrix, UpgradePortColor);

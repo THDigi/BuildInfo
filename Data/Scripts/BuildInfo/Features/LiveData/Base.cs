@@ -57,28 +57,46 @@ namespace Digi.BuildInfo.Features.LiveData
 
         public PortPos TransformToGrid(IMySlimBlock block)
         {
-            PortPos port = default(PortPos);
-
             // from MyConveyorConnector.PositionToGridCoords() + optimized with integer transform
-            MatrixI matrix = new MatrixI(block.Position, block.Orientation.Forward, block.Orientation.Up);
-            port.Position = Vector3I.Transform(CellPosition, matrix);
-            port.Direction = block.Orientation.TransformDirection(Direction);
+            MyBlockOrientation orientation = block.Orientation;
+            MatrixI matrix = new MatrixI(block.Position, orientation.Forward, orientation.Up);
+            return new PortPos()
+            {
+                Position = Vector3I.Transform(CellPosition, ref matrix),
+                Direction = orientation.TransformDirection(Direction),
+            };
+        }
+    }
 
-            return port;
+    public struct UpgradePortInfo
+    {
+        public readonly Matrix LocalMatrix;
+
+        /// <summary>
+        /// Relative to block's def.Center!
+        /// </summary>
+        public readonly Vector3I CellPosition;
+        public readonly Base6Directions.Direction Direction;
+
+        public UpgradePortInfo(Matrix localMatrix, Vector3I cellPos, Base6Directions.Direction dir)
+        {
+            Utils.MatrixMinSize(ref localMatrix, BData_Base.MatrixAllMinScale, BData_Base.MatrixIndividualMinScale);
+
+            LocalMatrix = localMatrix;
+            CellPosition = cellPos;
+            Direction = dir;
         }
 
-        public Vector3 GetGridLocalPosition(MyCubeBlock block)
+        public PortPos TransformToGrid(IMySlimBlock block)
         {
-            PortPos port = default(PortPos);
-
             // from MyConveyorConnector.PositionToGridCoords() + optimized with integer transform
-            MatrixI matrix = new MatrixI(block.Position, block.Orientation.Forward, block.Orientation.Up);
-            port.Position = Vector3I.Transform(CellPosition, matrix);
-            port.Direction = block.Orientation.TransformDirection(Direction);
-
-            Vector3 portCellCenter = port.Position * block.CubeGrid.GridSize;
-            Vector3 portEdgeOffset = Base6Directions.GetVector(port.Direction) * block.CubeGrid.GridSizeHalf;
-            return portCellCenter + portEdgeOffset;
+            MyBlockOrientation orientation = block.Orientation;
+            MatrixI matrix = new MatrixI(block.Position, orientation.Forward, orientation.Up);
+            return new PortPos()
+            {
+                Position = Vector3I.Transform(CellPosition, ref matrix),
+                Direction = orientation.TransformDirection(Direction),
+            };
         }
     }
 
@@ -169,7 +187,7 @@ namespace Digi.BuildInfo.Features.LiveData
         public BlockHas Has = BlockHas.Nothing;
         public List<ConveyorInfo> ConveyorPorts;
         public List<InteractionInfo> Interactive;
-        public List<Matrix> UpgradePorts;
+        public List<UpgradePortInfo> UpgradePorts;
         public List<string> Upgrades;
         public List<SubpartInfo> Subparts;
         public float DisassembleRatio = 1f;
@@ -409,10 +427,21 @@ namespace Digi.BuildInfo.Features.LiveData
                 else if(detectorType.EqualsIgnoreCase("upgrade"))
                 {
                     if(UpgradePorts == null)
-                        UpgradePorts = new List<Matrix>();
+                        UpgradePorts = new List<UpgradePortInfo>();
 
-                    Utils.MatrixMinSize(ref matrix, MatrixAllMinScale, MatrixIndividualMinScale);
-                    UpgradePorts.Add(matrix);
+                    Vector3 portLocalPos = matrix.Translation + sizeMetric; // + blockDef.ModelOffset  (already done to port matrix)
+                    Vector3I clamped = Vector3I.Clamp(Vector3I.Floor(portLocalPos / cellSize), Vector3I.Zero, def.Size - Vector3I.One);
+                    Vector3I portCellPos = clamped - def.Center;
+
+                    Vector3 cellV3 = (new Vector3(clamped) + Vector3.Half) * cellSize;
+                    Vector3 dirVec = Vector3.DominantAxisProjection((portLocalPos - cellV3) / cellSize);
+                    dirVec.Normalize();
+                    Base6Directions.Direction portDir = Base6Directions.GetDirection(dirVec);
+
+                    var port = new UpgradePortInfo(matrix, portCellPos, portDir);
+
+
+                    UpgradePorts.Add(port);
                 }
                 // from classes that use MyUseObjectAttribute
                 else if(detectorType.EqualsIgnoreCase("terminal"))
