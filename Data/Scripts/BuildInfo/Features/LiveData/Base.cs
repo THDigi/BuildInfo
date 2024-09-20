@@ -224,6 +224,8 @@ namespace Digi.BuildInfo.Features.LiveData
 
             dummies.Clear();
 
+            BuildInfoMod.Instance.CheckRestartRequired.CheckBlock(block, def, (ConveyorPorts?.Count ?? 0) > 0);
+
             ConveyorVisCenter = Vector3.Zero;
             if(ConveyorPorts != null && ConveyorPorts.Count > 0)
             {

@@ -40,7 +40,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
         const string Signature = "> [BuildInfo] ";
         const string LineSignature = "\n> ";
 
-        bool IsF11MenuAccessible => MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE;
+        public bool IsF11MenuAccessible => MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE;
 
         public ModderHelpMain(BuildInfoMod main) : base(main)
         {
