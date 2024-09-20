@@ -34,6 +34,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Shoot(StringBuilder sb, ToolbarItem item)
         {
+            if(!item.Block.HasInventory)
+                return false; // HACK: prevent weird errors where some blocks don't have inventories
+
             if(BuildInfoMod.Instance.CoreSystemsAPIHandler.Weapons.ContainsKey(item.Block.BlockDefinition))
                 return false;
 
@@ -144,6 +147,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
                 if(!isShootOnce && gunBlock.GetValue<bool>("Shoot"))
                     firing++;
+
+                if(!gunBlock.HasInventory)
+                    continue; // HACK: prevent weird errors where some blocks don't have inventories
 
                 IMyGunObject<MyGunBase> gun = (IMyGunObject<MyGunBase>)gunBlock;
                 int ammo = gun.GunBase.GetTotalAmmunitionAmount();
