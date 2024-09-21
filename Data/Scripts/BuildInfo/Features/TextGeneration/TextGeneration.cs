@@ -2460,23 +2460,25 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                if(!def.IsStandAlone || !def.HasPhysics)
+                bool hasCollider = def.HasPhysics && def.PhysicsOption != MyPhysicsOption.None;
+                if(!hasCollider || !def.IsStandAlone)
+                {
                     AddLine().Append(partPrefix);
 
-                if(!def.HasPhysics)
-                {
-                    GetLine().Append("No collisions");
-                }
+                    if(!hasCollider)
+                    {
+                        GetLine().Color(COLOR_WARNING).Append("No collisions");
+                    }
 
-                if(!def.IsStandAlone || !def.HasPhysics)
-                {
-                    if(!def.HasPhysics)
-                        GetLine().Separator();
+                    if(!def.IsStandAlone)
+                    {
+                        if(!hasCollider)
+                            GetLine().Separator();
 
-                    GetLine().Color(COLOR_WARNING).Append("No standalone");
+                        GetLine().Color(COLOR_WARNING).Append("No standalone");
 
-                    SimpleTooltip("'No standalone' means grid will self-delete if it's entirely made of blocks with this tag."
-                                + "\nBlocks with 'No collisions' also have this behavior while also not providing any mass to the grid.");
+                        SimpleTooltip("'No standalone' means grid will self-delete if it's entirely made of blocks like this.");
+                    }
                 }
             }
 
