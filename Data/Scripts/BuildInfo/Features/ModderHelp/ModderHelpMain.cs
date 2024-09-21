@@ -839,10 +839,14 @@ namespace Digi.BuildInfo.Features.ModderHelp
                         }
                     }
 
-                    if(!blockDef.HasPhysics && blockDef.IsStandAlone)
+                    if(blockDef.IsStandAlone && !blockDef.HasPhysics)
                     {
-                        ModProblem(def, "uses HasPhysics=false and IsStandAlone=true which allows player to place free-floating and then can't be grinded anymore!"
-                                      + "\nGenerally recommended for both of these tags to have the same value. Can also have IsStandAlone=false and HasPhysics=true.");
+                        ModProblem(def, "uses HasPhysics=false and IsStandAlone=true which allows player to place free-floating and then can't be grinded anymore!");
+                    }
+
+                    if(blockDef.IsStandAlone && blockDef.PhysicsOption == MyPhysicsOption.None)
+                    {
+                        ModProblem(def, "uses PhysicsOption=None and IsStandAlone=true which allows player to place free-floating and then can't be grinded anymore!");
                     }
 
                     if(blockDef.VoxelPlacement.HasValue)
