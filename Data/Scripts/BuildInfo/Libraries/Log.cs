@@ -17,7 +17,7 @@ namespace Digi
     /// <summary>
     /// <para>Standalone logger, does not require any setup.</para>
     /// <para>Mod name is automatically set from workshop name or folder name. Can also be manually defined using <see cref="ModName"/>.</para>
-    /// <para>Version 1.57 by Digi</para>
+    /// <para>Version 1.6 by Digi</para>
     /// </summary>
     [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate, priority: int.MaxValue)]
     public class Log : MySessionComponentBase
@@ -50,6 +50,9 @@ namespace Digi
             MainThreadId = Environment.CurrentManagedThreadId;
             EnsureHandlerCreated();
             handler.Init(this);
+
+            if(MainThreadId != 1)
+                Info($"WARNING: Main thread is not thread 1, but thread {MainThreadId}");
         }
 
         protected override void UnloadData()
@@ -476,7 +479,7 @@ namespace Digi
                     sb.Append(DateTime.Now.ToString("[HH:mm:ss/")).Append(((MyAPIGateway.Session?.GameplayFrameCounter ?? 0) % 60).ToString("00"));
 
                     int threadId = Environment.CurrentManagedThreadId;
-                    if(sessionComp.MainThreadId != threadId)
+                    if(sessionComp == null ? (threadId != 1) : (sessionComp.MainThreadId != threadId))
                         sb.Append("|Thr").Append(threadId);
 
                     if(writer == null)
