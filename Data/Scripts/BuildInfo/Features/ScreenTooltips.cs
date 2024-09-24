@@ -69,6 +69,7 @@ namespace Digi.BuildInfo.Features
             {
                 Hide();
                 SetUpdateMethods(UpdateFlags.UPDATE_DRAW, false);
+                Main.MenuHandler.RemoveCursorRequest(GetType().Name);
             }
         }
 

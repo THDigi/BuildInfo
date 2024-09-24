@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using Digi.BuildInfo.Features.GUI;
 using Digi.ComponentLib;
 using Draygo.API;
+using Sandbox.Engine.Utils;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using VRage;
+using VRage.Game.ModAPI;
 using VRage.Input;
 using VRage.Utils;
 using VRageMath;
@@ -20,6 +23,8 @@ namespace Digi.BuildInfo.Features
 
     public class MenuHandler : ModComponent
     {
+        const bool DebugPrint = false;
+
         ServerInfoMenu _serverInfo;
         public ServerInfoMenu ServerInfo => _serverInfo ?? (_serverInfo = new ServerInfoMenu());
 
@@ -28,6 +33,8 @@ namespace Digi.BuildInfo.Features
         Dictionary<string, Request> CursorRequests = new Dictionary<string, Request>();
         bool InEscapeLoop = false;
         HudAPIv2.BillBoardHUDMessage Cursor;
+
+        MatrixD SpectatorForcedOrientation;
 
         public MenuHandler(BuildInfoMod main) : base(main)
         {
@@ -55,27 +62,21 @@ namespace Digi.BuildInfo.Features
                 Menus.Remove(menu);
             }
 
-            RecheckUpdates();
+            RecheckUpdates("SetUpdateMenu()");
         }
 
         /// <summary>
         /// Adds (<paramref name="inMenu"/>=true) or removes (<paramref name="inMenu"/>=false) the given id from the input blockers list.
         /// </summary>
-        public void AddCursorRequest(string id, Action escapeCallback = null, bool blockViewXY = false, bool blockMoveAndRoll = false, bool unequip = false)
+        public void AddCursorRequest(string id, Action escapeCallback = null, bool blockMoveAndRoll = false, bool blockViewXY = false, bool blockClicks = false)
         {
+            if(DebugPrint)
+                DebugLog.PrintHUD(this, $"AddCursorRequest - {id}{(InEscapeLoop ? "; InEscapeLoop" : "")}", log: true);
+
             if(InEscapeLoop)
             {
                 Log.Error($"CursorRequest id={id} is being added in escape callback, which will be ignored because it gets cleared after the event!");
                 return;
-            }
-
-            if(unequip)
-            {
-                // TODO: find a way to unequip character tools/weapons as well as deselect weapons in cockpits/RC/etc
-                // not sure what to do while controlling turrets...
-
-                if(MyCubeBuilder.Static.IsActivated)
-                    MyCubeBuilder.Static.Deactivate();
             }
 
             if(CursorRequests.ContainsKey(id))
@@ -84,16 +85,30 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            CursorRequests.Add(id, new Request(escapeCallback, blockViewXY, blockMoveAndRoll));
+            if(blockViewXY || blockMoveAndRoll)
+            {
+                SpectatorForcedOrientation = MySpectator.Static.Orientation;
+            }
+
+            CursorRequests.Add(id, new Request()
+            {
+                EscapeAction = escapeCallback,
+                BlockMovementAndRoll = blockMoveAndRoll,
+                BlockViewXY = blockViewXY,
+                BlockClicks = blockClicks,
+            });
 
             if(Cursor != null)
                 Cursor.Visible = true;
 
-            RecheckUpdates();
+            RecheckUpdates("AddCursorRequest()");
         }
 
         public void RemoveCursorRequest(string id)
         {
+            if(DebugPrint)
+                DebugLog.PrintHUD(this, $"RemoveCursorRequest - {id}{(InEscapeLoop ? "; InEscapeLoop" : "")}", log: true);
+
             if(InEscapeLoop)
                 return; // silently ignore
 
@@ -102,16 +117,19 @@ namespace Digi.BuildInfo.Features
             if(Cursor != null && CursorRequests.Count <= 0)
                 Cursor.Visible = false;
 
-            RecheckUpdates();
+            RecheckUpdates("RemoveCursorRequest()");
         }
 
-        void RecheckUpdates()
+        void RecheckUpdates(string source)
         {
             bool requestedCursor = (CursorRequests.Count > 0);
             SetUpdateMethods(UpdateFlags.UPDATE_INPUT, requestedCursor);
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, requestedCursor || (Menus.Count > 0));
 
             Main.GameConfig.TempHideHUD(nameof(MenuHandler), Menus.Count > 0);
+
+            if(DebugPrint)
+                DebugLog.PrintHUD(this, $"RecheckUpdates from {source} --- {(Menus.Count > 0 ? "HIDE HUD!!!" : "show HUD")}", log: true);
         }
 
         public override void UpdateDraw()
@@ -147,29 +165,95 @@ namespace Digi.BuildInfo.Features
                         Cursor.Visible = false;
 
                     InEscapeLoop = false;
-                    RecheckUpdates();
+                    RecheckUpdates("esc key");
                 }
 
                 return;
             }
 
-            var ctrl = MyAPIGateway.Session.ControlledObject;
+            var ctrl = MyAPIGateway.Session.ControlledObject as Sandbox.Game.Entities.IMyControllableEntity;
             if(ctrl != null)
             {
-                bool blockView = false;
                 bool blockMove = false;
+                bool blockView = false;
+                bool blockClick = false;
 
                 foreach(Request request in CursorRequests.Values)
                 {
-                    blockView |= request.BlockViewXY;
                     blockMove |= request.BlockMovementAndRoll;
+                    blockView |= request.BlockViewXY;
+                    blockClick |= request.BlockClicks;
                 }
 
-                // FIXME: still can move/rotate in spec cam, see if can be fixed
+                if(blockClick)
+                {
+                    ctrl.SwitchToWeapon(null);
+                    ctrl.EndShoot(MyShootActionEnum.PrimaryAction);
+                    ctrl.EndShoot(MyShootActionEnum.SecondaryAction);
+                    ctrl.EndShoot(MyShootActionEnum.TertiaryAction);
 
-                ctrl.MoveAndRotate(blockMove ? Vector3.Zero : ctrl.LastMotionIndicator,
-                                   blockView ? Vector2.Zero : new Vector2(ctrl.LastRotationIndicator.X, ctrl.LastRotationIndicator.Y),
-                                   blockMove ? 0 : ctrl.LastRotationIndicator.Z);
+                    if(MyCubeBuilder.Static.IsActivated)
+                    {
+                        MyCubeBuilder.Static.Deactivate();
+                    }
+                }
+
+                bool forceFlip = MyAPIGateway.Input.IsAnyCtrlKeyPressed();
+                MySpectatorCameraMovementEnum specMode = MySpectator.Static.SpectatorCameraMovement;
+                bool isSpectator = MyAPIGateway.Session.CameraController is MySpectatorCameraController;
+
+                Vector3 motion = ctrl.LastMotionIndicator;
+                Vector2 rotation = new Vector2(ctrl.LastRotationIndicator.X, ctrl.LastRotationIndicator.Y);
+                float roll = ctrl.LastRotationIndicator.Z;
+
+                // TODO: turret/camera zoom
+
+                if(isSpectator && specMode != MySpectatorCameraMovementEnum.None)
+                {
+                    if(!MyAPIGateway.Gui.IsCursorVisible)
+                    {
+                        motion = MyAPIGateway.Input.GetPositionDelta();
+                        rotation = MyAPIGateway.Input.GetRotation();
+                        roll = MyAPIGateway.Input.GetRoll();
+
+                        MySpectator.Static.MoveAndRotate(blockMove ? -motion : motion,
+                                                         blockView ? -rotation : rotation,
+                                                         blockMove ? -roll : roll);
+
+                        if(blockMove || blockView)
+                        {
+                            SpectatorForcedOrientation.Translation = MySpectator.Static.Position;
+                            MySpectator.Static.SetViewMatrix(MatrixD.Invert(SpectatorForcedOrientation));
+                        }
+                    }
+                }
+                else if(forceFlip || ctrl is IMyLargeTurretBase || ctrl is IMySearchlight)
+                {
+                    // TODO: fix: movement is always blocked
+
+                    bool rotateShip = MyAPIGateway.Input.IsAnyAltKeyPressed();
+
+                    if(MyAPIGateway.Gui.IsCursorVisible || rotateShip)
+                    {
+                        ctrl.MoveAndRotate(blockMove ? Vector3.Zero : motion,
+                                           blockView ? Vector2.Zero : rotation,
+                                           blockMove ? 0 : roll);
+                    }
+                    else
+                    {
+                        ctrl.MoveAndRotate(blockMove ? -motion : motion,
+                                           blockView ? -rotation : rotation,
+                                           blockMove ? 0 : roll);
+                    }
+                }
+                else
+                {
+                    // TODO: fix: movement is always blocked for blocks (character works fine) 
+
+                    ctrl.MoveAndRotate(blockMove ? Vector3.Zero : motion,
+                                       blockView ? Vector2.Zero : rotation,
+                                       blockMove ? 0 : roll);
+                }
             }
 
             if(Cursor == null)
@@ -196,8 +280,6 @@ namespace Digi.BuildInfo.Features
             Cursor.Origin = mousePx; // in pixels because of the above option flag
         }
 
-
-
         /// <summary>
         /// Scalar (-1 to 1) mouse position for real GUI cursor.
         /// </summary>
@@ -213,16 +295,10 @@ namespace Digi.BuildInfo.Features
 
         struct Request
         {
-            public readonly Action EscapeAction;
-            public readonly bool BlockViewXY;
-            public readonly bool BlockMovementAndRoll;
-
-            public Request(Action escapeAction = null, bool blockViewXY = false, bool blockMovementAndRoll = false)
-            {
-                EscapeAction = escapeAction;
-                BlockViewXY = blockViewXY;
-                BlockMovementAndRoll = blockMovementAndRoll;
-            }
+            public Action EscapeAction;
+            public bool BlockMovementAndRoll;
+            public bool BlockViewXY;
+            public bool BlockClicks;
         }
     }
 }

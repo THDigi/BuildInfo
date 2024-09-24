@@ -59,6 +59,14 @@ namespace Digi.BuildInfo.Utilities
             new HudAPIv2.HUDMessage(text, new Vector2D(transformed.X, transformed.Y), Scale: scale, HideHud: false, TimeToLive: 2, Blend: BlendTypeEnum.PostPP);
         }
 
+        public static void DrawHudText(StringBuilder text, Vector2D pos, double scale = 0.5)
+        {
+            if(!BuildInfoMod.Instance.TextAPI.WasDetected)
+                return; // no textAPI
+
+            new HudAPIv2.HUDMessage(text, new Vector2D(pos.X, pos.Y), Scale: scale, HideHud: false, TimeToLive: 2, Blend: BlendTypeEnum.PostPP);
+        }
+
         public static void DrawOBB(MyOrientedBoundingBoxD obb, Color color, MySimpleObjectRasterizer draw = MySimpleObjectRasterizer.SolidAndWireframe, BlendTypeEnum blend = BlendTypeEnum.PostPP, bool extraSeeThrough = true)
         {
             MatrixD wm = MatrixD.CreateFromQuaternion(obb.Orientation);

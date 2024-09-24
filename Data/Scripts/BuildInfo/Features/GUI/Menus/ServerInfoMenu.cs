@@ -313,9 +313,9 @@ namespace Digi.BuildInfo.Features.GUI
 
                 Main.MenuHandler.AddCursorRequest(GetType().Name,
                     escapeCallback: () => CloseMenu(escPressed: true),
+                    blockMoveAndRoll: true,
                     blockViewXY: true,
-                    blockMoveAndRoll: false,
-                    unequip: true);
+                    blockClicks: true);
 
                 Main.MenuHandler.SetUpdateMenu(this, true);
                 Visible = true;

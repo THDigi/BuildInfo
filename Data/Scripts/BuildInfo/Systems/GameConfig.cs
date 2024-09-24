@@ -28,7 +28,7 @@ namespace Digi.BuildInfo.Systems
     {
         public HudState HudState { get; private set; }
 
-        public bool IsHudTempHidden { get; private set; }
+        public bool HudTempHidden { get; private set; }
 
         /// <summary>
         /// Original HUD state before it was temporarily hidden.
@@ -122,6 +122,23 @@ namespace Digi.BuildInfo.Systems
                     FirstSpawn?.Invoke();
                 }
             }
+
+            if(HudTempHidden)
+            {
+                if(OriginalHudState == null)
+                {
+                    OriginalHudState = HudState;
+                    SetHudState(HudState.OFF, isTemporary: true);
+                }
+            }
+            else
+            {
+                if(OriginalHudState != null)
+                {
+                    SetHudState(OriginalHudState.Value, isTemporary: true);
+                    OriginalHudState = null;
+                }
+            }
         }
 
         /// <summary>
@@ -137,25 +154,18 @@ namespace Digi.BuildInfo.Systems
                 // TODO: what about if HUD is already hidden? and what if player manually un-hides after this?
                 if(HideHudRequests.Count == 0)
                 {
-                    OriginalHudState = this.HudState;
-                    SetHudState(HudState.OFF, isTemporary: true);
-
-                    IsHudTempHidden = true;
+                    HudTempHidden = true;
                 }
 
                 HideHudRequests.Add(id);
-
             }
             else
             {
                 HideHudRequests.Remove(id);
 
-                if(HideHudRequests.Count == 0 && OriginalHudState != null)
+                if(HideHudRequests.Count == 0)
                 {
-                    SetHudState(OriginalHudState.Value, isTemporary: true);
-                    OriginalHudState = null;
-
-                    IsHudTempHidden = false;
+                    HudTempHidden = false;
                 }
             }
         }
@@ -163,7 +173,7 @@ namespace Digi.BuildInfo.Systems
         void DiscardTempHide()
         {
             OriginalHudState = null;
-            IsHudTempHidden = false;
+            HudTempHidden = false;
             HideHudRequests.Clear();
         }
 
