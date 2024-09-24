@@ -326,7 +326,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleToggle(Category_Misc, Main.Config.SpectatorAllowRotationModifier.Name, Main.Config.SpectatorAllowRotationModifier);
             SimpleToggle(Category_Misc, null, Main.Config.InternalInfo);
             SimpleToggle(Category_Misc, null, Main.Config.ScientificNotation);
-            SimpleToggle(Category_Misc, "ModderHelp: Show hints/problems with other mods", Main.Config.ModderHelpAlerts);
+            SimpleToggle(Category_Misc, "ModderHelp: Show hints/problems for mods", Main.Config.ModderHelpAlerts);
             AddSpacer(Category_Misc);
             Category_ConfirmReset = AddCategory("Reset to defaults", Category_Misc, header: "Reset, are you sure?");
             new ItemButton(Category_ConfirmReset, "<color=255,200,0>I am sure!", () =>

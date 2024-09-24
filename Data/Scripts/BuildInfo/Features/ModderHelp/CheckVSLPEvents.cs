@@ -13,7 +13,7 @@ using VRage.Utils;
 using VRageMath;
 using TypeExtensions = VRage.TypeExtensions; // HACK: some people have ambiguity on this, probably linux or such
 
-// test override and leaking
+// test override+leaking
 #if false
 namespace Someone.InexistentMod
 {
@@ -27,40 +27,94 @@ namespace Someone.InexistentMod
         }
 
         void ThingSpawned(string itemTypeName, string itemSubTypeName, long itemId, int amount, Vector3D position) { }
-        void PlayerBecameAlive(long playerId) { }
+        static void PlayerBecameAlive(long playerId) { }
     }
 }
 #endif
 
 namespace Digi.BuildInfo.Features.ModderHelp
 {
-    public class CheckVSLPEvents : ModComponent
+    [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate, priority: -10000)] // priority is sort order, ascending
+    class CheckVSLP : MySessionComponentBase
     {
-        [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate, priority: -10000)] // priority is sort order, ascending
-        class CheckVSLPEventsSession : MySessionComponentBase
+        CheckContainer Container = new CheckContainer();
+
+        const int TicksUntilChecks = Constants.TicksPerSecond * 3;
+        const string Signature = "CheckVSLP: ";
+
+        public CheckVSLP()
         {
-            public CheckVSLPEventsSession()
+            CreateHooks(Container);
+        }
+
+        public override void LoadData()
+        {
+            bool isDS = MyAPIGateway.Utilities.IsDedicated;
+
+            // discard checks for players opting out of this mod
+            // however DS can't really opt out via config because first they don't have a config and second, admins can remove the mod to opt out.
+            if(!isDS && BuildInfo_GameSession.IsKilled)
             {
-                CreateHooks(Container);
+                Unhook();
+                return;
             }
 
-            public override void LoadData()
+            if(isDS || (BuildInfoMod.Instance?.Config?.ModderHelpAlerts?.Value ?? false))
             {
-                // if mod is killed, no reason to keep these empty hooks during gameplay
-                if(BuildInfo_GameSession.IsKilled)
-                    Unhook();
+                SetUpdateOrder(MyUpdateOrder.AfterSimulation);
             }
 
-            protected override void UnloadData()
+            if(BuildInfoMod.IsDevMod)
             {
-                Unhook(); // safety redundancy
+                DevFindNewEvents();
+                //DevTestOverwrittenEvents();
             }
         }
 
-        static CheckContainer Container = new CheckContainer();
+        protected override void UnloadData()
+        {
+            Unhook(); // safety in case it didn't get to check them (which also unhooks)
+        }
+
+        public override void UpdateAfterSimulation()
+        {
+            if(MyAPIGateway.Session == null || MyAPIGateway.Session.GameplayFrameCounter < TicksUntilChecks)
+                return;
+
+            try
+            {
+                CheckEvents();
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+
+            try
+            {
+                Unhook();
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+
+            Container = null;
+            MyAPIGateway.Utilities.InvokeOnGameThread(() => SetUpdateOrder(MyUpdateOrder.NoUpdate));
+        }
+
+        static void Inform(string message)
+        {
+            message = Signature + message;
+
+            MyLog.Default.WriteLineAndConsole($"### {BuildInfoMod.ModName} :: {message}");
+            Log.Info(message);
+        }
 
         static void CreateHooks(CheckContainer container)
         {
+            Inform("Hooking MyVisualScriptLogicProvider events to detect overrides and leaks...");
+
             new Check_PlayerConnectRequest(container);
             new Check_PlayerLeftCockpit(container);
             new Check_PlayerEnteredCockpit(container);
@@ -122,7 +176,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
             container.Ignore.Add("GameIsReady");
         }
 
-        static void Unhook()
+        void Unhook()
         {
             try
             {
@@ -140,50 +194,13 @@ namespace Digi.BuildInfo.Features.ModderHelp
             }
         }
 
-        public CheckVSLPEvents(BuildInfoMod main) : base(main)
-        {
-        }
-
-        public override void RegisterComponent()
-        {
-            if(Main.Config.ModderHelpAlerts.Value) // && MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE && MyAPIGateway.Session.Mods.Any(m => m.PublishedFileId == 0))
-            {
-                // to wait a few seconds and then check hooks
-                UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
-            }
-
-            if(BuildInfoMod.IsDevMod)
-            {
-                DevFindNewEvents();
-                //DevTestOverwrittenEvents();
-            }
-        }
-
-        public override void UnregisterComponent()
-        {
-            Unhook(); // just making sure; but it should be unhooked elsewhere in case mod is killed
-        }
-
-        public override void UpdateAfterSim(int tick)
-        {
-            if(tick < (Constants.TicksPerSecond * 3))
-                return;
-
-            try
-            {
-                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
-                CheckEvents();
-            }
-            finally
-            {
-                Container = null;
-            }
-        }
-
         void CheckEvents()
         {
             if(Container?.Events == null)
+            {
+                Inform("Unexpected case, container or events are null!");
                 return;
+            }
 
             int preAssigned = 0;
             int erased = 0;
@@ -210,18 +227,21 @@ namespace Digi.BuildInfo.Features.ModderHelp
                 checker.Unhook();
             }
 
-            string msg = $"{nameof(CheckVSLPEvents)}: Done checking VSLP events; preAssigned={preAssigned}; erased={erased}; total events={count}";
-            MyLog.Default.WriteLine($"### {BuildInfoMod.ModName} :: {msg}");
-            Log.Info(msg);
+            bool ok = preAssigned == 0 && erased == 0;
 
-            if(preAssigned > 0 || erased > 0)
+            if(ok)
+            {
+                string msg = $"{Signature}Done checking VSLP events, all ok! (preAssigned={preAssigned}; erased={erased}; total events={count})";
+                Inform(msg);
+            }
+            else
             {
                 sb.Append("These are also written to SE log.");
 
                 string errors = sb.ToString();
 
                 sb.Clear();
-                sb.AppendLine("Other mods are overriding or leaking VSLP events! (Alert provided by BuildInfo mod)");
+                sb.AppendLine($"Another mod is overriding or leaking MyVisualScriptLogicProvider events! (preAssigned={preAssigned}; erased={erased}; total events={count})");
                 sb.AppendLine("What to do:");
                 sb.AppendLine("- if you can identify the mod(s) below then send all this info to the author.");
                 sb.AppendLine("- if you're the author, fix it by finding all the mentioned events and ensure you're using += to hook and -= to unhook, don't use = on them.");
@@ -229,22 +249,21 @@ namespace Digi.BuildInfo.Features.ModderHelp
                 sb.AppendLine();
                 sb.AppendLine("The problematic events: ");
                 sb.Append(errors);
+                sb.AppendLine("PS: If there's any leaked events, ensure you fully close the game before testing any fixes.");
 
                 string text = sb.ToString();
-
-                MyLog.Default.WriteLine($"### {BuildInfoMod.ModName} :: {nameof(CheckVSLPEvents)}: {text}");
-                Log.Info(text);
+                Inform(text);
 
                 // not really necessary as null would print unknown in both... but I like doing it :P
                 var fakeContext = new MyModContext();
                 fakeContext.Init("Unknown mod", "Unknown script");
 
-                MyDefinitionErrors.Add(fakeContext, text, TErrorSeverity.Error);
+                MyDefinitionErrors.Add(fakeContext, text, TErrorSeverity.Error, writeToLog: false);
 
-                if(MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE) // f11 menu accessible
-                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "Other mods are overriding or leaking VSLP events! See F11 menu or SE log for details.", FontsHandler.YellowSh);
+                if(BuildInfoMod.Instance.ModderHelpMain.IsF11MenuAccessible)
+                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "A mod is overriding/leaking VSLP events! F11 menu or SE log have further instructions.", FontsHandler.RedSh);
                 else
-                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "Other mods are overriding or leaking VSLP events! See SE log for details.", FontsHandler.YellowSh);
+                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "A mod is overriding/leaking VSLP events! SE Log has further instrcutions.", FontsHandler.RedSh);
             }
         }
 
@@ -264,11 +283,11 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     continue;
 
                 alert = true;
-                Log.Info($"[Dev] {GetType().Name}: new field found: {member.Name} - {member.ToString()}");
+                Log.Info($"[Dev] {Signature}new field found: {member.Name} - {member.ToString()}");
             }
 
             if(alert)
-                Log.Error($"[Dev] {GetType().Name}: new events found", Log.PRINT_MESSAGE);
+                Log.Error($"[Dev] {Signature}new events found", Log.PRINT_MESSAGE);
         }
 
 #if false
@@ -398,7 +417,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
                 StringBuilder sb = new StringBuilder(512);
 
                 sb.Append(PrefixSpacing).Append(ClassName).Append('.').Append(FieldName)
-                    .Append(" - leaked! If callbacks are from plugins you can ignore this.")
+                    .Append(" - leaked! If all callbacks are from plugins or the game then you can ignore this.")
                     .AppendLine();
 
                 sb.Append(PrefixSpacing).Append("Callbacks (first one is likely the problem):").AppendLine();
