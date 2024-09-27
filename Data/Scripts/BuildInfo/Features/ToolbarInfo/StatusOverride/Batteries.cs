@@ -13,10 +13,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         public Batteries(ToolbarStatusProcessor processor) : base(processor)
         {
             Type type = typeof(MyObjectBuilder_BatteryBlock);
+            string[] actions = { "ChargeMode", "Recharge", "Recharge_On", "Recharge_Off", "Discharge", "Discharge_On", "Discharge_Off", "Auto" };
 
-            processor.AddStatus(type, Charge, "ChargeMode", "Recharge", "Discharge", "Auto");
-
-            processor.AddGroupStatus(type, GroupCharge, "ChargeMode", "Recharge", "Discharge", "Auto");
+            processor.AddStatus(type, Charge, actions);
+            processor.AddGroupStatus(type, GroupCharge, actions);
         }
 
         bool Charge(StringBuilder sb, ToolbarItem item)
