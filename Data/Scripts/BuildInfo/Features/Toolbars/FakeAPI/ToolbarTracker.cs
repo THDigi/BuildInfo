@@ -105,7 +105,7 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
 
                     th.MultipleToolbars[ToolbarId.Normal] = new Toolbar(owner, casted.ToolbarType);
                     //th.MultipleToolbars[ToolbarId.BuildMode] = new Toolbar(owner, MyToolbarType.BuildCockpit);
-                    th.MultipleToolbars[ToolbarId.LockedOn] = new Toolbar(owner, MyToolbarType.ButtonPanel, 2, 1);
+                    th.MultipleToolbars[ToolbarId.LockedOn] = new Toolbar(owner, MyToolbarType.ButtonPanel, 2, 10);
 
                     if(casted is IMyRemoteControl)
                     {
@@ -197,7 +197,7 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
                 var casted = slim.FatBlock as IMyDefensiveCombatBlock;
                 if(casted != null)
                 {
-                    SingleToolbar(slim.FatBlock, MyToolbarType.ButtonPanel, 2, 1);
+                    SingleToolbar(slim.FatBlock, MyToolbarType.ButtonPanel, 2, 10);
                     return;
                 }
             }
@@ -336,6 +336,11 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
                 if(blockOB == null)
                     blockOB = block.GetObjectBuilderCubeBlock(false);
 
+                {
+                    var casted = blockOB as MyObjectBuilder_AirVent;
+                    if(casted != null)
+                        return casted.Toolbar;
+                }
                 {
                     var casted = blockOB as MyObjectBuilder_TimerBlock;
                     if(casted != null)
