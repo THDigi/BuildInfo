@@ -47,7 +47,6 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI.Items
 
         static readonly HashSet<Type> TempBlockTypes = new HashSet<Type>();
         static readonly List<IMyTerminalBlock> TempBlocks = new List<IMyTerminalBlock>();
-        static readonly List<IMyTerminalAction> TempActions = new List<IMyTerminalAction>();
 
         protected override ListReader<IMyTerminalAction> GetActions(MyToolbarType? toolbarType)
         {
@@ -57,47 +56,57 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI.Items
                 Group.GetBlocks(TempBlocks);
 
                 TempBlockTypes.Clear();
-                foreach(IMyTerminalBlock item in TempBlocks)
+
+                // HACK: clone of MyToolbarItemTerminalGroup.GetActions()...
+                bool genericType;
+                bool flag = true;
+
+                foreach(var tb in TempBlocks)
                 {
-                    TempBlockTypes.Add(item.GetType());
+                    flag = (flag && tb is IMyFunctionalBlock);
+                    TempBlockTypes.Add(tb.GetType());
                 }
 
                 if(TempBlockTypes.Count == 1)
+                {
+                    genericType = false;
                     return GetValidActions(TempBlocks[0], TempBlocks);
+                }
 
-                if(TempBlockTypes.Count == 0)
+                if(TempBlockTypes.Count == 0 || !flag)
+                {
+                    genericType = true;
                     return ListReader<IMyTerminalAction>.Empty;
+                }
 
-                return ListReader<IMyTerminalAction>.Empty;
+                genericType = true;
 
-                // I don't even.
-                // code from MyToolbarItemTerminalGroup and attempted to decipher.
-                /*
-                List<IMyTerminalAction> results = GetValidActions(TempBlocks[0], new List<IMyTerminalBlock> { TempBlocks[0] });
+                ListReader<IMyTerminalAction> results = GetValidActions(TempBlocks[0]);
 
+                // start from index 1
                 for(int i = 1; i < TempBlocks.Count; i++)
                 {
-                    IMyTerminalBlock item2 = TempBlocks[i];
+                    IMyTerminalBlock tb = TempBlocks[i];
 
-                    List<IMyTerminalAction> list3 = new List<IMyTerminalAction>();
-                    List<IMyTerminalAction> list4 = GetValidActions(item2, new List<IMyTerminalBlock> { item2 });
+                    List<IMyTerminalAction> filterMore = new List<IMyTerminalAction>(32);
+                    ListReader<IMyTerminalAction> actions2 = GetValidActions(tb);
 
-                    foreach(var item3 in results)
+                    foreach(IMyTerminalAction actionA in results)
                     {
-                        foreach(var item4 in list4)
+                        foreach(IMyTerminalAction actionB in actions2)
                         {
-                            if(item4.Id == item3.Id)
+                            if(actionB.Id == actionA.Id)
                             {
-                                list3.Add(item3);
+                                filterMore.Add(actionA);
                                 break;
                             }
                         }
                     }
 
-                    results = list3;
+                    results = filterMore;
                 }
+
                 return results;
-                */
             }
             finally
             {
@@ -105,9 +114,9 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI.Items
             }
         }
 
-        ListReader<IMyTerminalAction> GetValidActions(IMyTerminalBlock blockForType, ListReader<IMyTerminalBlock> blocks)
+        static ListReader<IMyTerminalAction> GetValidActions(IMyTerminalBlock blockForType, ListReader<IMyTerminalBlock> blocks)
         {
-            TempActions.Clear();
+            var actions = new List<IMyTerminalAction>(32); // not worth optimizing, risky
 
             // HACK: required like this to get ALL actions, the filled list only gets a specific toolbar type.
             blockForType.GetActions(null, (a) =>
@@ -115,25 +124,39 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI.Items
                 var action = (IMyTerminalAction)a;
                 if(action.ValidForGroups)
                 {
-                    bool validForAny = false;
-
                     foreach(IMyTerminalBlock b in blocks)
                     {
                         if(action.IsEnabled(b))
                         {
-                            validForAny = true;
+                            actions.Add(action);
                             break;
                         }
                     }
-
-                    if(validForAny)
-                        TempActions.Add(action);
                 }
 
                 return false;
             });
 
-            return new ListReader<IMyTerminalAction>(TempActions);
+            return actions;
+        }
+
+        static ListReader<IMyTerminalAction> GetValidActions(IMyTerminalBlock block)
+        {
+            var actions = new List<IMyTerminalAction>(32); // not worth optimizing, risky
+
+            // HACK: required like this to get ALL actions, the filled list only gets a specific toolbar type.
+            block.GetActions(null, (a) =>
+            {
+                var action = (IMyTerminalAction)a;
+                if(action.ValidForGroups && action.IsEnabled(block))
+                {
+                    actions.Add(action);
+                }
+
+                return false;
+            });
+
+            return actions;
         }
 
         public override string ToString()

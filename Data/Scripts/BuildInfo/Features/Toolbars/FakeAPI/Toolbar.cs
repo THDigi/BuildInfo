@@ -27,6 +27,9 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
 
         public bool HasItems { get; private set; }
 
+        /// <summary>
+        /// NOTE: It contains null for empty slots, and toolbar items can be invalid, be sure to check <see cref="ToolbarItem.IsValid"/>.
+        /// </summary>
         public readonly ToolbarItem[] Items;
         //public readonly List<ToolbarItem> ItemsGamepad;
 
