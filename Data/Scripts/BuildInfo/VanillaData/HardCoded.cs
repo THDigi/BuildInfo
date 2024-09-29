@@ -290,6 +290,10 @@ namespace Digi.BuildInfo.VanillaData
         // from MyMyProjectorBase.AllowWelding
         public static bool Projector_AllowWelding(MyProjectorDefinition def) => def.AllowWelding && !def.AllowScaling && !def.IgnoreSize;
 
+        // from EmissiveColors.sbc; no way to get emissive color presets
+        public static readonly Color EmissivePreset_EventController_State0 = new Color(0, 255, 255); // "lightblue", but it's cyan xD
+        public static readonly Color EmissivePreset_EventController_State1 = new Color(0, 0, 255);
+
         // from MyTimerBlock.Init()
         public const float Timer_PowerReq = 1E-07f;
 

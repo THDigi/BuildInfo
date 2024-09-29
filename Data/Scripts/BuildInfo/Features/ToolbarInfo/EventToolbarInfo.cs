@@ -6,6 +6,7 @@ using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Features.Overlays.Specialized;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
+using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.Game.EntityComponents;
@@ -691,6 +692,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 }
 
                 sb.Append("Same action can be used in both slots by using different pages.\n");
+
+                // TODO: need a way to know when a slot is triggered multiple times, some might even trigger in quick succession to even be possible in emissive...
+                sb.Append("Block's emissive will be ").Color(Hardcoded.EmissivePreset_EventController_State0).Append("this color*<reset> for slot 1 and ")
+                    .Color(Hardcoded.EmissivePreset_EventController_State1).Append("this color*<reset> for slot 2.\n");
                 return true;
             }
 
