@@ -426,8 +426,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                                 slot2.Append("when all doors are ");
                             }
 
-                            slot1.Append("opened");
-                            slot2.Append("closed");
+                            slot1.Append("fully open");
+                            slot2.Append("fully closed");
                             break;
                         }
 
