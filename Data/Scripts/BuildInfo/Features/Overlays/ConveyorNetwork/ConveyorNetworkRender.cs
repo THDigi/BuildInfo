@@ -397,6 +397,12 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
 
             Vector3D camPos = MyAPIGateway.Session.Camera.Position;
 
+            //MatrixD camWM = MyAPIGateway.Session.Camera.WorldMatrix;
+            //Vector3D camCorner0 = camWM.Left + camWM.Up;
+            //Vector3D camCorner1 = camWM.Up + camWM.Right;
+            //Vector3D camCorner2 = camWM.Right + camWM.Down;
+            //Vector3D camCorner3 = camWM.Down + camWM.Left;
+
             if(isShadow)
             {
                 drawLines = true;
@@ -459,7 +465,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         MyBillboard billboard = BH.Billboards[BH.BillboardIndex];
                         if(billboard == null)
                         {
-                            billboard = new MyBillboard();
+                            billboard = CreateBillboard();
                             BH.Billboards[BH.BillboardIndex] = billboard;
                         }
 
@@ -467,16 +473,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         #endregion
 
                         billboard.Material = material;
-                        billboard.UVOffset = Vector2.Zero;
-                        billboard.UVSize = Vector2.One;
-                        billboard.BlendType = Blend;
                         billboard.Color = color;
-                        billboard.ColorIntensity = 1f;
-
-                        //billboard.LocalType = LocalTypeEnum.Line;
-                        //billboard.Position0 = origin;
-                        //billboard.Position1 = direction;
-                        //billboard.Position2 = new Vector3D(length, thickness, 0);
 
                         MyQuadD quad;
                         MyPolyLineD polyLine;
@@ -484,29 +481,22 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         polyLine.Point0 = origin;
                         polyLine.Point1 = origin + direction * length;
                         polyLine.Thickness = thickness;
+
                         // TODO: find a faster way without sqrt?
-                        MyUtils.GetPolyLineQuad(out quad, ref polyLine, MyAPIGateway.Session.Camera.Position);
+                        MyUtils.GetPolyLineQuad(out quad, ref polyLine, camPos);
                         billboard.LocalType = LocalTypeEnum.Custom;
                         billboard.Position0 = quad.Point0;
                         billboard.Position1 = quad.Point1;
                         billboard.Position2 = quad.Point2;
                         billboard.Position3 = quad.Point3;
 
-                        //Vector3D endPoint = origin + direction * length;
-                        //Vector3D dirToCam = Vector3D.Normalize(MyAPIGateway.Session.Camera.Position - origin);
-                        //Vector3D offset = MyUtils.GetVector3Scaled(Vector3D.Cross(direction, dirToCam), thickness);
-                        //billboard.Position0 = origin - offset;
-                        //billboard.Position1 = endPoint - offset;
-                        //billboard.Position2 = endPoint + offset;
-                        //billboard.Position3 = origin + offset;
-
-                        billboard.ParentID = uint.MaxValue;
-                        billboard.CustomViewProjection = -1;
-
-                        billboard.Reflectivity = 0f;
-                        billboard.SoftParticleDistanceScale = 0f;
-                        //billboard.AlphaCutout = 0f;
-                        //billboard.DistanceSquared = 0; // does not seem used by the game
+                        //billboard.LocalType = LocalTypeEnum.Custom;
+                        //Vector3D vector = Vector3D.Normalize(camPos - polyLine.Point0);
+                        //Vector3D vector3Scaled = Vector3D.Cross(Vector3D.Normalize(polyLine.LineDirectionNormalized), vector) * polyLine.Thickness;
+                        //billboard.Position0 = polyLine.Point0 - vector3Scaled;
+                        //billboard.Position1 = polyLine.Point1 - vector3Scaled;
+                        //billboard.Position2 = polyLine.Point1 + vector3Scaled;
+                        //billboard.Position3 = polyLine.Point0 + vector3Scaled;
                         #endregion
                     }
                 }
@@ -548,7 +538,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         MyBillboard billboard = BH.Billboards[BH.BillboardIndex];
                         if(billboard == null)
                         {
-                            billboard = new MyBillboard();
+                            billboard = CreateBillboard();
                             BH.Billboards[BH.BillboardIndex] = billboard;
                         }
 
@@ -556,24 +546,18 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         #endregion
 
                         billboard.Material = material;
-                        billboard.UVOffset = Vector2.Zero;
-                        billboard.UVSize = Vector2.One;
-                        billboard.BlendType = Blend;
                         billboard.Color = color;
-                        billboard.ColorIntensity = 1f;
 
-                        // TODO some better way?
+                        // TODO some faster way?
                         billboard.LocalType = LocalTypeEnum.Point;
                         billboard.Position0 = posClose;
                         billboard.Position2 = new Vector3D(thickness, 0, 0);
 
-                        billboard.ParentID = uint.MaxValue;
-                        billboard.CustomViewProjection = -1;
-
-                        billboard.Reflectivity = 0f;
-                        billboard.SoftParticleDistanceScale = 0f;
-                        //billboard.AlphaCutout = 0f;
-                        //billboard.DistanceSquared = 0; // does not seem used by the game
+                        //billboard.LocalType = LocalTypeEnum.Custom;
+                        //billboard.Position0 = posClose + camCorner0 * thickness;
+                        //billboard.Position1 = posClose + camCorner1 * thickness;
+                        //billboard.Position2 = posClose + camCorner2 * thickness;
+                        //billboard.Position3 = posClose + camCorner3 * thickness;
                         #endregion
                     }
                 }
@@ -620,7 +604,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         MyBillboard billboard = BH.Billboards[BH.BillboardIndex];
                         if(billboard == null)
                         {
-                            billboard = new MyBillboard();
+                            billboard = CreateBillboard();
                             BH.Billboards[BH.BillboardIndex] = billboard;
                         }
 
@@ -628,33 +612,22 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         #endregion
 
                         billboard.Material = material;
-                        billboard.UVOffset = Vector2.Zero;
-                        billboard.UVSize = Vector2.One;
-                        billboard.BlendType = Blend;
                         billboard.Color = color;
-                        billboard.ColorIntensity = 1f;
 
                         MyQuadD quad;
                         MyPolyLineD polyLine;
-                        polyLine.LineDirectionNormalized = direction;
+                        polyLine.LineDirectionNormalized = direction; // doesn't really have to be normalized
                         polyLine.Point0 = origin;
                         polyLine.Point1 = origin + direction * length;
                         polyLine.Thickness = thickness;
+
                         // TODO: find a faster way without sqrt?
-                        MyUtils.GetPolyLineQuad(out quad, ref polyLine, MyAPIGateway.Session.Camera.Position);
+                        MyUtils.GetPolyLineQuad(out quad, ref polyLine, camPos);
                         billboard.LocalType = LocalTypeEnum.Custom;
                         billboard.Position0 = quad.Point0;
                         billboard.Position1 = quad.Point1;
                         billboard.Position2 = quad.Point2;
                         billboard.Position3 = quad.Point3;
-
-                        billboard.ParentID = uint.MaxValue;
-                        billboard.CustomViewProjection = -1;
-
-                        billboard.Reflectivity = 0f;
-                        billboard.SoftParticleDistanceScale = 0f;
-                        //billboard.AlphaCutout = 0f;
-                        //billboard.DistanceSquared = 0; // does not seem used by the game
                         #endregion
                     }
                 }
@@ -710,7 +683,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                     MyBillboard billboard = BH.Billboards[BH.BillboardIndex];
                     if(billboard == null)
                     {
-                        billboard = new MyBillboard();
+                        billboard = CreateBillboard();
                         BH.Billboards[BH.BillboardIndex] = billboard;
                     }
 
@@ -718,49 +691,47 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                     #endregion
 
                     billboard.Material = material;
-                    billboard.UVOffset = Vector2.Zero;
-                    billboard.UVSize = Vector2.One;
-                    billboard.BlendType = Blend;
                     billboard.Color = color;
-                    billboard.ColorIntensity = 1f;
-
-                    //billboard.LocalType = LocalTypeEnum.Line;
-                    //billboard.Position0 = origin;
-                    //billboard.Position1 = direction;
-                    //billboard.Position2 = new Vector3D(length, thickness, 0);
 
                     MyQuadD quad;
                     MyPolyLineD polyLine;
-                    polyLine.LineDirectionNormalized = direction;
+                    polyLine.LineDirectionNormalized = direction; // doesn't really have to be normalized
                     polyLine.Point0 = origin;
                     polyLine.Point1 = origin + direction * length;
                     polyLine.Thickness = thickness;
+
                     // TODO: find a faster way without sqrt?
-                    MyUtils.GetPolyLineQuad(out quad, ref polyLine, MyAPIGateway.Session.Camera.Position);
+                    MyUtils.GetPolyLineQuad(out quad, ref polyLine, camPos);
                     billboard.LocalType = LocalTypeEnum.Custom;
                     billboard.Position0 = quad.Point0;
                     billboard.Position1 = quad.Point1;
                     billboard.Position2 = quad.Point2;
                     billboard.Position3 = quad.Point3;
-
-                    //Vector3D endPoint = origin + direction * length;
-                    //Vector3D dirToCam = Vector3D.Normalize(MyAPIGateway.Session.Camera.Position - origin);
-                    //Vector3D offset = MyUtils.GetVector3Scaled(Vector3D.Cross(direction, dirToCam), thickness);
-                    //billboard.Position0 = origin - offset;
-                    //billboard.Position1 = endPoint - offset;
-                    //billboard.Position2 = endPoint + offset;
-                    //billboard.Position3 = origin + offset;
-
-                    billboard.ParentID = uint.MaxValue;
-                    billboard.CustomViewProjection = -1;
-
-                    billboard.Reflectivity = 0f;
-                    billboard.SoftParticleDistanceScale = 0f;
-                    //billboard.AlphaCutout = 0f;
-                    //billboard.DistanceSquared = 0; // does not seem used by the game
                     #endregion
                 }
             }
+        }
+
+        MyBillboard CreateBillboard()
+        {
+            var billboard = new MyBillboard();
+
+            billboard.ColorIntensity = 1f;
+
+            billboard.UVOffset = Vector2.Zero;
+            billboard.UVSize = Vector2.One;
+            billboard.BlendType = Blend;
+
+            billboard.ParentID = uint.MaxValue;
+            billboard.CustomViewProjection = -1;
+
+            billboard.Reflectivity = 0f;
+            billboard.SoftParticleDistanceScale = 0f;
+
+            billboard.AlphaCutout = 0f;
+            //billboard.DistanceSquared = 0; // does not seem used by the game
+
+            return billboard;
         }
 
         MyQuadD[] TempQuads = new MyQuadD[6];
@@ -863,7 +834,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         MyBillboard billboard = BH.Billboards[BH.BillboardIndex];
                         if(billboard == null)
                         {
-                            billboard = new MyBillboard();
+                            billboard = CreateBillboard();
                             BH.Billboards[BH.BillboardIndex] = billboard;
                         }
 
@@ -871,25 +842,13 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         #endregion
 
                         billboard.Material = material;
-                        billboard.UVOffset = Vector2.Zero;
-                        billboard.UVSize = Vector2.One;
-                        billboard.BlendType = Blend;
                         billboard.Color = box.Color;
-                        billboard.ColorIntensity = 1f;
 
                         billboard.LocalType = LocalTypeEnum.Custom;
                         billboard.Position0 = quad.Point0;
                         billboard.Position1 = quad.Point1;
                         billboard.Position2 = quad.Point2;
                         billboard.Position3 = quad.Point3;
-
-                        billboard.ParentID = uint.MaxValue;
-                        billboard.CustomViewProjection = -1;
-
-                        billboard.Reflectivity = 0f;
-                        billboard.SoftParticleDistanceScale = 0f;
-                        //billboard.AlphaCutout = 0f;
-                        //billboard.DistanceSquared = 0; // does not seem used by the game
                         #endregion
                     }
                 }
