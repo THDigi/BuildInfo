@@ -562,8 +562,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                             }
 
                             float angle = eventController.GetValue<float>("Angle");
-                            slot1.Append(conditionInfoTrue).AngleFormat(angle, 1);
-                            slot2.Append(conditionInfoFalse).AngleFormat(angle, 1);
+                            slot1.Append(conditionInfoTrue).AngleFormatDeg(angle, 1);
+                            slot2.Append(conditionInfoFalse).AngleFormatDeg(angle, 1);
                             break;
                         }
 
