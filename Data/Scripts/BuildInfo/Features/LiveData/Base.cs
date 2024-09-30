@@ -372,7 +372,8 @@ namespace Digi.BuildInfo.Features.LiveData
                     else if(part1.EqualsIgnoreCase("in") || part2.EqualsIgnoreCase("in"))
                         flags |= ConveyorFlags.In;
 
-                    if(!detectorPtr.StartsWithCaseInsensitive("conveyorline"))
+                    bool isInteractive = !detectorPtr.StartsWithCaseInsensitive("conveyorline");
+                    if(isInteractive)
                     {
                         flags |= ConveyorFlags.Interactive;
                         Has |= BlockHas.PhysicalTerminalAccess;
@@ -389,15 +390,35 @@ namespace Digi.BuildInfo.Features.LiveData
 
                     ConveyorInfo port = new ConveyorInfo(flags, matrix, portCellPos, portDir);
 
-                    // some blocks like classic large turrets have their interactive ports as real conveyor ports but they are not reachable because they start from middle cell.
                     {
                         PortPos portPos = port.TransformToGrid(block.SlimBlock);
+
+                        IMySlimBlock thisSlimCheck = block.CubeGrid.GetCubeBlock(portPos.Position);
+                        if(thisSlimCheck != block.SlimBlock)
+                        {
+                            if(isInteractive)
+                            {
+                                Interactive.Add(new InteractionInfo(matrix, "Inventory/Terminal access", OverlayDrawInstance.InteractiveTerminalColor));
+                                Has |= BlockHas.PhysicalTerminalAccess;
+                            }
+
+                            if(showModderAlerts && isModModel)
+                                Main.ModderHelpMain.ModHint(def, $"Conveyor port '{dummy.Name}' starts outside of the block!" +
+                                                                 "\nMove dummy's position towards the block a bit so that its center is inside the block boundingbox.");
+
+                            continue;
+                        }
+
                         Vector3I connectingToCell = portPos.Position + Base6Directions.GetIntVector(portPos.Direction);
                         IMySlimBlock slimCheck = block.CubeGrid.GetCubeBlock(connectingToCell);
+
                         if(slimCheck == block.SlimBlock) // connects to itself, mark unreachable
                         {
-                            Interactive.Add(new InteractionInfo(matrix, "Inventory/Terminal access", OverlayDrawInstance.InteractiveTerminalColor));
-                            Has |= BlockHas.PhysicalTerminalAccess;
+                            if(isInteractive)
+                            {
+                                Interactive.Add(new InteractionInfo(matrix, "Inventory/Terminal access", OverlayDrawInstance.InteractiveTerminalColor));
+                                Has |= BlockHas.PhysicalTerminalAccess;
+                            }
 
                             if(showModderAlerts && isModModel)
                                 Main.ModderHelpMain.ModHint(def, $"Conveyor port '{dummy.Name}' cannot connect to a different block!" +
@@ -563,6 +584,37 @@ namespace Digi.BuildInfo.Features.LiveData
             TrimList(ref ConveyorPorts);
             TrimList(ref UpgradePorts);
             TrimList(ref Interactive);
+
+            if(ConveyorPorts != null && showModderAlerts && isModModel && CheckConveyorsForOverlap())
+            {
+                Main.ModderHelpMain.ModHint(def, $"Its model has multiple conveyor dummies in the same cell and direction. This might cause conveyors to not connect in certain cases.");
+            }
+        }
+
+        bool CheckConveyorsForOverlap()
+        {
+            if(ConveyorPorts == null)
+                return false;
+
+            for(int a = 0; a < ConveyorPorts.Count; a++)
+            {
+                ConveyorInfo portA = ConveyorPorts[a];
+
+                for(int b = 0; b < ConveyorPorts.Count; b++)
+                {
+                    if(a == b)
+                        continue;
+
+                    ConveyorInfo portB = ConveyorPorts[b];
+
+                    if(portA.Direction == portB.Direction && portA.CellPosition == portB.CellPosition)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         static void TrimList<T>(ref List<T> list)
