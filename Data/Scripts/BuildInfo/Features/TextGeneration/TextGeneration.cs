@@ -2250,9 +2250,13 @@ namespace Digi.BuildInfo.Features
                     int obPrefixLen = "MyObjectBuilder_".Length;
                     string typeIdString = def.Id.TypeId.ToString();
 
-                    line.ResetFormatting()
-                        .Separator().Color(COLOR_INTERNAL).Label("Id").Color(COLOR_NORMAL).Append(typeIdString, obPrefixLen, (typeIdString.Length - obPrefixLen)).Append("/").Append(def.Id.SubtypeName)
-                        .Separator().Color(COLOR_INTERNAL).Label("Pair").Color(COLOR_NORMAL).Append(def.BlockPairName);
+                    line = AddLine().Append(partPrefix);
+
+                    line.Color(COLOR_INTERNAL).Label("Id").Color(COLOR_NORMAL).Append(typeIdString, obPrefixLen, (typeIdString.Length - obPrefixLen)).Append("/").Append(def.Id.SubtypeName);
+
+                    line = AddLine().Append(partPrefix);
+
+                    line.Color(COLOR_INTERNAL).Label("Pair").Color(COLOR_NORMAL).Append(def.BlockPairName);
 
                     StringBuilder tooltip = CreateTooltip(() => CopyDefIdToClipboard(def.Id));
 
