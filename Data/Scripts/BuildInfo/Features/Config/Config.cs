@@ -97,6 +97,7 @@ namespace Digi.BuildInfo.Features.Config
         public BackgroundOpacitySetting TextAPIBackgroundOpacity;
 
         public BoolSetting ScientificNotation;
+        public BoolSetting TextReplace;
 
         public BoolSetting OverlaysAlwaysVisible;
         public FlagsSetting<OverlayLabelsFlags> OverlayLabels;
@@ -715,6 +716,11 @@ namespace Digi.BuildInfo.Features.Config
             ScientificNotation = new BoolSetting(Handler, "Scientific Notation", false,
                 "Enabling this will make most numbers provided by this mod turn into scientific notation for larger than 1e4 or lower than 1e-4.",
                 "With this off, scientific notation will still be used for numbers past 1e12 and some past 1e18.");
+
+            TextReplace = new BoolSetting(Handler, "Text Replace", true,
+                "The mod replaces some texts around the game for better context.",
+                "Currently it only affects Event Controller's Event names to be more consistent and clear.",
+                "This feature will not do anything if the game language is set to anything but English.");
 
             ModderHelpAlerts = new BoolSetting(Handler, "ModderHelp: Show problems/hints", true,
                 "Toggles wether this mod looks at definitions from local mods for sneaky problems or hints." +

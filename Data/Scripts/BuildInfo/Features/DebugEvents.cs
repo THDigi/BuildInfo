@@ -33,6 +33,7 @@ using Sandbox.Game.EntityComponents;
 using VRage.Game.Entity;
 using static VRageRender.MyBillboard;
 using VRage.Game.ObjectBuilders.Definitions.SessionComponents;
+using VRage.Voxels;
 
 namespace Digi.BuildInfo.Features
 {
@@ -211,6 +212,42 @@ namespace Digi.BuildInfo.Features
             //EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
             //EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
+
+        //public override void UpdateAfterSim(int tick)
+        //{
+        //    var camWM = MyAPIGateway.Session.Camera.WorldMatrix;
+
+        //    MatrixD placeMatrix = camWM;
+        //    placeMatrix.Translation += camWM.Forward * 5;
+
+        //    LineD line = new LineD(camWM.Translation, placeMatrix.Translation);
+
+        //    List<MyLineSegmentOverlapResult<MyVoxelBase>> hits = new List<MyLineSegmentOverlapResult<MyVoxelBase>>();
+        //    MyGamePruningStructure.GetVoxelMapsOverlappingRay(ref line, hits);
+
+        //    //var box = new BoundingBoxD(placeMatrix.Translation - Vector3D.One, placeMatrix.Translation + Vector3D.One);
+
+        //    //var map = MyAPIGateway.Session.VoxelMaps.GetVoxelMapWhoseBoundingBoxIntersectsBox(ref box, null);
+        //    //if(map != null)
+
+        //    foreach(MyLineSegmentOverlapResult<MyVoxelBase> hit in hits)
+        //    {
+        //        MyVoxelBase voxelBase = hit.Element;
+
+        //        MyStorageData tempStorage = new MyStorageData(MyStorageDataTypeFlags.ContentAndMaterial);
+        //        tempStorage.Resize(Vector3I.One);
+
+        //        var worldPos = placeMatrix.Translation;
+        //        Vector3I posVox;
+        //        MyVoxelCoordSystems.WorldPositionToVoxelCoord(voxelBase.PositionLeftBottomCorner, ref worldPos, out posVox);
+        //        voxelBase.Storage.ReadRange(tempStorage, MyStorageDataTypeFlags.ContentAndMaterial, 0, posVox, posVox);
+
+        //        var content = tempStorage.Content(0);
+        //        var material = tempStorage.Material(0);
+        //        var def = MyDefinitionManager.Static.GetVoxelMaterialDefinition(material);
+        //        MyAPIGateway.Utilities.ShowNotification($"material={(def == null ? "NULL" : def.Id.SubtypeName)} ({material}); content={content}; voxel={voxelBase.DisplayName}", 16);
+        //    }
+        //}
 
         /*
         Vector3I? RememberA;

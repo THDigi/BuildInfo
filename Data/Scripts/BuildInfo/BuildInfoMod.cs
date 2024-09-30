@@ -58,6 +58,7 @@ namespace Digi.BuildInfo
         public readonly Config Config;
         public readonly FontsHandler FontsHandler;
         public readonly ConfigMenuHandler ConfigMenuHandler;
+        public readonly TextReplacer TextReplacer;
         public readonly MenuHandler MenuHandler;
         public readonly HUDEditor HUDEditor;
         public readonly ScreenTooltips ScreenTooltips;
@@ -155,6 +156,7 @@ namespace Digi.BuildInfo
             Config = new Config(this);
             FontsHandler = new FontsHandler(this);
             ConfigMenuHandler = new ConfigMenuHandler(this);
+            TextReplacer = new TextReplacer(this);
             MenuHandler = new MenuHandler(this);
             JumpDriveMonitor = new JumpDriveMonitor(this);
             HUDEditor = new HUDEditor(this);
