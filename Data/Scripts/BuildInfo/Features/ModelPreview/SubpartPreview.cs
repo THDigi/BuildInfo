@@ -40,8 +40,6 @@ namespace Digi.BuildInfo.Features.ModelPreview
             // other turret-like blocks: MyLaserAntenna, MySearchlight; searchlight rotates the same as turrets but laser antenna parents differently
 
             RegisterType<AdvancedDoor>(typeof(MyObjectBuilder_AdvancedDoor));
-
-            RegisterType<HangarDoor>(typeof(MyObjectBuilder_AirtightHangarDoor));
         }
 
         public override void RegisterComponent()
