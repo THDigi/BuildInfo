@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Utilities;
+using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
+using VRage.Utils;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
@@ -39,6 +41,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
         Vector4 NetworkColor;
 
         public readonly List<IMyCubeGrid> GridsForEvents = new List<IMyCubeGrid>();
+        readonly List<IMyCubeBlock> BlocksHooked = new List<IMyCubeBlock>();
 
         public ConveyorNetworkCompute(ConveyorNetworkView handler)
         {
@@ -71,6 +74,19 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                 grid.OnGridMerge += GridMergeOrSplit;
                 grid.OnGridSplit += GridMergeOrSplit;
                 grid.OnConnectionChangeCompleted += GridConnectionChange;
+
+                if(grid.BlocksCounters.GetValueOrDefault(typeof(MyObjectBuilder_ConveyorSorter), 0) > 0)
+                {
+                    foreach(MyCubeBlock fatblock in grid.GetFatBlocks())
+                    {
+                        var sorter = fatblock as IMyConveyorSorter;
+                        if(sorter != null)
+                        {
+                            sorter.IsWorkingChanged += SorterWorkingChanged;
+                            BlocksHooked.Add(sorter);
+                        }
+                    }
+                }
             }
         }
 
@@ -89,16 +105,23 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                     grid.OnGridSplit -= GridMergeOrSplit;
                     grid.OnConnectionChangeCompleted -= GridConnectionChange;
                 }
+
+                foreach(var block in BlocksHooked)
+                {
+                    block.IsWorkingChanged -= SorterWorkingChanged;
+                }
             }
             finally
             {
                 GridsForEvents.Clear();
+                BlocksHooked.Clear();
             }
         }
 
         void GridBlockChanges(IMySlimBlock slim) => Handler.ScheduleRescan();
         void GridMergeOrSplit(MyCubeGrid grid1, MyCubeGrid grid2) => Handler.ScheduleRescan();
         void GridConnectionChange(MyCubeGrid grid, GridLinkTypeEnum link) => Handler.ScheduleRescan();
+        void SorterWorkingChanged(IMyCubeBlock block) => Handler.ScheduleRescan();
 
         void ResetCompute()
         {
@@ -395,6 +418,14 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                 #endregion
 
                 bool functional = block.IsFunctional;
+
+                // as per MyGridConveyorSystem.IsAccessAllowed() / MyConveyorSorter.IsAllowed()
+                var sorter = block as IMyConveyorSorter;
+                if(sorter != null)
+                {
+                    functional = block.IsWorking;
+                }
+
                 Vector4 lineColor = (functional ? NetworkColor : ConveyorNetworkRender.BrokenColor);
 
                 #region render connected ports to center
