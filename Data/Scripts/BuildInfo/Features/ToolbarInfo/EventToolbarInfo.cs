@@ -330,6 +330,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                             Console.WriteLine($"case \"{type.Name}\":");
                         }
                     }
+
+                    // add result the end of the switch to quickly verify if any are new, the ones without a red highlight.
                     */
 
                     string typeName = eventComp.GetType().Name;
@@ -600,7 +602,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                                 case "MyEventBlockIntegrity": singular = "block"; plural = "blocks"; suffix = " integrity"; break;
                                 case "MyEventCargoFilledEntityComponent":
                                     singular = "inventory"; plural = "inventories"; suffix = " filled";
-                                    note = "NOTE: This acts per inventory, Refinery for example has 2.";
+                                    note = "<color=255,220,155>Note:<reset> This acts per inventory, for example Refinery has 2.";
                                     break;
                                 case "MyEventGasTankFilled": singular = "tank"; plural = "tanks"; suffix = " filled"; break;
                                 case "MyEventPistonPosition": singular = "piston's position"; plural = "pistons' position"; break;
@@ -678,8 +680,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     if(slot2.Length == 0)
                         slot2.Append("when condition is false");
 
-                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": ").AppendStringBuilder(slot1).Append('\n');
-                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": ").AppendStringBuilder(slot2).Append('\n');
+                    sb.Color(SlotColor).Append("Left slots").ResetFormatting().Append(": ").AppendStringBuilder(slot1).Append('\n');
+                    sb.Color(SlotColor).Append("Right slots").ResetFormatting().Append(": ").AppendStringBuilder(slot2).Append('\n');
 
                     if(note != null)
                         sb.Append(note).Append('\n');
@@ -687,15 +689,17 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 else
                 {
                     RenderBoxHeader(sb, blocks.Count, "'(No event)' toolbar for ");
-                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": ").Append("when condition is true").Append('\n');
-                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": ").Append("when condition is false").Append('\n');
+                    sb.Color(SlotColor).Append("Left slots").ResetFormatting().Append(": ").Append("when condition is true").Append('\n');
+                    sb.Color(SlotColor).Append("Right slots").ResetFormatting().Append(": ").Append("when condition is false").Append('\n');
                 }
 
-                sb.Append("Same action can be used in both slots by using different pages.\n");
+                sb.NewCleanLine();
+                sb.Append("Hint: The same action can be used on both sides by using different pages.\n");
 
                 // TODO: need a way to know when a slot is triggered multiple times, some might even trigger in quick succession to even be possible in emissive...
-                sb.Append("Block's emissive will be ").Color(Hardcoded.EmissivePreset_EventController_State0).Append("this color*<reset> for slot 1 and ")
-                    .Color(Hardcoded.EmissivePreset_EventController_State1).Append("this color*<reset> for slot 2.\n");
+                sb.Append("Hint: Block's lights change color depending on triggered side: ")
+                    .Color(Hardcoded.EmissivePreset_EventController_State0).Append("left<reset>, ")
+                    .Color(Hardcoded.EmissivePreset_EventController_State1).Append("right<reset>.\n");
                 return true;
             }
 
