@@ -3592,11 +3592,19 @@ namespace Digi.BuildInfo.Features
                     float mulSpeed = MyAPIGateway.Session.AssemblerSpeedMultiplier;
                     float mulEff = MyAPIGateway.Session.AssemblerEfficiencyMultiplier;
 
-                    AddLine().Append("Assembly speed: ").ProportionToPercent(assembler.AssemblySpeed * mulSpeed).Color(COLOR_UNIMPORTANT).OptionalMultiplier(mulSpeed).ResetFormatting()
+                    StringBuilder line = AddLine().Append("Assembly speed: ").ProportionToPercent(assembler.AssemblySpeed * mulSpeed)
+                        .Color(COLOR_UNIMPORTANT).OptionalMultiplier(mulSpeed).ResetFormatting()
                         .Separator().Append("Efficiency: ").ProportionToPercent(mulEff);
 
-                    SimpleTooltip($"Assembler speed is from the block multiplied by the world setting ({assembler.AssemblySpeed:0.##} * {mulSpeed:0.##})."
-                                + $"\nAssembler efficiency is entirely the world setting.");
+                    // HACK MySurvivalKit.GetEfficiencyMultiplierForBlueprint()
+                    if(assembler is MySurvivalKitDefinition)
+                    {
+                        line.Append(" (").Color(COLOR_BAD).ProportionToPercent(1f).Append("<reset> for ore)");
+                    }
+
+                    SimpleTooltip($"Assembler speed is from the block multiplied by the world setting ({assembler.AssemblySpeed:0.##} * {mulSpeed:0.##}) and is a multiplier of the blueprint's baseline build time."
+                                + $"\nAssembler efficiency is entirely the world setting."
+                                + $"\nFor SurvivalKit types, blueprints that involve Ore will be locked at 100% efficiency regardless of world settings.");
                 }
             }
 
@@ -4278,7 +4286,7 @@ namespace Digi.BuildInfo.Features
 
                 Hardcoded.LCDRenderDistanceInfo lcdRenderDistanceInfo = Hardcoded.TextSurface_MaxRenderDistance(def);
 
-                AddLine().LabelHardcoded("LCD - Render").DistanceFormat(lcdRenderDistanceInfo.RenderDistanceRaw * lcdRenderDistanceInfo.TextureQualityMultiplier).Separator().LabelHardcoded("Sync").DistanceFormat(Hardcoded.TextSurfaceMaxSyncDistance);
+                AddLine().Label("LCD - Render").DistanceFormat(lcdRenderDistanceInfo.RenderDistanceRaw * lcdRenderDistanceInfo.TextureQualityMultiplier).Separator().LabelHardcoded("Sync").DistanceFormat(Hardcoded.TextSurfaceMaxSyncDistance);
 
                 SimpleTooltip("LCD render distance is affected by game's Texture Quality setting, 2/3 for medium and 1/3 for low."
                             + $"\nThe value you see is already modified by your current texture setting (x{lcdRenderDistanceInfo.TextureQualityMultiplier:0.##})."
