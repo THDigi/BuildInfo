@@ -89,7 +89,7 @@ namespace Digi.BuildInfo.Features
             if(!Main.TextAPI.IsEnabled)
                 return;
 
-            bool chatVisible = MyAPIGateway.Gui.ChatEntryVisible;
+            bool chatVisible = MyAPIGateway.Gui.ChatEntryVisible && !Main.TextAPI.InModMenu;
             if(WasChatVisible != chatVisible)
             {
                 WasChatVisible = chatVisible;

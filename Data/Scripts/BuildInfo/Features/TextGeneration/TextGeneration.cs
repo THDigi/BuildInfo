@@ -10,6 +10,7 @@ using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Digi.Input;
 using Digi.Input.Devices;
+using Draygo.API;
 using ObjectBuilders.SafeZone;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Common.ObjectBuilders.Definitions;
@@ -70,8 +71,8 @@ namespace Digi.BuildInfo.Features
         public const int CACHE_PURGE_TICKS = 60 * 30; // how frequent the caches are being checked for purging, in ticks
         public const int CACHE_EXPIRE_SECONDS = 60 * 5; // how long a cached string remains stored until it's purged, in seconds
 
-        readonly Vector2D TEXT_HUDPOS = new Vector2D(-0.9675, 0.49); // textAPI default left side position
-        readonly Vector2D TEXT_HUDPOS_WIDE = new Vector2D(-0.9675 / 3f, 0.49); // textAPI default left side position when using a really wide resolution
+        //readonly Vector2D TEXT_HUDPOS = new Vector2D(-0.9675, 0.9675); // textAPI default left side position
+        //readonly Vector2D TEXT_HUDPOS_WIDE = new Vector2D(-0.9675 / 3f, 0.9675); // textAPI default left side position when using a really wide resolution
         readonly Vector2D TEXT_HUDPOS_RIGHT = new Vector2D(0.9692, 0.26); // textAPI default right side position
         readonly Vector2D TEXT_HUDPOS_RIGHT_WIDE = new Vector2D(0.9692 / 3f, 0.26); // textAPI default right side position when using a really wide resolution
 
@@ -230,11 +231,19 @@ namespace Digi.BuildInfo.Features
         {
             if(textShown && textObject != null)
             {
-                // HACK: let this box be rendered by textAPI to draw under the textAPI menu.
-                textObject.Visible = Main.TextAPI.InModMenu;
+                if(Main.TextAPI.InModMenu)
+                {
+                    // HACK: let this box be rendered by textAPI to draw under the textAPI menu.
+                    textObject.Visible = true;
 
-                if(!Main.TextAPI.InModMenu)
+                    // also hide text only, because if it's overlapping it makes it hard to read either
+                    textObject.Text.Visible = false;
+                }
+                else
+                {
+                    textObject.Visible = false;
                     textObject.Draw();
+                }
             }
             else
             {
@@ -610,12 +619,30 @@ namespace Digi.BuildInfo.Features
             }
             else if(!useLeftSide) // right side autocomputed
             {
-                textPos = (Main.GameConfig.AspectRatio > 5 ? TEXT_HUDPOS_RIGHT_WIDE : TEXT_HUDPOS_RIGHT);
+                //textPos = (Main.GameConfig.AspectRatio > 5 ? TEXT_HUDPOS_RIGHT_WIDE : TEXT_HUDPOS_RIGHT);
+
+                const double PxFromCorner = 30;
+
+                var px = HudAPIv2.APIinfo.ScreenPositionOnePX;
+                textPos = new Vector2D(1d - (px.X * PxFromCorner), 0.26);
+
+                if(Main.GameConfig.AspectRatio > 5)
+                    textPos.X *= 1f / 3f;
+
                 textOffset = new Vector2D(-textSize.X, -textSize.Y); // bottom-right pivot
             }
             else // left side autocomputed
             {
-                textPos = (Main.GameConfig.AspectRatio > 5 ? TEXT_HUDPOS_WIDE : TEXT_HUDPOS);
+                //textPos = (Main.GameConfig.AspectRatio > 5 ? TEXT_HUDPOS_WIDE : TEXT_HUDPOS);
+
+                const double PxFromCorner = 30;
+
+                var px = HudAPIv2.APIinfo.ScreenPositionOnePX;
+                textPos = new Vector2D(-1d + (px.X * PxFromCorner), 1d - (px.Y * PxFromCorner));
+
+                if(Main.GameConfig.AspectRatio > 5)
+                    textPos.X *= 1f / 3f;
+
                 textOffset = new Vector2D(0, 0); // top-left pivot
             }
 
