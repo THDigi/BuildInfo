@@ -12,7 +12,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         bool AllInteractible = true;
 
-        private readonly int allValue;
+        private readonly int CombinedValues;
 
         private readonly ItemGroup topToggle = new ItemGroup();
         private readonly ItemGroup individualToggles = new ItemGroup();
@@ -23,10 +23,20 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             Setting = setting;
             OnValueSet = onValueSet;
 
-            allValue = (int)Enum.Parse(typeof(T), "All");
+            string[] names = Enum.GetNames(typeof(T));
+            int[] values = (int[])Enum.GetValues(typeof(T));
+
+            CombinedValues = 0;
+            for(int i = 0; i < values.Length; ++i)
+            {
+                int value = values[i];
+                if(value == 0 || value == int.MaxValue)
+                    continue;
+                CombinedValues |= value;
+            }
 
             CreateToggleAll(category);
-            CreateFlagToggles(category);
+            CreateFlagToggles(category, names, values);
         }
 
         public override bool Interactable
@@ -56,33 +66,29 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         void CreateToggleAll(MenuCategoryBase category)
         {
             ItemToggle item = new ItemToggle(category, ToggleTitle,
-                getter: () => Setting.Value == allValue,
+                getter: () => Setting.Value == CombinedValues || Setting.Value == int.MaxValue,
                 setter: (v) =>
                 {
-                    Setting.SetValue(v ? allValue : 0);
-                    OnValueSet?.Invoke(allValue, v);
+                    Setting.SetValue(v ? CombinedValues : 0);
+                    OnValueSet?.Invoke(CombinedValues, v);
                     individualToggles.Update();
                 },
-                defaultValue: (Setting.DefaultValue & allValue) != 0);
+                defaultValue: Setting.DefaultValue == int.MaxValue || (Setting.DefaultValue & CombinedValues) != 0);
 
             Item = item.Item;
 
             topToggle.Add(item);
         }
 
-        void CreateFlagToggles(MenuCategoryBase category)
+        void CreateFlagToggles(MenuCategoryBase category, string[] names, int[] values)
         {
-            string[] names = Enum.GetNames(typeof(T));
-            int[] values = (int[])Enum.GetValues(typeof(T));
-
-            for(int i = 0; i < names.Length; ++i)
+            for(int i = 0; i < values.Length; ++i)
             {
                 string name = names[i];
-
-                if(name == "All" || name == "None")
-                    continue;
-
                 int value = values[i]; // captured by lambda, needs to be in this scope to not change
+
+                if(value == 0 || value == int.MaxValue)
+                    continue;
 
                 ItemToggle item = new ItemToggle(category, $"    {name}",
                     getter: () => Setting.IsSet(value),
