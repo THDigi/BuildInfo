@@ -18,7 +18,7 @@ namespace Digi.BuildInfo.Features
         public const int MassDataExpireTicks = (Constants.TicksPerSecond * 60 * 5);
         public const int MassDataCheckTicks = (Constants.TicksPerSecond * 60);
 
-        readonly MyConcurrentPool<MassData> DataPool = new MyConcurrentPool<MassData>();
+        readonly Stack<MassData> DataPool = new Stack<MassData>();
         readonly Dictionary<IMyCubeGrid, MassData> Grids = new Dictionary<IMyCubeGrid, MassData>();
         readonly HashSet<IMyCubeGrid> KeysToRemove = new HashSet<IMyCubeGrid>();
 
@@ -32,6 +32,9 @@ namespace Digi.BuildInfo.Features
 
         public override void UnregisterComponent()
         {
+            DataPool.Clear();
+            Grids.Clear();
+            KeysToRemove.Clear();
         }
 
         public override void UpdateAfterSim(int tick)
@@ -69,7 +72,7 @@ namespace Digi.BuildInfo.Features
             MassData data;
             if(!Grids.TryGetValue(grid, out data))
             {
-                data = DataPool.Get();
+                data = (DataPool.Count > 0 ? DataPool.Pop() : new MassData());
                 data.Init(grid);
                 grid.OnMarkForClose += GridMarkedForClose;
 
@@ -96,7 +99,7 @@ namespace Digi.BuildInfo.Features
                     Grids.Remove(grid);
 
                     data.Reset();
-                    DataPool.Return(data);
+                    DataPool.Push(data);
                 }
 
                 if(Grids.Count == 0)

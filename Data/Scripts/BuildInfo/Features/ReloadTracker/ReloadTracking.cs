@@ -41,7 +41,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
 
         readonly List<MyEntity> TempEntities = new List<MyEntity>();
 
-        readonly MyConcurrentPool<TrackedWeapon> WeaponPool = new MyConcurrentPool<TrackedWeapon>();
+        readonly Stack<TrackedWeapon> WeaponPool = new Stack<TrackedWeapon>();
 
         public ReloadTracking(BuildInfoMod main) : base(main)
         {
@@ -59,7 +59,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
         {
             NextTickUpdate.Clear();
             WeaponLookup.Clear();
-            WeaponPool.Clean();
+            WeaponPool.Clear();
 
             MyAPIGateway.Missiles.OnMissileAdded -= MissileSpawned;
             MyAPIGateway.Projectiles.OnProjectileAdded -= ProjectileSpawned;
@@ -128,11 +128,11 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             if(WeaponLookup.ContainsKey(gunBlock.EntityId))
                 return; // ignore grid merge/split if gun is already tracked
 
-            TrackedWeapon tw = WeaponPool.Get();
+            TrackedWeapon tw = (WeaponPool.Count > 0 ? WeaponPool.Pop() : new TrackedWeapon());
             if(!tw.Init(gunBlock))
             {
                 tw.Clear();
-                WeaponPool.Return(tw);
+                WeaponPool.Push(tw);
                 return;
             }
 
@@ -173,7 +173,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
                 ProjectileWeaponsPerGrid.GetValueOrDefault(tw.Block.CubeGrid.EntityId)?.Remove(tw);
 
                 tw.Clear();
-                WeaponPool.Return(tw);
+                WeaponPool.Push(tw);
             }
             catch(Exception e)
             {
