@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Digi.BuildInfo.Features.Toolbars.FakeAPI.Items;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces.Terminal;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
@@ -14,9 +16,9 @@ namespace Digi.BuildInfo.Utilities
     public class Caches : ModComponent
     {
         // caches/lookups
-        public readonly List<MyPhysicalItemDefinition> ItemDefs = new List<MyPhysicalItemDefinition>(128); // vanilla has ~107
-        public readonly List<MyCubeBlockDefinition> BlockDefs = new List<MyCubeBlockDefinition>(1024); // vanilla has ~637
-        public readonly Dictionary<string, MyTargetingGroupDefinition> TargetGroups = new Dictionary<string, MyTargetingGroupDefinition>(4); // vanilla has 3
+        public readonly List<MyPhysicalItemDefinition> ItemDefs = new List<MyPhysicalItemDefinition>(256); // vanilla has ~120 in v204
+        public readonly List<MyCubeBlockDefinition> BlockDefs = new List<MyCubeBlockDefinition>(2048); // vanilla has ~1170 in v204
+        public readonly Dictionary<string, MyTargetingGroupDefinition> TargetGroups = new Dictionary<string, MyTargetingGroupDefinition>(4); // vanilla has 3 in v204
         public readonly List<MyTargetingGroupDefinition> OrderedTargetGroups = new List<MyTargetingGroupDefinition>(4);
         public readonly Dictionary<int, List<Vector3>> GeneratedSphereData = new Dictionary<int, List<Vector3>>();
 
@@ -29,6 +31,20 @@ namespace Digi.BuildInfo.Utilities
         public readonly List<Vector3D> Vertices = new List<Vector3D>();
         public readonly Dictionary<string, int> NamedSums = new Dictionary<string, int>();
         public readonly List<IMyPlayer> Players = new List<IMyPlayer>();
+
+        /// <summary>
+        /// Max amount of expected actions for any single block
+        /// </summary>
+        public const int ExpectedActions = 32;
+
+        /// <summary>
+        /// How many terminal blocks are expected the average grid to have, it will likely go past this anyway.
+        /// </summary>
+        public const int ExpectedTerminalBlocks = 256;
+
+        public readonly Stack<List<IMyTerminalAction>> PoolActions = new Stack<List<IMyTerminalAction>>();
+
+        public readonly Stack<ActionCount> PoolActionCounted = new Stack<ActionCount>();
 
         //public readonly Dictionary<MyCubeBlockDefinition, Dictionary<int, List<string>>> MountRestrictions = new Dictionary<MyCubeBlockDefinition, Dictionary<int, List<string>>>();
 
@@ -47,6 +63,8 @@ namespace Digi.BuildInfo.Utilities
             CacheTargetGroups();
             //ComputeMountpointProperties();
             CacheLightningStats();
+
+            Log.Info($"Cached ItemDefs={ItemDefs.Count}, BlockDefs: {BlockDefs.Count}, TargetGroups={TargetGroups.Count}");
         }
 
         public override void RegisterComponent()

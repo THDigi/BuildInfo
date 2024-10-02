@@ -1,5 +1,6 @@
 ﻿using System;
 using Digi.BuildInfo.Features.Toolbars.FakeAPI.Items;
+using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game;
 using Sandbox.ModAPI;
@@ -57,6 +58,8 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
         public void LoadFromOB(MyObjectBuilder_Toolbar ob)
         {
             if(ob == null) throw new ArgumentNullException("ob");
+
+            Utils.AssertMainThread(throwException: true);
 
             Type = ob.ToolbarType;
 

@@ -6,7 +6,6 @@ using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
-using VRage.Collections;
 using VRage.Game;
 using VRage.Game.Entity;
 
@@ -59,29 +58,34 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI.Items
             return true;
         }
 
-        static readonly List<IMyTerminalAction> TempActions = new List<IMyTerminalAction>();
-        static readonly HashSet<string> TempExistingActions = new HashSet<string>();
+        static readonly HashSet<string> TempExistingActions = new HashSet<string>(Caches.ExpectedActions);
 
-        protected override ListReader<IMyTerminalAction> GetActions(MyToolbarType? toolbarType)
+        protected override void GetActions(MyToolbarType? toolbarType, List<IMyTerminalAction> results)
         {
-            TempActions.Clear();
-            TempExistingActions.Clear();
-
-            // HACK: required like this to get ALL actions, the filled list only gets a specific toolbar type.
-            Block.GetActions(null, (a) =>
+            try
             {
-                var action = (IMyTerminalAction)a;
+                results.Clear();
 
-                if(action.IsEnabled(Block) && (toolbarType == null || action.InvalidToolbarTypes.Contains(toolbarType.Value)))
+                TempExistingActions.Clear();
+
+                // HACK: required like this to get ALL actions, the filled list only gets a specific toolbar type.
+                Block.GetActions(null, (a) =>
                 {
-                    if(TempExistingActions.Add(action.Id))
-                        TempActions.Add(action);
-                }
+                    var action = (IMyTerminalAction)a;
 
-                return false;
-            });
+                    if(action.IsEnabled(Block) && (toolbarType == null || action.InvalidToolbarTypes.Contains(toolbarType.Value)))
+                    {
+                        if(TempExistingActions.Add(action.Id))
+                            results.Add(action);
+                    }
 
-            return new ListReader<IMyTerminalAction>(TempActions);
+                    return false;
+                });
+            }
+            finally
+            {
+                TempExistingActions.Clear();
+            }
         }
 
         public override string ToString()

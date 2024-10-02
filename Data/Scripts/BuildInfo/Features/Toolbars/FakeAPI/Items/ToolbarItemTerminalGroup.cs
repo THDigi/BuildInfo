@@ -6,12 +6,17 @@ using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
-using VRage.Collections;
 using VRage.Game;
 using VRage.Game.Entity;
 
 namespace Digi.BuildInfo.Features.Toolbars.FakeAPI.Items
 {
+    public class ActionCount
+    {
+        public int Count;
+        public IMyTerminalAction Action;
+    }
+
     public class ToolbarItemTerminalGroup : ToolbarItemWithAction
     {
         public IMyBlockGroup Group { get; protected set; }
@@ -45,118 +50,180 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI.Items
             return true;
         }
 
-        static readonly HashSet<Type> TempBlockTypes = new HashSet<Type>();
-        static readonly List<IMyTerminalBlock> TempBlocks = new List<IMyTerminalBlock>();
+        static readonly Dictionary<Type, IMyTerminalBlock> TempBlockTypes = new Dictionary<Type, IMyTerminalBlock>(16);
+        static readonly Dictionary<string, ActionCount> TempActionsById = new Dictionary<string, ActionCount>(Caches.ExpectedActions);
 
-        protected override ListReader<IMyTerminalAction> GetActions(MyToolbarType? toolbarType)
+        protected override void GetActions(MyToolbarType? toolbarType, List<IMyTerminalAction> results)
         {
             try
             {
+                results.Clear();
+
                 TempBlocks.Clear();
                 Group.GetBlocks(TempBlocks);
 
                 TempBlockTypes.Clear();
 
-                // HACK: clone of MyToolbarItemTerminalGroup.GetActions()...
-                bool genericType;
-                bool flag = true;
+                // HACK: clone of MyToolbarItemTerminalGroup.GetActions(), with optimizations
+                //bool genericType;
+                bool allFunctional = true;
 
-                foreach(var tb in TempBlocks)
+                foreach(IMyTerminalBlock block in TempBlocks)
                 {
-                    flag = (flag && tb is IMyFunctionalBlock);
-                    TempBlockTypes.Add(tb.GetType());
+                    allFunctional = (allFunctional && block is IMyFunctionalBlock);
+                    TempBlockTypes[block.GetType()] = block;
                 }
 
                 if(TempBlockTypes.Count == 1)
                 {
-                    genericType = false;
-                    return GetValidActions(TempBlocks[0], TempBlocks);
+                    GetValidActions(TempBlocks[0], results);
+
+                    // TODO is this method really required?
+                    //GetValidActions(TempBlocks[0], TempBlocks, results);
+                    return;
                 }
 
-                if(TempBlockTypes.Count == 0 || !flag)
+                if(TempBlockTypes.Count == 0 || !allFunctional)
                 {
-                    genericType = true;
-                    return ListReader<IMyTerminalAction>.Empty;
+                    //genericType = true;
+                    return;
                 }
 
-                genericType = true;
+                //genericType = true;
 
-                ListReader<IMyTerminalAction> results = GetValidActions(TempBlocks[0]);
+                #region Actions that exist on all types
+                TempActionsById.Clear();
+                int blockTypes = TempBlockTypes.Count;
+                Stack<ActionCount> pool = BuildInfoMod.Instance.Caches.PoolActionCounted;
 
-                // start from index 1
-                for(int i = 1; i < TempBlocks.Count; i++)
+                // first, tally actions by Id (not instance because there can be different instances with same Id)
+                foreach(IMyTerminalBlock block in TempBlockTypes.Values)
                 {
-                    IMyTerminalBlock tb = TempBlocks[i];
+                    // abusing results list as a temporary list
+                    results.Clear();
+                    GetValidActions(block, results);
 
-                    List<IMyTerminalAction> filterMore = new List<IMyTerminalAction>(32);
-                    ListReader<IMyTerminalAction> actions2 = GetValidActions(tb);
-
-                    foreach(IMyTerminalAction actionA in results)
+                    foreach(IMyTerminalAction action in results)
                     {
-                        foreach(IMyTerminalAction actionB in actions2)
+                        ActionCount ac;
+                        if(!TempActionsById.TryGetValue(action.Id, out ac))
                         {
-                            if(actionB.Id == actionA.Id)
-                            {
-                                filterMore.Add(actionA);
-                                break;
-                            }
+                            ac = (pool.Count > 0 ? pool.Pop() : new ActionCount());
+                            ac.Action = action;
+                            ac.Count = 0;
+                            TempActionsById[action.Id] = ac;
                         }
+
+                        ac.Count++;
+                    }
+                }
+
+                // second, return only actions that are as many as the block types
+                results.Clear();
+
+                foreach(ActionCount ac in TempActionsById.Values)
+                {
+                    if(ac.Count == blockTypes)
+                    {
+                        results.Add(ac.Action);
                     }
 
-                    results = filterMore;
+                    ac.Action = null;
+                    pool.Push(ac);
+                }
+                #endregion
+
+                // TODO is this necessary to do for all blocks?
+                /*
+                #region Get only actions that exist for all blocks
+                TempActionsById.Clear();
+                int totalBlocks = TempBlocks.Count;
+                Stack<ActionCounted> pool = BuildInfoMod.Instance.Caches.PoolActionCounted;
+
+                // first, count all actions by Id
+                for(int i = 0; i < totalBlocks; i++)
+                {
+                    IMyTerminalBlock block = TempBlocks[i];
+
+                    // abusing results list as a temporary list
+                    results.Clear();
+                    GetValidActions(block, results);
+
+                    foreach(IMyTerminalAction action in results)
+                    {
+                        ActionCounted ac;
+                        if(!TempActionsById.TryGetValue(action.Id, out ac))
+                        {
+                            ac = (pool.Count > 0 ? pool.Pop() : new ActionCounted());
+                            ac.Action = action;
+                            ac.Count = 0;
+                            TempActionsById[action.Id] = ac;
+                        }
+
+                        ac.Count++;
+                    }
                 }
 
-                return results;
+                // secondly, return only actions that are as many as the blocks
+                results.Clear();
+
+                foreach(var ac in TempActionsById.Values)
+                {
+                    if(ac.Count == totalBlocks)
+                    {
+                        results.Add(ac.Action);
+                    }
+
+                    ac.Action = null;
+                    pool.Push(ac);
+                }
+                #endregion
+                */
             }
             finally
             {
                 TempBlocks.Clear();
+                TempActionsById.Clear();
             }
         }
 
-        static ListReader<IMyTerminalAction> GetValidActions(IMyTerminalBlock blockForType, ListReader<IMyTerminalBlock> blocks)
+        //static void GetValidActions(IMyTerminalBlock blockForType, ListReader<IMyTerminalBlock> blocks, List<IMyTerminalAction> results)
+        //{
+        //    // HACK: required to use the lambda because there's an extra condition after it's called: action.IsValidForToolbarType(MyToolbarType.ButtonPanel)
+        //    // this is the same for SearchActionsOfName() and GetActionWithName().
+        //    blockForType.GetActions(null, (a) =>
+        //    {
+        //        var action = (IMyTerminalAction)a;
+        //        if(!action.ValidForGroups)
+        //            return false;
+        //
+        //        foreach(IMyTerminalBlock b in blocks)
+        //        {
+        //            if(action.IsEnabled(b))
+        //            {
+        //                results.Add(action);
+        //                break;
+        //            }
+        //        }
+        //
+        //        return false;
+        //    });
+        //}
+
+        static void GetValidActions(IMyTerminalBlock block, List<IMyTerminalAction> results)
         {
-            var actions = new List<IMyTerminalAction>(32); // not worth optimizing, risky
-
-            // HACK: required like this to get ALL actions, the filled list only gets a specific toolbar type.
-            blockForType.GetActions(null, (a) =>
-            {
-                var action = (IMyTerminalAction)a;
-                if(action.ValidForGroups)
-                {
-                    foreach(IMyTerminalBlock b in blocks)
-                    {
-                        if(action.IsEnabled(b))
-                        {
-                            actions.Add(action);
-                            break;
-                        }
-                    }
-                }
-
-                return false;
-            });
-
-            return actions;
-        }
-
-        static ListReader<IMyTerminalAction> GetValidActions(IMyTerminalBlock block)
-        {
-            var actions = new List<IMyTerminalAction>(32); // not worth optimizing, risky
-
-            // HACK: required like this to get ALL actions, the filled list only gets a specific toolbar type.
+            // HACK: required to use the lambda because there's an extra condition after it's called: action.IsValidForToolbarType(MyToolbarType.ButtonPanel)
+            // this is the same for SearchActionsOfName() and GetActionWithName().
             block.GetActions(null, (a) =>
             {
                 var action = (IMyTerminalAction)a;
                 if(action.ValidForGroups && action.IsEnabled(block))
                 {
-                    actions.Add(action);
+                    results.Add(action);
                 }
 
                 return false;
             });
-
-            return actions;
         }
 
         public override string ToString()

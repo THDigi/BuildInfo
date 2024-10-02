@@ -1,7 +1,8 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Text;
 using Digi.BuildInfo.Utilities;
+using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
-using VRage.Collections;
 using VRage.Game;
 using VRageMath;
 
@@ -18,17 +19,32 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI.Items
         {
             Action = null;
 
-            foreach(IMyTerminalAction a in GetActions(null))
+            Stack<List<IMyTerminalAction>> pool = BuildInfoMod.Instance.Caches.PoolActions;
+            List<IMyTerminalAction> actions = (pool.Count > 0 ? pool.Pop() : new List<IMyTerminalAction>(Caches.ExpectedActions));
+
+            try
             {
-                if(a.Id == actionId)
+                GetActions(null, actions);
+
+                foreach(IMyTerminalAction a in actions)
                 {
-                    Action = a;
-                    break;
+                    if(a.Id == actionId)
+                    {
+                        Action = a;
+                        break;
+                    }
                 }
+            }
+            finally
+            {
+                actions.Clear();
+                pool.Push(actions);
             }
         }
 
-        protected abstract ListReader<IMyTerminalAction> GetActions(MyToolbarType? toolbarType);
+        protected static readonly List<IMyTerminalBlock> TempBlocks = new List<IMyTerminalBlock>(Caches.ExpectedTerminalBlocks);
+
+        protected abstract void GetActions(MyToolbarType? toolbarType, List<IMyTerminalAction> results);
 
         protected void AppendActionName(StringBuilder sb, float opacity)
         {
