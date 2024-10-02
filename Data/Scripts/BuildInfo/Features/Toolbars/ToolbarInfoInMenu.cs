@@ -14,6 +14,7 @@ namespace Digi.BuildInfo.Features.Toolbars
     public class ToolbarInfoInMenu : ModComponent
     {
         ToolbarRender Render = new ToolbarRender();
+        ToolbarRender Render2 = new ToolbarRender();
         Toolbar Toolbar;
         IMyTerminalBlock TargetBlock;
 
@@ -49,6 +50,9 @@ namespace Digi.BuildInfo.Features.Toolbars
         void CreateUI()
         {
             Render.CreateUI();
+            Render2.CreateUI();
+
+            Render.BoxDrag.Dragging += RenderDragging;
         }
 
         void EventToolbarMonitor_OpenedToolbarConfig(ListReader<IMyTerminalBlock> blocks)
@@ -73,12 +77,14 @@ namespace Digi.BuildInfo.Features.Toolbars
             Toolbar = null;
             TargetBlock = null;
             Render.SetVisible(false);
+            Render2.SetVisible(false);
         }
 
         void LoadToolbar()
         {
             Toolbar = null;
             Render.SetVisible(false);
+            Render2.SetVisible(false);
 
             ToolbarHolder th;
             if(!Main.ToolbarTracker.EntitiesWithToolbars.TryGetValue(TargetBlock, out th))
@@ -135,16 +141,9 @@ namespace Digi.BuildInfo.Features.Toolbars
                 return;
 
             Render.Reset();
+            Render2.Reset();
 
             StringBuilder sb = Render.TextSB;
-
-            float opacity = 1f;
-            bool gamepadHUD = false;
-            int toolbarPage = Toolbar.CurrentPageIndex;
-            int startIndex = toolbarPage * Toolbar.SlotsPerPage;
-            int maxIndexPage = startIndex + Toolbar.SlotsPerPage - 1;
-
-            var slots = Toolbar.Items;
 
             //if(BuildInfoMod.IsDevMod)
             //{
@@ -158,13 +157,176 @@ namespace Digi.BuildInfo.Features.Toolbars
             //    }
             //}
 
+            float opacity = 1f;
+
             sb.ColorA(ToolbarRender.HeaderColor * opacity).Append("Toolbar Info");
 
-            if(Toolbar.PageCount > 1)
-                sb.Append(" - Page ").Append(toolbarPage + 1);
+            if(TargetBlock is IMyEventControllerBlock && Toolbar.PageCount > 1 && Toolbar.SlotsPerPage == 2)
+            {
+                DesignEventCompact(sb, opacity);
+            }
+            else
+            {
+                DesignNormal(sb, opacity);
+            }
 
-            sb.Append(" <i>").ColorA(Color.Gray * opacity).Append("(").Append(BuildInfoMod.ModName).Append(" Mod)");
+            Render.HUDPosition = Main.Config.ToolbarLabelsMenuPosition.Value;
+            Render.GUIScale = (float)(ToolbarRender.ScaleMultiplier * Main.Config.ToolbarLabelsMenuScale.Value);
+            Render.UpdateProperties();
+            Render.SetVisible(true);
+        }
+
+        /// <summary>
+        /// Expects exactly 2 slots per page and multiple pages
+        /// </summary>
+        void DesignEventCompact(StringBuilder sb, float opacity)
+        {
+            sb.Append(" - Left side slots:");
             sb.NewCleanLine();
+
+            int max = Toolbar.PageCount * Toolbar.SlotsPerPage;
+
+            var slots = Toolbar.Items;
+
+            for(int index = 0; index < max; index += 2)
+            {
+                if(index >= slots.Length)
+                {
+                    Log.Error($"Toolbar render error: index={index}; slots={slots.Length}; page={Toolbar.CurrentPageIndex}; using event-toolbar render");
+                    return;
+                }
+
+                var item = slots[index];
+
+                sb.ResetFormatting();
+
+                if(item == null)
+                    sb.ColorA(Color.Gray * opacity);
+
+                //sb.Append(index + 1).Append(". ");
+                sb.Append("  ");
+
+                if(item == null)
+                {
+                    sb.Append("—");
+                }
+                else
+                {
+                    item.AppendFancyRender(sb, opacity);
+                }
+
+                sb.NewCleanLine();
+            }
+
+            sb = Render2.TextSB;
+
+            sb.ColorA(ToolbarRender.HeaderColor * opacity).Append("Right side slots");
+            sb.NewCleanLine();
+
+            for(int index = 1; index < max; index += 2)
+            {
+                if(index >= slots.Length)
+                {
+                    Log.Error($"Toolbar render error: index={index}; slots={slots.Length}; page={Toolbar.CurrentPageIndex}; using event-toolbar render");
+                    return;
+                }
+
+                var item = slots[index];
+
+                sb.ResetFormatting();
+
+                if(item == null)
+                    sb.ColorA(Color.Gray * opacity);
+
+                //sb.Append(index + 1).Append(". ");
+                sb.Append("  ");
+
+                if(item == null)
+                {
+                    sb.Append("—");
+                }
+                else
+                {
+                    item.AppendFancyRender(sb, opacity);
+                }
+
+                sb.NewCleanLine();
+            }
+
+            Render2.HUDPosition = Render.HUDPosition + new Vector2D(Render.Text.Text.GetTextLength().X + 0.02, 0);
+            Render2.GUIScale = Render.GUIScale;
+            Render2.UpdateProperties();
+            Render2.SetVisible(true);
+        }
+
+        void DesignNormal(StringBuilder sb, float opacity)
+        {
+            bool gamepadHUD = false;
+            int toolbarPage = Toolbar.CurrentPageIndex;
+            var slots = Toolbar.Items;
+
+            if(Toolbar.PageCount > 1)
+            {
+                Color pageSeleced = new Color(0, 155, 255);
+                Color pageHasItems = new Color(125, 255, 155);
+
+                //sb.Append(" - Page ").Append(toolbarPage + 1);
+
+                sb.Append(" - Pages: ");
+
+                for(int p = 0; p < Toolbar.PageCount; p++)
+                {
+                    int start = p * Toolbar.SlotsPerPage;
+                    int max = start + Toolbar.SlotsPerPage - 1;
+                    bool hasThings = false;
+
+                    for(int i = 0; i < Toolbar.SlotsPerPage; i++)
+                    {
+                        int idx = start + i;
+                        if(idx >= slots.Length)
+                            break;
+
+                        var item = slots[idx];
+                        if(item != null)
+                        {
+                            //Log.Info($"[debug] found item {item.GetType().Name} at {idx}; p={p}; i={i}; start={start}; max={max}");
+                            hasThings = true;
+                            break;
+                        }
+                    }
+
+                    bool isSelected = (toolbarPage == p);
+
+                    if(isSelected)
+                    {
+                        if(sb[sb.Length - 1] == ' ')
+                            sb.Length -= 1;
+
+                        sb.ColorA(pageSeleced * opacity).Append("[");
+                    }
+
+                    if(hasThings)
+                        sb.ColorA(pageHasItems * opacity);
+                    else if(isSelected)
+                        sb.Append("<reset>");
+
+                    sb.Append(p + 1);
+
+                    if(hasThings && !isSelected)
+                        sb.Append("<reset>");
+
+                    if(isSelected)
+                        sb.ColorA(pageSeleced * opacity).Append("]<reset>");
+                    else
+                        sb.Append(" ");
+                }
+            }
+
+            //sb.Append(" <i>").ColorA(Color.Gray * opacity).Append("(").Append(BuildInfoMod.ModName).Append(" Mod)");
+            sb.NewCleanLine();
+
+            int startIndex = toolbarPage * Toolbar.SlotsPerPage;
+            int maxIndexPage = startIndex + Toolbar.SlotsPerPage - 1;
 
             for(int i = 0; i < Toolbar.SlotsPerPage; i++)
             {
@@ -198,9 +360,6 @@ namespace Digi.BuildInfo.Features.Toolbars
 
                 sb.NewCleanLine();
             }
-
-            Render.UpdateProperties();
-            Render.SetVisible(true);
         }
 
         public override void UpdateAfterSim(int tick)
@@ -210,11 +369,23 @@ namespace Digi.BuildInfo.Features.Toolbars
                 LoadToolbar();
             }
 
+            Render.HUDPosition = Main.Config.ToolbarLabelsMenuPosition.Value;
+            Render.GUIScale = (float)(ToolbarRender.ScaleMultiplier * Main.Config.ToolbarLabelsMenuScale.Value);
             Render.UpdateBoxDrag();
 
             if(Toolbar?.CheckPageInputs() ?? false)
             {
                 RefreshToolbar();
+            }
+        }
+
+        void RenderDragging(Vector2D pos)
+        {
+            if(Render2.IsVisible)
+            {
+                Render2.HUDPosition = Render.HUDPosition + new Vector2D(Render.Text.Text.GetTextLength().X + 0.02, 0);
+                Render2.GUIScale = Render.GUIScale;
+                Render2.UpdateProperties();
             }
         }
     }

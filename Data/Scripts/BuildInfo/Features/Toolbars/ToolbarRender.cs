@@ -32,18 +32,21 @@ namespace Digi.BuildInfo.Features.Toolbars
         public const int MaxActionNameLength = 28; // first X characters
         public const int MaxArgLength = 16; // first X characters
 
-        const double ScaleMultiplier = 0.75;
+        public const double ScaleMultiplier = 0.75;
 
         public bool IsInit { get; private set; } = false;
 
         public readonly StringBuilder TextSB = new StringBuilder(512);
 
-        CornerBackground Box;
-        TextAPI.TextPackage Text;
+        public CornerBackground Box;
+        public TextAPI.TextPackage Text;
         HudAPIv2.BillBoardHUDMessage DebugPivot;
 
-        BoxDragging BoxDrag;
-        float GUIScale;
+        public BoxDragging BoxDrag;
+
+        public bool IsVisible => Text.Visible;
+        public Vector2D HUDPosition;
+        public float GUIScale;
 
         readonly BuildInfoMod Main;
 
@@ -109,9 +112,6 @@ namespace Digi.BuildInfo.Features.Toolbars
         {
             Text.TextStringBuilder.TrimEndWhitespace();
 
-            Vector2D configPos = Main.Config.ToolbarLabelsMenuPosition.Value;
-            GUIScale = (float)(ScaleMultiplier * Main.Config.ToolbarLabelsMenuScale.Value);
-
             Text.Scale = GUIScale;
 
             Vector2D textSize = Text.Text.GetTextLength();
@@ -120,7 +120,7 @@ namespace Digi.BuildInfo.Features.Toolbars
             Vector2D padding = (new Vector2D(12, -12) * GUIScale * px);
             textSize += padding * 2;
 
-            Vector2D pos = configPos + new Vector2D(0, -textSize.Y); // bottom-left pivot
+            Vector2D pos = HUDPosition + new Vector2D(0, -textSize.Y); // bottom-left pivot
 
             Text.Position = pos + padding;
 
@@ -137,7 +137,7 @@ namespace Digi.BuildInfo.Features.Toolbars
 
             if(DebugDraw)
             {
-                DebugPivot.Origin = Main.DrawUtils.TextAPIHUDToPixels(configPos);
+                DebugPivot.Origin = Main.DrawUtils.TextAPIHUDToPixels(HUDPosition);
                 DebugPivot.Offset = Vector2D.Zero;
             }
 
@@ -171,7 +171,7 @@ namespace Digi.BuildInfo.Features.Toolbars
 
         public void UpdateBoxDrag()
         {
-            BoxDrag.Position = Main.Config.ToolbarLabelsMenuPosition.Value;
+            BoxDrag.Position = HUDPosition;
             BoxDrag.Update();
         }
     }
