@@ -1316,9 +1316,18 @@ namespace Digi.BuildInfo.Utilities
                     string formatted = Math.Round(value, digits).ToString("###,###,###,###,###,##0.0000########");
 
                     if(formatted.EndsWith(".0000"))
-                        return s.Append(formatted, 0, formatted.Length - 5);
-                    else
-                        return s.Append(formatted);
+                        return s.Append(formatted, 0, formatted.Length - 5); // 1.0000 -> 1
+
+                    if(formatted.IndexOf('.') != -1) // must first ensure we're not removing from integers
+                    {
+                        if(formatted.EndsWith("000"))
+                            return s.Append(formatted, 0, formatted.Length - 3); // 0.5000 -> 0.5
+
+                        if(formatted.EndsWith("00"))
+                            return s.Append(formatted, 0, formatted.Length - 2); // 0.0500 -> 0.05
+                    }
+
+                    return s.Append(formatted);
                 }
             }
         }
