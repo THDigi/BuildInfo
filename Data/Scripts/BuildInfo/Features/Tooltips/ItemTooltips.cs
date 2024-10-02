@@ -739,7 +739,8 @@ namespace Digi.BuildInfo.Features.Tooltips
             int limit = 0;
             foreach(KeyValuePair<string, Sizes> kv in dict)
             {
-                if(++limit > customListLimit)
+                // second condition is to avoid "and 1 more..."
+                if(++limit > customListLimit && (dict.Count - limit) > 1)
                 {
                     limit--;
                     s.Append("\n  ...and ").Append(dict.Count - limit).Append(" more");
