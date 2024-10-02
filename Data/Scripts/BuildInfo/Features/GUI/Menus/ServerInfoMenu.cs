@@ -387,7 +387,7 @@ namespace Digi.BuildInfo.Features.GUI
             if(MyAPIGateway.Gui.ChatEntryVisible)
             {
                 ListReader<char> input = MyAPIGateway.Input.TextInput;
-                if(input.Count > 0)
+                if(input.Count > 0 || !SearchBar.Visible)
                 {
                     ChatTyped(input);
                 }
