@@ -478,46 +478,21 @@ namespace Digi.BuildInfo.Features.GUI
             if(WindowBG == null)
                 return;
 
-            int findLength = TextInput.Count;
-            if(findLength < MinCharsToSearch)
+            if(TextInput.Count < MinCharsToSearch)
                 return;
 
             LinesHighlighted.Clear();
 
             string findTextUpper = string.Join("", TextInput).ToUpperInvariant();
+            int findLength = findTextUpper.Length;
 
             for(int columnIdx = 0; columnIdx < Columns.Length; columnIdx++)
             {
                 Column column = Columns[columnIdx];
 
+                // search content
                 {
                     StringBuilder sb = column.Render.TextStringBuilder;
-
-
-                    //int line = 0;
-                    //bool search = true;
-                    //int startLineIdx = 0;
-                    //while(search)
-                    //{
-                    //    int endLineIdx = sb.IndexOf('\n', startLineIdx);
-                    //    if(endLineIdx == -1)
-                    //    {
-                    //        endLineIdx = sb.Length - 1;
-                    //        search = false;
-                    //    }
-                    //
-                    //    string lineText = sb.ToString(startLineIdx, endLineIdx - startLineIdx);
-                    //    startLineIdx = endLineIdx + 1;
-                    //
-                    //    if(lineText.IndexOf(findTextUpper, StringComparison.OrdinalIgnoreCase) != -1)
-                    //    {
-                    //        LinesHighlighted.Add(new Vector2I(columnIdx, line));
-                    //        HighlightLine(column, line);
-                    //    }
-                    //
-                    //    line++;
-                    //}
-
 
                     int line = 0;
                     int maxSearchLength = (sb.Length - findLength) + 1;
@@ -532,7 +507,7 @@ namespace Digi.BuildInfo.Features.GUI
                             continue;
                         }
 
-                        // skip textAPI formatting
+                        #region skip over TextAPI formatting
                         if(chr == '<')
                         {
                             int x = i;
@@ -570,12 +545,16 @@ namespace Digi.BuildInfo.Features.GUI
                             || SkipOverString(sb, ref i, "</i>"))
                                 continue;
                         }
+                        #endregion
 
                         if(char.ToUpperInvariant(chr) == findTextUpper[0])
                         {
                             int foundChars = 1;
-                            while((foundChars < findLength) && (char.ToUpperInvariant(sb[i + foundChars]) == findTextUpper[foundChars]))
+                            while(foundChars < findLength)
                             {
+                                if(char.ToUpperInvariant(sb[i + foundChars]) != findTextUpper[foundChars])
+                                    break;
+
                                 foundChars++;
                             }
 
@@ -585,17 +564,19 @@ namespace Digi.BuildInfo.Features.GUI
                                 HighlightLine(column, line);
 
                                 // we got a match on this line, now skip to next line to avoid re-highlighting this one
-                                i = sb.IndexOf('\n', i);
-                                if(i == -1)
+                                int lineEnd = sb.IndexOf('\n', i);
+                                if(lineEnd == -1)
                                     break;
-                                i++; // skip over \n too
-                                line++;
+
+                                // -1 required so that the next iteration lands on \n and executes the new line condition
+                                i = lineEnd - 1;
                                 continue;
                             }
                         }
                     }
                 }
 
+                // search tooltips too
                 foreach(KeyValuePair<int, Column.Tooltip> kv in column.Tooltips)
                 {
                     int line = kv.Key;
@@ -1104,7 +1085,7 @@ namespace Digi.BuildInfo.Features.GUI
                 "Scripter Role", "Adds a Scripter role, only Scripters and higher ranks will be able to paste and modify scripts in programmable block.",
                 GrayIfFalse(settings.EnableIngameScripts));
             PrintFormattedNumber(sb, nameof(settings.BroadcastControllerMaxOfflineTransmitDistance), settings.BroadcastControllerMaxOfflineTransmitDistance, DefaultSettings.BroadcastControllerMaxOfflineTransmitDistance, false,
-                "Max Broadcast Controller distance when owner offline", " m", "The maximum distance Broadcast Controller will transmit messages when its owner is offline.");
+                "Broadcast Controller Offline Range", " m", "The maximum range for Broadcast Controller blocks that have offline owners.");
             PrintSetting(sb, nameof(settings.EnableSupergridding), settings.EnableSupergridding, DefaultSettings.EnableSupergridding, false,
                 "Supergridding", "Allows supergridding exploit to be used (placing block on wrong size grid, e.g. jumpdrive on smallgrid).");
 
