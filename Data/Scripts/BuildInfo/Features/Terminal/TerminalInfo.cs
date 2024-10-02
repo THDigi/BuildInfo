@@ -1793,23 +1793,31 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Max Required Input: <n> W
             //      Filled: <n>% (<current>L / <max>L)
 
+            IMyGasTank tank = block as IMyGasTank;
+            if(tank == null)
+                return;
+
+            MyGasTankDefinition tankDef = block?.SlimBlock?.BlockDefinition as MyGasTankDefinition;
+            if(tankDef == null)
+                return;
+
+            double ratio = tank.FilledRatio;
+            double filledGas = tank.FilledRatio * tank.Capacity;
+
             info.DetailInfo_CurrentPowerUsage(Sink);
+            info.Append("Stored: ").VolumeFormat((float)filledGas).Append(" (max: ").VolumeFormat(tank.Capacity).Append(")\n");
             info.DetailInfo_InputGasList(Sink);
             info.DetailInfo_OutputGasList(Source);
 
-            IMyGasTank tank = block as IMyGasTank;
-            MyGasTankDefinition tankDef = block.SlimBlock.BlockDefinition as MyGasTankDefinition;
-            if(tank != null && tank.FilledRatio < 1 && tankDef != null && Sink != null && Source != null)
+            if(tank.FilledRatio < 1 && Sink != null && Source != null)
             {
                 float input = Sink.CurrentInputByType(tankDef.StoredGasId);
                 float output = Source.CurrentOutputByType(tankDef.StoredGasId);
-                double filledGas = tank.FilledRatio * tank.Capacity;
 
-                float leak = 0;
                 if(!block.IsFunctional)
                 {
                     float ratioPerSec = (tankDef.LeakPercent / 100f) * 60f; // HACK: LeakPercent gets subtracted every 100 ticks
-                    leak = ratioPerSec * tankDef.Capacity;
+                    float leak = ratioPerSec * tankDef.Capacity;
 
                     if(leak > 0)
                     {
@@ -1831,7 +1839,7 @@ namespace Digi.BuildInfo.Features.Terminal
                     float filling = (input - output);
                     double remainingGas = tank.Capacity - filledGas;
                     float timeToFill = (float)(remainingGas / filling);
-                    info.Append("Filled in: ").TimeFormat(timeToFill).Append('\n');
+                    info.Append("Full in: ").TimeFormat(timeToFill).Append('\n');
                 }
                 else
                 {
