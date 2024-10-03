@@ -573,7 +573,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             if(InToolbarConfig || Main.Config.ToolbarLabelsHeader.Value)
             {
-                sb.ColorA(new Color(255, 240, 220) * opacity).Append("Toolbar Info - Page ").Append(toolbarPage + 1).Append(" <i>").ColorA(Color.Gray * opacity).Append("(").Append(BuildInfoMod.ModName).Append(" Mod)").NewCleanLine();
+                sb.Color(new Color(255, 240, 220) * opacity).Append("Toolbar Info - Page ").Append(toolbarPage + 1).Append(" <i>").Color(Color.Gray * opacity).Append("(").Append(BuildInfoMod.ModName).Append(" Mod)").NewCleanLine();
             }
 
             for(int i = 0; i < slotsPerPage; i++)
@@ -591,7 +591,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 }
 
                 if(item.DisplayName == null)
-                    sb.ColorA(Color.Gray * opacity);
+                    sb.Color(Color.Gray * opacity);
 
                 if(gamepadHUD)
                     sb.Append(Main.Constants.DPadIcons[i]).Append("  ");
@@ -617,22 +617,22 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         || (NamesMode == ToolbarNameMode.InMenuOnly && InToolbarConfig))
                         {
                             if(item.GroupId != null)
-                                sb.ColorA(new Color(155, 220, 255) * opacity).Append('*');
+                                sb.Color(new Color(155, 220, 255) * opacity).Append('*');
 
                             int maxNameLength = (item.PBArgument != null ? MaxBlockNameLengthIfPbArg : MaxBlockNameLength);
                             sb.AppendMaxLength(item.DisplayName, maxNameLength).ResetFormatting();
 
                             if(item.GroupId != null)
-                                sb.ColorA(new Color(155, 220, 255) * opacity).Append('*');
+                                sb.Color(new Color(155, 220, 255) * opacity).Append('*');
 
-                            sb.ColorA(Color.Gray * opacity).Append(" - ").ResetFormatting();
+                            sb.Color(Color.Gray * opacity).Append(" - ").ResetFormatting();
                         }
 
                         sb.AppendMaxLength(item.ActionName, MaxActionNameLength);
 
                         if(item.PBArgument != null)
                         {
-                            sb.Append(": <i>").ColorA(new Color(55, 200, 155) * opacity).AppendMaxLength(item.PBArgument, MaxArgLength).ResetFormatting();
+                            sb.Append(": <i>").Color(new Color(55, 200, 155) * opacity).AppendMaxLength(item.PBArgument, MaxArgLength).ResetFormatting();
                         }
                     }
                 }
@@ -641,9 +641,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     bool isWeaponSlot = (item.SlotOB.Data is MyObjectBuilder_ToolbarItemWeapon);
 
                     if(isWeaponSlot)
-                        sb.ColorA(new Color(255, 220, 155) * opacity);
+                        sb.Color(new Color(255, 220, 155) * opacity);
                     else
-                        sb.ColorA(new Color(200, 210, 215) * opacity);
+                        sb.Color(new Color(200, 210, 215) * opacity);
 
                     if(item.SlotOB.Data is MyObjectBuilder_ToolbarItemEmote || item.SlotOB.Data is MyObjectBuilder_ToolbarItemAnimation)
                         sb.Append("Emote - ");

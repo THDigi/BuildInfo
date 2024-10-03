@@ -42,9 +42,9 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI.Items
         public override void AppendFancyRender(StringBuilder sb, float opacity)
         {
             if(IsWeapon)
-                sb.ColorA(ToolbarRender.WeaponColor * opacity);
+                sb.Color(ToolbarRender.WeaponColor * opacity);
             else
-                sb.ColorA(ToolbarRender.OtherItemColor * opacity);
+                sb.Color(ToolbarRender.OtherItemColor * opacity);
 
             if(IsEmote)
                 sb.Append("Emote - ");

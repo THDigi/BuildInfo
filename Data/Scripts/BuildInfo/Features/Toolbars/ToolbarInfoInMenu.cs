@@ -159,7 +159,7 @@ namespace Digi.BuildInfo.Features.Toolbars
 
             float opacity = 1f;
 
-            sb.ColorA(ToolbarRender.HeaderColor * opacity).Append("Toolbar Info");
+            sb.Color(ToolbarRender.HeaderColor * opacity).Append("Toolbar Info");
 
             if(TargetBlock is IMyEventControllerBlock && Toolbar.PageCount > 1 && Toolbar.SlotsPerPage == 2)
             {
@@ -201,7 +201,7 @@ namespace Digi.BuildInfo.Features.Toolbars
                 sb.ResetFormatting();
 
                 if(item == null)
-                    sb.ColorA(Color.Gray * opacity);
+                    sb.Color(Color.Gray * opacity);
 
                 //sb.Append(index + 1).Append(". ");
                 sb.Append("  ");
@@ -220,7 +220,7 @@ namespace Digi.BuildInfo.Features.Toolbars
 
             sb = Render2.TextSB;
 
-            sb.ColorA(ToolbarRender.HeaderColor * opacity).Append("Right side slots");
+            sb.Color(ToolbarRender.HeaderColor * opacity).Append("Right side slots");
             sb.NewCleanLine();
 
             for(int index = 1; index < max; index += 2)
@@ -236,7 +236,7 @@ namespace Digi.BuildInfo.Features.Toolbars
                 sb.ResetFormatting();
 
                 if(item == null)
-                    sb.ColorA(Color.Gray * opacity);
+                    sb.Color(Color.Gray * opacity);
 
                 //sb.Append(index + 1).Append(". ");
                 sb.Append("  ");
@@ -302,11 +302,11 @@ namespace Digi.BuildInfo.Features.Toolbars
                         if(sb[sb.Length - 1] == ' ')
                             sb.Length -= 1;
 
-                        sb.ColorA(pageSeleced * opacity).Append("[");
+                        sb.Color(pageSeleced * opacity).Append("[");
                     }
 
                     if(hasThings)
-                        sb.ColorA(pageHasItems * opacity);
+                        sb.Color(pageHasItems * opacity);
                     else if(isSelected)
                         sb.Append("<reset>");
 
@@ -316,7 +316,7 @@ namespace Digi.BuildInfo.Features.Toolbars
                         sb.Append("<reset>");
 
                     if(isSelected)
-                        sb.ColorA(pageSeleced * opacity).Append("]<reset>");
+                        sb.Color(pageSeleced * opacity).Append("]<reset>");
                     else
                         sb.Append(" ");
                 }
@@ -342,7 +342,7 @@ namespace Digi.BuildInfo.Features.Toolbars
                 sb.ResetFormatting();
 
                 if(item == null)
-                    sb.ColorA(Color.Gray * opacity);
+                    sb.Color(Color.Gray * opacity);
 
                 if(gamepadHUD)
                     sb.Append(Main.Constants.DPadIcons[i]).Append("  ");

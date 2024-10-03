@@ -235,12 +235,12 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI.Items
         {
             if(Group == null) throw new ArgumentNullException("Group");
 
-            sb.ColorA(ToolbarRender.GroupColor * opacity).Append('*');
+            sb.Color(ToolbarRender.GroupColor * opacity).Append('*');
 
             int maxNameLength = (PBArg != null ? ToolbarRender.MaxNameLengthIfPbArg : ToolbarRender.MaxNameLength);
             sb.AppendMaxLength(Group.Name, maxNameLength).ResetFormatting();
 
-            sb.ColorA(ToolbarRender.GroupColor * opacity).Append('*');
+            sb.Color(ToolbarRender.GroupColor * opacity).Append('*');
 
             AppendActionName(sb, opacity);
         }

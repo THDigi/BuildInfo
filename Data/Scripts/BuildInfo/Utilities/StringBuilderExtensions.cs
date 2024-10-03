@@ -276,7 +276,7 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
-        const string LineInfoSeparator = ", ";
+        public const string LineInfoSeparator = ", ";
 
         public static StringBuilder Separator(this StringBuilder s)
         {
@@ -297,6 +297,10 @@ namespace Digi.BuildInfo.Utilities
             return s.Append('\n');
         }
 
+        /// <summary>
+        /// Appends <reset> then new line.
+        /// Does nothing if TextAPI is not present or disabled.
+        /// </summary>
         public static StringBuilder NewCleanLine(this StringBuilder s)
         {
             if(BuildInfoMod.Instance.TextAPI.IsEnabled)
@@ -329,6 +333,9 @@ namespace Digi.BuildInfo.Utilities
             return s.Append(b ? "Yes" : "No");
         }
 
+        /// <summary>
+        /// Appends the tooltip hint icon, or nothing if TextAPI is not present or disabled.
+        /// </summary>
         public static StringBuilder MarkTooltip(this StringBuilder s)
         {
             if(BuildInfoMod.Instance.TextAPI.IsEnabled)
@@ -341,26 +348,31 @@ namespace Digi.BuildInfo.Utilities
         /// </summary>
         public static Color CurrentColor { get; set; } = VRageMath.Color.White;
 
+        /// <summary>
+        /// Adds a <color=r,g,b> in the text for TextAPI coloring.
+        /// Also adds alpha if it's <255.
+        /// And assigns <see cref="CurrentColor"/>.
+        /// Does nothing if TextAPI is not present or disabled.
+        /// </summary>
         public static StringBuilder Color(this StringBuilder s, Color color)
         {
             if(BuildInfoMod.Instance.TextAPI.IsEnabled)
             {
                 s.Append("<color=").Append(color.R).Append(',').Append(color.G).Append(',').Append(color.B).Append('>');
+
+                if(color.A < 255)
+                    s.Append(color.A).Append('>');
+
                 CurrentColor = color;
             }
             return s;
         }
 
-        public static StringBuilder ColorA(this StringBuilder s, Color color)
-        {
-            if(BuildInfoMod.Instance.TextAPI.IsEnabled)
-            {
-                s.Append("<color=").Append(color.R).Append(',').Append(color.G).Append(',').Append(color.B).Append(',').Append(color.A).Append('>');
-                CurrentColor = color;
-            }
-            return s;
-        }
-
+        /// <summary>
+        /// Appends <reset> to the stringbuilder which clears all formatting for TextAPI.
+        /// And assigns <see cref="CurrentColor"/>.
+        /// Does nothing if TextAPI is not present or disabled.
+        /// </summary>
         public static StringBuilder ResetFormatting(this StringBuilder s)
         {
             if(BuildInfoMod.Instance.TextAPI.IsEnabled)
@@ -372,7 +384,8 @@ namespace Digi.BuildInfo.Utilities
         }
 
         /// <summary>
-        /// White icon, restores text color after
+        /// Appends <reset> then the given icon character, after which it restores text color after.
+        /// Only appends given character if TextAPI is not present or disabled.
         /// </summary>
         public static StringBuilder Icon(this StringBuilder s, char icon)
         {
@@ -388,7 +401,8 @@ namespace Digi.BuildInfo.Utilities
         }
 
         /// <summary>
-        /// Colored icon, restores text color after.
+        /// Saves existing color, calls <see cref="Color(StringBuilder, VRageMath.Color)"/> with the given input, appends character then calls Color() again with original color.
+        /// Only appends given character if TextAPI is not present or disabled.
         /// </summary>
         public static StringBuilder Icon(this StringBuilder s, Color color, char icon)
         {
@@ -404,6 +418,9 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
+        /// <summary>
+        /// Append the given string without TextAPI formatting tags.
+        /// </summary>
         public static StringBuilder AppendSanitized(this StringBuilder sb, string text)
         {
             for(int i = 0; i < text.Length; i++)

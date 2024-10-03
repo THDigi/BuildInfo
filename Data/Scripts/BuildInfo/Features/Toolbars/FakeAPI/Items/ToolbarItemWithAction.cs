@@ -48,11 +48,11 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI.Items
 
         protected void AppendActionName(StringBuilder sb, float opacity)
         {
-            sb.ColorA(Color.Gray * opacity).Append(" - ").ResetFormatting();
+            sb.Color(Color.Gray * opacity).Append(" - ").ResetFormatting();
 
             if(Action == null)
             {
-                sb.ColorA(Color.Red * opacity).Append("(Unknown)");
+                sb.Color(Color.Red * opacity).Append("(Unknown)");
             }
             else
             {
@@ -62,7 +62,7 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI.Items
             if(PBArg != null)
             {
                 // ToolbarRender.MaxArgLength is kinda small for this, letting it stretch.
-                sb.Append(": <i>").ColorA(ToolbarRender.ArgColor * opacity).AppendMaxLength(PBArg, 48);
+                sb.Append(": <i>").Color(ToolbarRender.ArgColor * opacity).AppendMaxLength(PBArg, 48);
             }
         }
     }
