@@ -156,23 +156,37 @@ namespace Digi.BuildInfo.Utilities
 
         void CacheLightningStats()
         {
-            if(!MyAPIGateway.Session.SessionSettings.WeatherLightingDamage)
+            LightningMinDamage = 0;
+            LightningMaxDamage = 0;
+
+            if(MyAPIGateway.Session?.SessionSettings == null)
             {
-                LightningMinDamage = 0;
-                LightningMaxDamage = 0;
+                Log.Error(MyAPIGateway.Session == null ? "Session is null!" : "SessionSettings is null!");
                 return;
             }
 
+            if(!MyAPIGateway.Session.SessionSettings.WeatherLightingDamage)
+                return;
+
             LightningMinDamage = int.MaxValue;
             LightningMaxDamage = int.MinValue;
+            bool assigned = false;
 
-            foreach(var weatherDef in MyDefinitionManager.Static.GetWeatherDefinitions())
+            foreach(MyWeatherEffectDefinition weatherDef in MyDefinitionManager.Static.GetWeatherDefinitions())
             {
-                if(weatherDef.Lightning != null && weatherDef.LightningGridHitIntervalMax > 0 || weatherDef.LightningCharacterHitIntervalMax > 0 || weatherDef.LightningIntervalMax > 0)
+                if(weatherDef.Lightning != null
+                && (weatherDef.LightningGridHitIntervalMax > 0 || weatherDef.LightningCharacterHitIntervalMax > 0 || weatherDef.LightningIntervalMax > 0))
                 {
                     LightningMinDamage = Math.Min(LightningMinDamage, weatherDef.Lightning.Damage);
                     LightningMaxDamage = Math.Max(LightningMaxDamage, weatherDef.Lightning.Damage);
+                    assigned = true;
                 }
+            }
+
+            if(!assigned)
+            {
+                LightningMinDamage = 0;
+                LightningMaxDamage = 0;
             }
         }
 
