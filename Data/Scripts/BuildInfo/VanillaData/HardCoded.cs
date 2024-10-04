@@ -75,8 +75,10 @@ namespace Digi.BuildInfo.VanillaData
         // from MyAssembler.CalculateBlueprintProductionTime()
         public static float Assembler_BpProductionTime(MyBlueprintDefinitionBase bp, MyAssemblerDefinition assemblerDef, IMyAssembler assembler = null)
         {
+            float assemblerSpeedMultiplier = MyAPIGateway.Session.AssemblerSpeedMultiplier;
+            float assemblySpeed = assemblerDef.AssemblySpeed;
             float upgrades = assembler?.UpgradeValues["Productivity"] ?? 0; // defaults to 0 in MyAssembler.Init()
-            float result = (float)Math.Round(bp.BaseProductionTimeInSeconds * 1000f / (MyAPIGateway.Session.AssemblerSpeedMultiplier * assemblerDef.AssemblySpeed + upgrades));
+            float result = (float)Math.Round(bp.BaseProductionTimeInSeconds * 1000f / (assemblerSpeedMultiplier * (assemblySpeed + upgrades)));
             return result / 1000f;
         }
 
