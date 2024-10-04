@@ -63,7 +63,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 MatrixD carveMatrix = blockWorldMatrix;
                 carveMatrix.Translation += carveMatrix.Forward * drill.CutOutOffset;
 
-                float carveRadius = Hardcoded.ShipDrill_VoxelVisualAdd + (drill.CutOutRadius * Hardcoded.Drill_MineVoelNoOreRadiusMul);
+                float carveRadius = Hardcoded.ShipDrill_VoxelVisualAdd + (drill.CutOutRadius * drill.DiscardingMultiplier);
 
                 Utils.DrawSphere(ref carveMatrix, carveRadius, LineEveryDeg,
                    wireColor: ColorCarveLines, wireMaterial: MaterialLaser, wireThickness: LineThickness, wireBlend: BlendType);

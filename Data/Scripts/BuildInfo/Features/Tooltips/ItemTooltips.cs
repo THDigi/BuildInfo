@@ -322,7 +322,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             MyHandDrillDefinition drillDef = toolDef as MyHandDrillDefinition;
             if(drillDef != null)
             {
-                s.Append("Drill radius: ").DistanceFormat(Hardcoded.HandDrill_DefaultRadius * toolDef.DistanceMultiplier).Append(" (x").RoundedNumber(Hardcoded.Drill_MineVoelNoOreRadiusMul, 2).Append(" with secondary)").Append('\n');
+                s.Append("Drill radius: ").DistanceFormat(Hardcoded.HandDrill_DefaultRadius * toolDef.DistanceMultiplier).Append(" (x").RoundedNumber(Hardcoded.HandDrill_MineVoxelNoOreRadiusMul, 2).Append(" with secondary)").Append('\n');
                 s.Append("Drill speed: ").MultiplierToPercent(toolDef.SpeedMultiplier).Append('\n');
                 s.Append("Drill harvest: ").MultiplierToPercent(drillDef.HarvestRatioMultiplier).Append('\n');
                 return;

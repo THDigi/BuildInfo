@@ -2993,9 +2993,13 @@ namespace Digi.BuildInfo.Features
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 float mineRadius = Hardcoded.ShipDrill_VoxelVisualAdd + shipDrill.CutOutRadius;
-                float carveRadius = Hardcoded.ShipDrill_VoxelVisualAdd + (shipDrill.CutOutRadius * Hardcoded.Drill_MineVoelNoOreRadiusMul);
-                AddLine().LabelHardcoded("Mining radius").DistanceFormat(mineRadius).Separator().LabelHardcoded("when not collecting").DistanceFormat(carveRadius);
+                float carveRadius = Hardcoded.ShipDrill_VoxelVisualAdd + (shipDrill.CutOutRadius * shipDrill.DiscardingMultiplier);
+                AddLine().LabelHardcoded("Radius - Harvesting").DistanceFormat(mineRadius).Separator().Label("Carving").DistanceFormat(carveRadius);
+
+                // TODO: tag as internal info? not exactly useful to players...
                 AddLine().Label("Entity detection radius").DistanceFormat(shipDrill.SensorRadius);
+                SimpleTooltip("This is used to detect entities such as voxels, grids or characters by using their world boundingbox." +
+                              "\nIf an entity isn't detected then it can't be mined/damaged.");
             }
         }
 

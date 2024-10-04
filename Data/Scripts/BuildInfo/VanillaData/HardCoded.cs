@@ -152,7 +152,7 @@ namespace Digi.BuildInfo.VanillaData
         public const float ShipDrill_VoxelVisualAdd = 0.6f; // based on visual tests
 
         // applies to both ship and hand drills
-        public const float Drill_MineVoelNoOreRadiusMul = 3f; // MyDrillBase.TryDrillVoxels()
+        public const float HandDrill_MineVoxelNoOreRadiusMul = 3f; // MyDrillBase.TryDrillVoxels() - still hardcoded for hand-tools
         public const float Drill_MineFloatingObjectRadiusMul = 1.33f; // MyDrillBase.DrillFloatingObject()
         public const float Drill_MineCharacterRadiusMul = 0.8f; // MyDrillBase.DrillCharacter()
 
