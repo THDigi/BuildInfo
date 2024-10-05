@@ -113,9 +113,9 @@ namespace Digi.BuildInfo.Features.Tooltips
             }
 
             #region internal info
-            const string IdLabel = "\nId:\u00A0"; // non-space space to not count as whitespace for splitting the words.
-            const string IdTypeLabel = "\nIdType:\u00A0";
-            const string IdSubtypeLabel = "\nIdSub:\u00A0";
+            const string IdLabel = "Id:\u00A0"; // non-space space to not count as whitespace for splitting the words.
+            const string IdTypeLabel = "IdType:\u00A0";
+            const string IdSubtypeLabel = "IdSub:\u00A0";
 
             if(SB.Length > 0)
             {
@@ -126,6 +126,8 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             if(Main.Config.InternalInfo.Value)
             {
+                SB.Append('\n');
+
                 string typeIdString = blockDef.Id.TypeId.ToString();
                 string subtypeIdString = blockDef.Id.SubtypeName;
 
@@ -136,15 +138,17 @@ namespace Digi.BuildInfo.Features.Tooltips
                 int totalWidth = shortTypeIdLength + 1 + subtypeIdString.Length;
                 if(totalWidth > MaxWidth)
                 {
-                    SB.Append(IdTypeLabel).Append(typeIdString, obPrefixLen, shortTypeIdLength);
-                    SB.Append(IdSubtypeLabel).Append(subtypeIdString);
+                    SB.Append(IdTypeLabel).Append(typeIdString, obPrefixLen, shortTypeIdLength).Append('\n');
+                    SB.Append(IdSubtypeLabel).Append(subtypeIdString).Append('\n');
                 }
                 else
                 {
-                    SB.Append(IdLabel).Append(typeIdString, obPrefixLen, shortTypeIdLength).Append("/").Append(subtypeIdString);
+                    SB.Append(IdLabel).Append(typeIdString, obPrefixLen, shortTypeIdLength).Append("/").Append(subtypeIdString).Append('\n');
                 }
             }
             #endregion internal info
+
+            SB.TrimEndWhitespace();
 
             blockDef.DescriptionEnum = null; // prevent this from being used instead of DisplayNameString
             blockDef.DescriptionString = SB.ToString();
@@ -152,26 +156,22 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         void GenerateDescription(StringBuilder s, MyCubeBlockDefinition blockDef)
         {
-            SB.Append('\n');
+            s.Append('\n');
 
             if(!IgnoreBlockDefs.Contains(blockDef.Id))
             {
-                if(blockDef.DLCs != null && blockDef.DLCs.Length > 0)
+                string[] dlcs = blockDef.DLCs;
+
+                if(dlcs != null && dlcs.Length > 0)
                 {
-                    s.Append("\nDLC: ");
+                    s.Append("DLC: ");
 
-                    bool multiDLC = blockDef.DLCs.Length > 1;
-                    for(int i = 0; i < blockDef.DLCs.Length; ++i)
+                    for(int i = 0; i < dlcs.Length; ++i)
                     {
-                        string dlcId = blockDef.DLCs[i];
+                        string dlcId = dlcs[i];
 
-                        if(multiDLC && i > 0)
-                        {
-                            if(Main.TextAPI.IsEnabled)
-                                s.Append("\n   | ");
-                            else
-                                s.Append(", ");
-                        }
+                        if(i > 0)
+                            s.Append(", ");
 
                         IMyDLC dlc;
                         if(MyAPIGateway.DLC.TryGetDLC(dlcId, out dlc))
@@ -180,9 +180,11 @@ namespace Digi.BuildInfo.Features.Tooltips
                         }
                         else
                         {
-                            s.Append("(Unknown: ").Append(dlcId).Append(")");
+                            s.Append("(Unknown:").Append(dlcId).Append(")");
                         }
                     }
+
+                    s.Append('\n');
                 }
             }
 

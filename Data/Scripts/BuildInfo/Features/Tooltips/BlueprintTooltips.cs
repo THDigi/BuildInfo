@@ -303,7 +303,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             if(bpBaseDef.Results.Length > 1)
             {
-                s.TrimEndWhitespace().Append("\nMultiple results:\n");
+                s.Append("Multiple results:\n");
 
                 foreach(MyBlueprintDefinitionBase.Item result in bpBaseDef.Results)
                 {
@@ -325,7 +325,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                     string desc = def.DescriptionText;
                     if(!string.IsNullOrWhiteSpace(desc))
                     {
-                        s.TrimEndWhitespace().Append('\n').AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append('\n');
+                        s.AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append('\n');
                     }
 
                     MyPhysicalItemDefinition physDef = def as MyPhysicalItemDefinition;
@@ -338,7 +338,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                         // don't add this if another mod already did
                         if(!string.IsNullOrWhiteSpace(tooltip) && !bpTooltip.Contains(tooltip))
                         {
-                            s.TrimEndWhitespace().Append('\n').AppendWordWrapped(tooltip, MaxWidth).TrimEndWhitespace().Append('\n');
+                            s.AppendWordWrapped(tooltip, MaxWidth).TrimEndWhitespace().Append('\n');
                         }
 
                         // only specific BI's item tooltips added to the blueprint name

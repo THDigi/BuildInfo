@@ -237,7 +237,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 string desc = physDef.DescriptionText;
                 if(!string.IsNullOrWhiteSpace(desc))
                 {
-                    s.TrimEndWhitespace().Append("\n\n").AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append("\n");
+                    s.TrimEndWhitespace().Append("\n\"").AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append("\"\n");
                 }
 
                 TooltipConsumable(s, physDef);
@@ -263,7 +263,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             MyConsumableItemDefinition consumable = physDef as MyConsumableItemDefinition;
             if(consumable != null && consumable.Stats.Count > 0)
             {
-                s.Append("\nConsumable: ");
+                s.Append("Consumable: ");
 
                 Dictionary<string, string> statNames = Main.TooltipHandler.TmpStatDisplayNames;
 
@@ -271,14 +271,16 @@ namespace Digi.BuildInfo.Features.Tooltips
                 {
                     MyConsumableItemDefinition.StatValue stat = consumable.Stats[0];
                     s.Append(stat.Value > 0 ? "+" : "").ProportionToPercent(stat.Value * stat.Time, 2).Append(" ")
-                     .Append(statNames.GetValueOrDefault(stat.Name, stat.Name)).Append(" over ").TimeFormat(stat.Time);
+                     .Append(statNames.GetValueOrDefault(stat.Name, stat.Name)).Append(" over ").TimeFormat(stat.Time)
+                     .Append('\n');
                 }
                 else
                 {
                     foreach(MyConsumableItemDefinition.StatValue stat in consumable.Stats)
                     {
-                        s.Append("\n  ").Append(stat.Value > 0 ? "+" : "").ProportionToPercent(stat.Value * stat.Time, 2).Append(" ")
-                         .Append(statNames.GetValueOrDefault(stat.Name, stat.Name)).Append(" over ").TimeFormat(stat.Time);
+                        s.Append("  ").Append(stat.Value > 0 ? "+" : "").ProportionToPercent(stat.Value * stat.Time, 2).Append(" ")
+                         .Append(statNames.GetValueOrDefault(stat.Name, stat.Name)).Append(" over ").TimeFormat(stat.Time)
+                         .Append('\n');
                     }
                 }
             }
@@ -290,8 +292,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             if(bottleDef == null)
                 return;
 
-            s.Append("\nCapacity: ").VolumeFormat(bottleDef.Capacity).Append(" of ").ItemName(bottleDef.StoredGasId);
-
+            s.Append("Capacity: ").VolumeFormat(bottleDef.Capacity).Append(" of ").ItemName(bottleDef.StoredGasId).Append('\n');
             // not really necessary
             /*
             List<MyProductionBlockDefinition> prodDefs;
@@ -321,9 +322,9 @@ namespace Digi.BuildInfo.Features.Tooltips
             MyHandDrillDefinition drillDef = toolDef as MyHandDrillDefinition;
             if(drillDef != null)
             {
-                s.Append("\nDrill radius: ").DistanceFormat(Hardcoded.HandDrill_DefaultRadius * toolDef.DistanceMultiplier).Append(" (x").RoundedNumber(Hardcoded.Drill_MineVoelNoOreRadiusMul, 2).Append(" with secondary)");
-                s.Append("\nDrill speed: ").MultiplierToPercent(toolDef.SpeedMultiplier);
-                s.Append("\nDrill harvest: ").MultiplierToPercent(drillDef.HarvestRatioMultiplier);
+                s.Append("Drill radius: ").DistanceFormat(Hardcoded.HandDrill_DefaultRadius * toolDef.DistanceMultiplier).Append(" (x").RoundedNumber(Hardcoded.Drill_MineVoelNoOreRadiusMul, 2).Append(" with secondary)").Append('\n');
+                s.Append("Drill speed: ").MultiplierToPercent(toolDef.SpeedMultiplier).Append('\n');
+                s.Append("Drill harvest: ").MultiplierToPercent(drillDef.HarvestRatioMultiplier).Append('\n');
                 return;
             }
 
@@ -332,20 +333,20 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             if(defType == "MyAngleGrinderDefinition")
             {
-                s.Append("\nReach: ").DistanceFormat(Hardcoded.EngineerToolBase_DefaultReachDistance * toolDef.DistanceMultiplier);
-                s.Append("\nGrind speed: ").MultiplierToPercent(toolDef.SpeedMultiplier);
+                s.Append("Reach: ").DistanceFormat(Hardcoded.EngineerToolBase_DefaultReachDistance * toolDef.DistanceMultiplier).Append('\n');
+                s.Append("Grind speed: ").MultiplierToPercent(toolDef.SpeedMultiplier).Append('\n');
                 return;
             }
 
             if(defType == "MyWelderDefinition")
             {
-                s.Append("\nReach: ").DistanceFormat(Hardcoded.EngineerToolBase_DefaultReachDistance * toolDef.DistanceMultiplier);
-                s.Append("\nWeld speed: ").MultiplierToPercent(toolDef.SpeedMultiplier);
+                s.Append("Reach: ").DistanceFormat(Hardcoded.EngineerToolBase_DefaultReachDistance * toolDef.DistanceMultiplier).Append('\n');
+                s.Append("Weld speed: ").MultiplierToPercent(toolDef.SpeedMultiplier).Append('\n');
                 return;
             }
 
-            s.Append("\nTool distance: ").MultiplierToPercent(toolDef.DistanceMultiplier);
-            s.Append("\nTool speed: ").MultiplierToPercent(toolDef.SpeedMultiplier);
+            s.Append("Tool distance: ").MultiplierToPercent(toolDef.DistanceMultiplier).Append('\n');
+            s.Append("Tool speed: ").MultiplierToPercent(toolDef.SpeedMultiplier).Append('\n');
         }
 
         public void TooltipWeapon(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
@@ -369,14 +370,11 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             if(weaponDef.AmmoMagazinesId != null && weaponDef.AmmoMagazinesId.Length > 0)
             {
-                if(weaponDef.AmmoMagazinesId.Length == 1)
-                    s.Append("\nUses magazine:");
-                else
-                    s.Append("\nUses magazines:");
+                s.Append("Uses ").Append(weaponDef.AmmoMagazinesId.Length == 1 ? "magazine" : "magazines").Append(":\n");
 
                 foreach(MyDefinitionId magId in weaponDef.AmmoMagazinesId)
                 {
-                    s.Append("\n  ");
+                    s.Append("  ");
 
                     MyAmmoMagazineDefinition magDef = Utils.TryGetMagazineDefinition(magId, weaponDef.Context);
                     if(magDef == null)
@@ -386,6 +384,8 @@ namespace Digi.BuildInfo.Features.Tooltips
 
                     if(!Main.TooltipHandler.TmpHasBP.Contains(magId))
                         s.Append(" (Not Craftable)");
+
+                    s.Append('\n');
                 }
             }
         }
@@ -397,7 +397,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 return;
 
             if(magDef.Capacity > 1)
-                s.Append("\nMagazine Capacity: ").Append(magDef.Capacity);
+                s.Append("Magazine Capacity: ").Append(magDef.Capacity).Append('\n');
 
             MyAmmoDefinition ammoDef = Utils.TryGetAmmoDefinition(magDef.AmmoDefinitionId, magDef.Context);
             if(ammoDef != null)
@@ -407,11 +407,11 @@ namespace Digi.BuildInfo.Features.Tooltips
                 {
                     if(damagePerMag > 0)
                     {
-                        s.Append("\nOn container destroyed: explodes by ").RoundedNumber(damagePerMag, 5).Append("dmg/mag");
+                        s.Append("On container destroyed: explodes by ").RoundedNumber(damagePerMag, 5).Append("dmg/mag").Append('\n');
                     }
                     else if(damagePerMag < 0)
                     {
-                        s.Append("\nOn container destroyed: reduces other ammo explosion by ").RoundedNumber(damagePerMag, 5).Append("dmg/mag");
+                        s.Append("On container destroyed: reduces other ammo explosion by ").RoundedNumber(damagePerMag, 5).Append("dmg/mag").Append('\n');
                     }
                 }
             }
@@ -513,7 +513,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                     continue;
 
                 // if composite's subtype contains a type/subtype separator then assume it's for a block and skip it
-                if(bpDef is MyCompositeBlueprintDefinition && bpDef.Id.SubtypeName.Contains("/"))
+                if(bpDef is MyCompositeBlueprintDefinition && bpDef.Id.SubtypeName.IndexOf('/') != -1)
                     continue;
 
                 bool isResult = false;
@@ -563,7 +563,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 HashSet<MyCubeBlockDefinition> blockDefs;
                 if(Main.TooltipHandler.TmpComponentFromGrindingBlocks.TryGetValue(physDef.Id, out blockDefs))
                 {
-                    s.Append("\nGained by grinding ").Append(blockDefs.Count).Append(" specific ").Append(blockDefs.Count == 1 ? "block." : "blocks.");
+                    s.Append("Can be gained by grinding ").Append(blockDefs.Count).Append(" specific ").Append(blockDefs.Count == 1 ? "block." : "blocks.").Append('\n');
                 }
             }
 
@@ -605,7 +605,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             if(showNotCraftable)
             {
-                s.Append("\nNot Craftable.");
+                s.Append("Not Craftable.\n");
             }
         }
 
@@ -653,7 +653,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             {
                 if(detailed && TmpStringSet.Count <= ListLimit)
                 {
-                    s.Append("\nUsed for crafting ").Append(usedForAssembly == 1 ? "item" : "items").Append(":");
+                    s.Append("Used for crafting ").Append(usedForAssembly == 1 ? "item" : "items").Append(":\n");
 
                     int limit = 0;
 
@@ -662,16 +662,16 @@ namespace Digi.BuildInfo.Features.Tooltips
                         if(++limit > ListLimit)
                         {
                             limit--;
-                            s.Append("\n  ...and ").Append(TmpStringSet.Count - limit).Append(" more");
+                            s.Append("  ...and ").Append(TmpStringSet.Count - limit).Append(" more.").Append('\n');
                             break;
                         }
 
-                        s.Append("\n  ").Append(name);
+                        s.Append("  ").Append(name).Append('\n');
                     }
                 }
                 else
                 {
-                    s.Append("\nUsed for crafting ").Append(usedForAssembly).Append(" item").Append(usedForAssembly == 1 ? "." : "s.");
+                    s.Append("Used for crafting ").Append(usedForAssembly).Append(" item").Append(usedForAssembly == 1 ? "." : "s.").Append('\n');
                 }
             }
         }
@@ -698,7 +698,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 }
                 else
                 {
-                    s.Append("\nUsed for building ").Append(blockDefs.Count).Append(" ").Append(blockDefs.Count == 1 ? "block." : "blocks.");
+                    s.Append("Used for building ").Append(blockDefs.Count).Append(" ").Append(blockDefs.Count == 1 ? "block." : "blocks.").Append('\n');
                 }
             }
         }
@@ -717,7 +717,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 if(blockDef != null)
                     currentSize = (blockDef.CubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
                 else
-                    Log.Error($"ItemTooltips.AddToList() :: No size provided for {def.Id} and can't guess it because it's not a block def.");
+                    Log.Error($"{nameof(ItemTooltips)}.{nameof(AddToList)}() :: No size provided for {def.Id} and can't guess it because it's not a block def.");
             }
 
             Sizes existingSize;
@@ -734,7 +734,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         static void PrintList(Dictionary<string, Sizes> dict, StringBuilder s, string label = "Used in", int customListLimit = ListLimit)
         {
-            s.Append("\n").Append(label).Append(":");
+            s.Append(label).Append(":").Append("\n");
 
             int limit = 0;
             foreach(KeyValuePair<string, Sizes> kv in dict)
@@ -743,11 +743,11 @@ namespace Digi.BuildInfo.Features.Tooltips
                 if(++limit > customListLimit && (dict.Count - limit) > 1)
                 {
                     limit--;
-                    s.Append("\n  ...and ").Append(dict.Count - limit).Append(" more");
+                    s.Append("  ...and ").Append(dict.Count - limit).Append(" more").Append("\n");
                     break;
                 }
 
-                s.Append("\n  ").Append(kv.Key);
+                s.Append("  ").Append(kv.Key);
 
                 switch(kv.Value)
                 {
@@ -756,6 +756,8 @@ namespace Digi.BuildInfo.Features.Tooltips
                     case Sizes.Both: s.Append(" (Small + Large)"); break;
                     case Sizes.HandWeapon: s.Append(" (Hand-held)"); break;
                 }
+
+                s.Append("\n");
             }
         }
 

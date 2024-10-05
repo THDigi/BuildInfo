@@ -281,12 +281,12 @@ namespace Digi.BuildInfo.Features.Tooltips
         {
             if(!def.Context.IsBaseGame)
             {
-                s.TrimEndWhitespace().Append("\n\nMod: ").AppendMaxLength(def.Context.ModName, modNameMaxLen);
+                s.Append("Mod: ").AppendMaxLength(def.Context.ModName, modNameMaxLen).Append('\n');
 
                 MyObjectBuilder_Checkpoint.ModItem modItem = def.Context.ModItem;
                 if(modItem.Name != null && modItem.PublishedFileId > 0)
                 {
-                    s.Append("\nModId: ").Append(modItem.PublishedServiceName).Append(':').Append(modItem.PublishedFileId);
+                    s.Append("ModId: ").Append(modItem.PublishedServiceName).Append(':').Append(modItem.PublishedFileId).Append('\n');
                 }
             }
         }
