@@ -104,7 +104,22 @@ namespace Digi.BuildInfo.Features.Terminal.Underlays
                 }
 
                 if(!block.HasLocalPlayerAccess())
+                {
+                    // only highlight the block if local player is friendly with the grid's bigowner.
+                    // reminder that neutral is enemy.
+                    if(MyAPIGateway.Session.Player != null && block.CubeGrid.BigOwners != null && block.CubeGrid.BigOwners.Count > 0)
+                    {
+                        long bigOwner = block.CubeGrid.BigOwners[0];
+                        MyRelationsBetweenPlayerAndBlock relation = MyAPIGateway.Session.Player.GetRelationTo(bigOwner);
+
+                        if(relation.IsFriendly())
+                        {
+                            DrawSelectionBox(block, Color.Red);
+                        }
+                    }
+
                     continue;
+                }
 
                 DrawSelectionBox(block, block.IsFunctional ? blockBBcolor : Color.Yellow);
 
