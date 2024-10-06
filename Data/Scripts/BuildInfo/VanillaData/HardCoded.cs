@@ -104,6 +104,12 @@ namespace Digi.BuildInfo.VanillaData
                 }
             }
 
+            var assemblerDef = defBase as MyAssemblerDefinition;
+            if(assemblerDef != null && assemblerDef.IgnoreEfficiencyMultiplier)
+            {
+                return 1f;
+            }
+
             return MyAPIGateway.Session.AssemblerEfficiencyMultiplier;
         }
 

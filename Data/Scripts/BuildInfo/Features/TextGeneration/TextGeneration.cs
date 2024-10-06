@@ -3596,19 +3596,39 @@ namespace Digi.BuildInfo.Features
                     float mulSpeed = MyAPIGateway.Session.AssemblerSpeedMultiplier;
                     float mulEff = MyAPIGateway.Session.AssemblerEfficiencyMultiplier;
 
-                    StringBuilder line = AddLine().Append("Assembly speed: ").ProportionToPercent(assembler.AssemblySpeed * mulSpeed)
-                        .Color(COLOR_UNIMPORTANT).OptionalMultiplier(mulSpeed).ResetFormatting()
-                        .Separator().Append("Efficiency: ").ProportionToPercent(mulEff);
+                    StringBuilder line = AddLine().Label("Assembly - Speed").ProportionToPercent(assembler.AssemblySpeed * mulSpeed)
+                        .Color(COLOR_UNIMPORTANT).OptionalMultiplier(mulSpeed).ResetFormatting();
 
-                    // HACK MySurvivalKit.GetEfficiencyMultiplierForBlueprint()
-                    if(assembler is MySurvivalKitDefinition)
+                    // HACK: MyAssembler & MySurvivalKit's GetEfficiencyMultiplierForBlueprint()
+
+                    line.Separator().Label("Efficiency");
+
+                    if(assembler.IgnoreEfficiencyMultiplier)
                     {
-                        line.Append(" (").Color(COLOR_BAD).ProportionToPercent(1f).Append("<reset> for ore)");
+                        line.Color(COLOR_WARNING).ProportionToPercent(1).Append("<reset> (ignores world setting)");
+                    }
+                    else
+                    {
+                        line.ProportionToPercent(mulEff);
+
+                        if(assembler is MySurvivalKitDefinition)
+                        {
+                            line.Append(" (").Color(COLOR_BAD).ProportionToPercent(1f).Append("<reset> for ore)");
+                        }
                     }
 
-                    SimpleTooltip($"Assembler speed is from the block multiplied by the world setting ({assembler.AssemblySpeed:0.##} * {mulSpeed:0.##}) and is a multiplier of the blueprint's baseline build time."
-                                + $"\nAssembler efficiency is entirely the world setting."
-                                + $"\nFor SurvivalKit types, blueprints that involve Ore will be locked at 100% efficiency regardless of world settings.");
+                    StringBuilder tooltip = CreateTooltip();
+                    if(tooltip != null)
+                    {
+                        // HACK: from CalculateBlueprintProductionTime() and GetEfficiencyMultiplierForBlueprint()
+
+                        tooltip.Append("Speed is the final divider for the blueprint time, made from the world setting (").ProportionToPercent(mulSpeed).Append(") multiplied by the block's own speed (").ProportionToPercent(assembler.AssemblySpeed).Append(").\n");
+                        tooltip.Append("Upgrade modules with Productivity will be additive to the block's own speed, then multiplied as a whole by the world multiplier.\n");
+                        tooltip.Append('\n');
+                        tooltip.Append("Efficiency is only the world's Assembler Efficiency Multiplier, and impacts materials required. For example, 200% means it will require half the materials.\n");
+                        tooltip.Append("Specific assemblers can choose to ignore that world setting however and they will remain locked at 100% efficiency, those are marked with '(ignores world setting)'.\n");
+                        tooltip.Append("Additionally, all SurvivalKit types will have locked 100% efficiency for any blueprint that uses at least one ore in its requirements.");
+                    }
                 }
             }
 
@@ -3617,8 +3637,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
                 {
-                    AddLine().Label("Healing").RoundedNumber(Math.Abs(MyEffectConstants.GenericHeal * 60), 2).Append("hp/s");
-                    AddLine().LabelHardcoded("Refuel").Append("Yes (x1)");
+                    AddLine().Label("Healing").RoundedNumber(Math.Abs(MyEffectConstants.GenericHeal * 60), 2).Append(" hp/s").Separator().LabelHardcoded("Refuel").Append("Yes (x1)");
                 }
             }
 
