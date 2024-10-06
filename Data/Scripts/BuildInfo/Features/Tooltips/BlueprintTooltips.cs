@@ -251,9 +251,18 @@ namespace Digi.BuildInfo.Features.Tooltips
 
                 MyPhysicalItemDefinition itemDef;
                 if(MyDefinitionManager.Static.TryGetPhysicalItemDefinition(item.Id, out itemDef))
+                {
                     name = itemDef.DisplayNameText;
+                }
                 else
+                {
                     name = $"(ERROR, not found: '{item.Id}')";
+
+                    if(Main.Config.ModderHelpAlerts.Value && bpBaseDef.Context.IsLocal())
+                    {
+                        Main.ModderHelpMain.ModProblem(bpBaseDef, $"The pre-requisite '{item.Id}' does not exist!");
+                    }
+                }
 
                 s.Append("  ");
 
@@ -349,6 +358,11 @@ namespace Digi.BuildInfo.Features.Tooltips
             if(bpBaseDef.Results == null || bpBaseDef.Results.Length <= 0)
             {
                 s.Append("ERROR: Has no results!\n");
+
+                if(Main.Config.ModderHelpAlerts.Value && bpBaseDef.Context.IsLocal())
+                {
+                    Main.ModderHelpMain.ModProblem(bpBaseDef, $"Has no results!");
+                }
                 return;
             }
 
@@ -399,7 +413,14 @@ namespace Digi.BuildInfo.Features.Tooltips
                     s.Append("• ").RoundedNumber((float)result.Amount, 2).Append("x ");
 
                     if(!MyDefinitionManager.Static.TryGetDefinition(result.Id, out def))
+                    {
                         def = null;
+
+                        if(Main.Config.ModderHelpAlerts.Value && bpBaseDef.Context.IsLocal())
+                        {
+                            Main.ModderHelpMain.ModProblem(bpBaseDef, $"The result '{result.Id}' does not exist!");
+                        }
+                    }
 
                     s.DefinitionName(def, result.Id).Append('\n');
 
@@ -469,7 +490,12 @@ namespace Digi.BuildInfo.Features.Tooltips
                 }
                 else
                 {
-                    s.Append("ERROR: Result item not found '").IdTypeSubtypeFormat(def.Id).Append("'\n");
+                    s.Append("Result item: ").DefinitionName(null, bpBaseDef.Results[0].Id).Append('\n');
+
+                    if(Main.Config.ModderHelpAlerts.Value && def.Context.IsLocal())
+                    {
+                        Main.ModderHelpMain.ModProblem(def, $"Results in an item that does not exist which means it will actually build the first item in definitions.");
+                    }
                 }
             }
         }
