@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Text;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
+using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 
@@ -103,12 +105,30 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         void HandleTooltip(MyBlueprintDefinitionBase bpBaseDef, bool generate)
         {
+            bool usedByAssemblers = false;
+            HashSet<MyProductionBlockDefinition> usedByBlocks;
+            if(Main.TooltipHandler.TmpBpUsedIn.TryGetValue(bpBaseDef.Id, out usedByBlocks))
+            {
+                foreach(MyProductionBlockDefinition prodDef in usedByBlocks)
+                {
+                    if(prodDef is MyAssemblerDefinition) // includes survival kits
+                    {
+                        usedByAssemblers = true;
+                        break;
+                    }
+                }
+            }
+
+            // refinery-only blueprints aren't visible anywhere in the game UI
+            if(!usedByAssemblers)
+                return;
+
             string tooltip = null;
             if(generate)
             {
                 // generate tooltips and cache them alone
                 SB.Clear();
-                GenerateTooltip(SB, bpBaseDef);
+                GenerateTooltip(SB, bpBaseDef, usedByBlocks);
                 if(SB.Length > 5)
                 {
                     tooltip = SB.ToString();
@@ -129,7 +149,8 @@ namespace Digi.BuildInfo.Features.Tooltips
                 // tooltip likely contains the cached tooltip, get rid of it.
                 if(SB.Length >= tooltip.Length)
                 {
-                    SB.Replace(tooltip, "").TrimEndWhitespace();
+                    SB.Replace(tooltip, "");
+                    SB.TrimEndWhitespace();
                 }
 
                 if(Main.Config.ItemTooltipAdditions.Value)
@@ -174,40 +195,90 @@ namespace Digi.BuildInfo.Features.Tooltips
             bpBaseDef.DisplayNameString = SB.ToString();
         }
 
-        void GenerateTooltip(StringBuilder s, MyBlueprintDefinitionBase bpBaseDef)
+        void GenerateTooltip(StringBuilder s, MyBlueprintDefinitionBase bpBaseDef, HashSet<MyProductionBlockDefinition> usedByBlocks)
         {
+            if(Main.TooltipHandler.IgnoreModItems.Contains(bpBaseDef.Id))
+                return;
+
             s.Append('\n');
 
-            HashSet<MyProductionBlockDefinition> prodDefs;
-            if(Main.TooltipHandler.TmpBpUsedIn.TryGetValue(bpBaseDef.Id, out prodDefs))
-            {
-                BuildTime(s, bpBaseDef, prodDefs);
-            }
+            BuildTime(s, bpBaseDef, usedByBlocks);
 
-            if(bpBaseDef.Results != null && bpBaseDef.Results.Length > 0)
-            {
-                if(!Main.TooltipHandler.IgnoreModItems.Contains(bpBaseDef.Id) && !Main.TooltipHandler.IgnoreModItems.Contains(bpBaseDef.Results[0].Id))
-                {
-                    TooltipDescription(s, bpBaseDef);
-                }
-            }
+            Requirements(s, bpBaseDef, usedByBlocks);
+
+            ResultDescription(s, bpBaseDef);
 
             TooltipHandler.AppendModInfo(s, bpBaseDef);
-
-            // would also need an icon overlay or something to show the symbol...
-            //if(bpBaseDef.Results != null && bpBaseDef.Results.Length == 1)
-            //{
-            //    MyPhysicalItemDefinition physDef;
-            //    if(MyDefinitionManager.Static.TryGetPhysicalItemDefinition(bpBaseDef.Results[0].Id, out physDef) && Hardcoded.Conveyors_ItemNeedsLargeTube(physDef))
-            //    {
-            //        s.Append('\n').Append(ItemTooltips.ReqLargeConveyorSymbol).Append(" Result item is too large for small conveyors.");
-            //    }
-            //}
 
             s.TrimEndWhitespace();
         }
 
-        void BuildTime(StringBuilder s, MyBlueprintDefinitionBase bpBaseDef, HashSet<MyProductionBlockDefinition> prodDefs)
+        void Requirements(StringBuilder s, MyBlueprintDefinitionBase bpBaseDef, HashSet<MyProductionBlockDefinition> usedByBlocks)
+        {
+            MyFixedPoint materialMultiplierMin = MyFixedPoint.MaxValue;
+            MyFixedPoint materialMultiplierMax = MyFixedPoint.MinValue;
+            bool assigned = false;
+
+            if(usedByBlocks != null)
+            {
+                foreach(MyProductionBlockDefinition prodDef in usedByBlocks)
+                {
+                    if(prodDef is MyAssemblerDefinition)
+                    {
+                        // HACK: from MyTerminalProductionController.AddComponentPrerequisites()
+                        MyFixedPoint mul = (MyFixedPoint)(1f / Hardcoded.Assembler_GetEfficiencyMultiplierForBlueprint(prodDef, bpBaseDef));
+
+                        materialMultiplierMin = MyFixedPoint.Min(mul, materialMultiplierMin);
+                        materialMultiplierMax = MyFixedPoint.Max(mul, materialMultiplierMax);
+                        assigned = true;
+                    }
+                }
+            }
+
+            if(!assigned)
+            {
+                return; // don't add anything if it's not used by at least one assembler
+
+                //materialMultiplierMin = (MyFixedPoint)MyAPIGateway.Session.AssemblerEfficiencyMultiplier;
+                //materialMultiplierMax = materialMultiplierMin;
+            }
+
+            s.Append("Requires:\n");
+
+            foreach(MyBlueprintDefinitionBase.Item item in bpBaseDef.Prerequisites)
+            {
+                string name;
+
+                MyPhysicalItemDefinition itemDef;
+                if(MyDefinitionManager.Static.TryGetPhysicalItemDefinition(item.Id, out itemDef))
+                    name = itemDef.DisplayNameText;
+                else
+                    name = $"(ERROR, not found: '{item.Id}')";
+
+                s.Append("  ");
+
+                float min = (float)(item.Amount * materialMultiplierMin);
+                float max = (float)(item.Amount * materialMultiplierMax);
+
+                if(Math.Abs(max - min) > 0.01)
+                {
+                    s.Number(min).Append("x ~ ").Number(max).Append("x ");
+                }
+                else
+                {
+                    s.Number(max).Append("x ");
+                }
+
+                s.Append(name);
+
+                if(!Main.TooltipHandler.TmpHasBP.Contains(item.Id))
+                    s.Append(" (Not Craftable)");
+
+                s.Append('\n');
+            }
+        }
+
+        void BuildTime(StringBuilder s, MyBlueprintDefinitionBase bpBaseDef, HashSet<MyProductionBlockDefinition> usedByBlocks)
         {
             bool inRefinery = false;
             bool inAssembler = false;
@@ -218,7 +289,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             float assembleMin = float.MaxValue;
             float assembleMax = float.MinValue;
 
-            foreach(MyProductionBlockDefinition prodDef in prodDefs)
+            foreach(MyProductionBlockDefinition prodDef in usedByBlocks)
             {
                 var assemblerDef = prodDef as MyAssemblerDefinition;
                 if(assemblerDef != null)
@@ -241,31 +312,49 @@ namespace Digi.BuildInfo.Features.Tooltips
                 }
             }
 
-            if(inRefinery != inAssembler)
+            if(!inRefinery && !inAssembler)
             {
-                float min, max;
-
-                if(inRefinery)
-                {
-                    min = refineMin;
-                    max = refineMax;
-                }
-                else //if(inAssembler)
-                {
-                    min = assembleMin;
-                    max = assembleMax;
-                }
-
-                s.Append("Stock build time: ");
-                if(Math.Abs(min - max) > 0.1f)
-                    s.TimeFormat(min).Append(" ~ ").TimeFormat(max).Append('\n');
-                else
-                    s.TimeFormat(min).Append('\n');
+                s.Append("ERROR: Blueprint in neither refinery or assembler...\n" +
+                         "  Something is wrong, please report to BuildInfo author!\n");
+                return;
             }
+
+            float min, max;
+
+            if(inRefinery && inAssembler)
+            {
+                min = Math.Min(refineMin, assembleMin);
+                max = Math.Max(refineMax, assembleMax);
+            }
+            else if(inRefinery)
+            {
+                min = refineMin;
+                max = refineMax;
+            }
+            else //if(inAssembler)
+            {
+                min = assembleMin;
+                max = assembleMax;
+            }
+
+            s.Append("Build time: ");
+            if(Math.Abs(min - max) > 0.01f)
+                s.TimeFormat(min).Append(" ~ ").TimeFormat(max).Append('\n');
+            else
+                s.TimeFormat(min).Append('\n');
         }
 
-        void TooltipDescription(StringBuilder s, MyBlueprintDefinitionBase bpBaseDef)
+        void ResultDescription(StringBuilder s, MyBlueprintDefinitionBase bpBaseDef)
         {
+            if(bpBaseDef.Results == null || bpBaseDef.Results.Length <= 0)
+            {
+                s.Append("ERROR: Has no results!\n");
+                return;
+            }
+
+            if(Main.TooltipHandler.IgnoreModItems.Contains(bpBaseDef.Results[0].Id))
+                return;
+
             MyDefinitionBase def;
 
             // likely a block blueprint which adds all its components to queue.
@@ -303,7 +392,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             if(bpBaseDef.Results.Length > 1)
             {
-                s.Append("Multiple results:\n");
+                s.Append("Results in multiple items:\n");
 
                 foreach(MyBlueprintDefinitionBase.Item result in bpBaseDef.Results)
                 {
@@ -321,11 +410,32 @@ namespace Digi.BuildInfo.Features.Tooltips
             {
                 if(MyDefinitionManager.Static.TryGetDefinition(bpBaseDef.Results[0].Id, out def))
                 {
+                    int lengthBefore = s.Length;
+
+                    string defDisplayName = def.DisplayNameText;
+
+                    // get only the first line in the display name
+                    string bpDisplayName = bpBaseDef.DisplayNameText;
+                    int newLineIdx = bpDisplayName.IndexOf('\n');
+                    if(newLineIdx != -1)
+                        bpDisplayName = bpDisplayName.Substring(0, newLineIdx);
+
+                    if(defDisplayName != null && !bpDisplayName.Equals(defDisplayName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        s.Append("Result item: ").Append(defDisplayName).Append("\n");
+                    }
+                    else
+                    {
+                        s.Append("Result item info:\n");
+                    }
+
+                    int lengthCheck = s.Length;
+
                     const int MaxWidth = 70;
                     string desc = def.DescriptionText;
                     if(!string.IsNullOrWhiteSpace(desc))
                     {
-                        s.AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append('\n');
+                        s.Append('"').AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append('"').Append('\n');
                     }
 
                     MyPhysicalItemDefinition physDef = def as MyPhysicalItemDefinition;
@@ -338,7 +448,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                         // don't add this if another mod already did
                         if(!string.IsNullOrWhiteSpace(tooltip) && !bpTooltip.Contains(tooltip))
                         {
-                            s.AppendWordWrapped(tooltip, MaxWidth).TrimEndWhitespace().Append('\n');
+                            s.Append('"').AppendWordWrapped(tooltip, MaxWidth).TrimEndWhitespace().Append('"').Append('\n');
                         }
 
                         // only specific BI's item tooltips added to the blueprint name
@@ -352,6 +462,14 @@ namespace Digi.BuildInfo.Features.Tooltips
                         it.TooltipBoughtOrSold(s, physDef, true);
                         it.TooltipCrafting(s, physDef, true);
                     }
+
+                    // erase the result info if nothing was appended
+                    if(s.Length == lengthCheck)
+                        s.Length = lengthBefore;
+                }
+                else
+                {
+                    s.Append("ERROR: Result item not found '").IdTypeSubtypeFormat(def.Id).Append("'\n");
                 }
             }
         }

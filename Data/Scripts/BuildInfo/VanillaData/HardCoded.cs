@@ -68,6 +68,7 @@ namespace Digi.BuildInfo.VanillaData
             return physicalItemDefinition.Size.AbsMax() > 0.25f;
         }
 
+        // from MyCharacter.UpdateBuildPlanner() and MakeBlueprintFromBuildPlanItem()
         public const string BuildPlanner_BPClassSubtype = "BuildPlanner";
         public const string BuildPlanner_BPSubtypePrefix = "BuildPlanItem_";
 
@@ -85,6 +86,23 @@ namespace Digi.BuildInfo.VanillaData
             float upgrades = refinery?.UpgradeValues["Productivity"] ?? 0; // defaults to 0 in MyRefinery.Init()
             float refineSpeed = ((refineryDef.RefineSpeed + upgrades) * MyAPIGateway.Session.RefinerySpeedMultiplier);
             return bp.BaseProductionTimeInSeconds / refineSpeed;
+        }
+
+        // from MyAssembler.GetEfficiencyMultiplierForBlueprint() + overrides from MySurvivalKit
+        public static float Assembler_GetEfficiencyMultiplierForBlueprint(MyDefinitionBase defBase, MyBlueprintDefinitionBase blueprint)
+        {
+            if(defBase is MySurvivalKitDefinition)
+            {
+                foreach(MyBlueprintDefinitionBase.Item item in blueprint.Prerequisites)
+                {
+                    if(item.Id.TypeId == typeof(MyObjectBuilder_Ore))
+                    {
+                        return 1f;
+                    }
+                }
+            }
+
+            return MyAPIGateway.Session.AssemblerEfficiencyMultiplier;
         }
 
         // from MyShipConnector.Init()
