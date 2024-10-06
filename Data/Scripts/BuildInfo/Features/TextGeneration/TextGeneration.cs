@@ -2822,9 +2822,9 @@ namespace Digi.BuildInfo.Features
                         sb.Append("Yes").Separator().Label("Port size").Append(data.IsSmallConnector ? "Small" : "Large");
                         SimpleTooltip("Connectors can only connect to other connectors that have the same size port.");
 
-                        AddLine().LabelHardcoded("Connect limits - Max distance").DistanceFormat(Hardcoded.Connector_ConnectMaxDistance).Separator().LabelHardcoded("Max angle").AngleFormat(Hardcoded.Connector_ConnectAngleMinMax);
+                        AddLine().LabelHardcoded("Connect limits - Max distance").DistanceFormat(Hardcoded.Connector_ConnectMaxDistance).Separator().LabelHardcoded("Max angle").AngleFormat(Hardcoded.Connector_ConnectAngleOffAxis);
                         SimpleTooltip("Connectors will only magnetize under these conditions relative to another." +
-                                      "\nDistance is checked from connecting position and angle is offset between connectors' Forward, resulting in a cone.");
+                                      "\nDistance is checked from connecting position and angle is off-axis between connectors, resulting in a cone.");
                     }
                     else
                     {

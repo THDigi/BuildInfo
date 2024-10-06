@@ -124,9 +124,10 @@ namespace Digi.BuildInfo.VanillaData
         public const string Connector_Connect_DummyName = "connector";
         public const string Connector_SmallPort_DummyName = "small_connector";
         public const string Connector_Ejector_DummyName = "ejector";
-        // from MyShipConnector.TryAttach()
-        public static readonly float Connector_ConnectAngleMinMax = MathHelper.ToRadians(45);
-        public static readonly float Connector_ConnectMaxDistance = (float)Math.Sqrt(0.35f);
+        // from MyShipConnector.TryAttach() 
+        const float Connector_AngleCheck = (MathHelper.Pi * 3f / 4f); // used to test angle between 2 facing directions
+        public static readonly float Connector_ConnectAngleOffAxis = MathHelper.Pi - Connector_AngleCheck; // therefore the off axis angle is this difference
+        public static readonly float Connector_ConnectMaxDistance = (float)Math.Sqrt(0.34999999403953552); // ~0.591m
 
         // from MyShipMergeBlock.LoadDummies()
         public const string Merge_DummyName = "merge"; // see MergeFailDetector too!
