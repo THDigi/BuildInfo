@@ -198,7 +198,9 @@ namespace Digi.BuildInfo.Features
                     }
                 }
 
-                bool forceFlip = MyAPIGateway.Input.IsAnyCtrlKeyPressed();
+                // TODO fix passenger seat rotates freely...
+
+                bool forceFlip = false; // MyAPIGateway.Input.IsAnyCtrlKeyPressed();
                 MySpectatorCameraMovementEnum specMode = MySpectator.Static.SpectatorCameraMovement;
                 bool isSpectator = MyAPIGateway.Session.CameraController is MySpectatorCameraController;
 
