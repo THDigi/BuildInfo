@@ -1238,12 +1238,19 @@ namespace Digi.BuildInfo.Features.GUI
             PrintSetting(sb, nameof(settings.EnableBountyContracts), settings.EnableBountyContracts, DefaultSettings.EnableBountyContracts, false,
                 "Bounty Contracts", "If trading outposts generate kill contracts for players that have low standing with that faction.",
                 GrayIfFalse(settings.EnableEconomy));
+
             PrintSetting(sb, nameof(settings.EnableContainerDrops), settings.EnableContainerDrops, DefaultSettings.EnableContainerDrops, false,
                 "Drop Containers", "Enables drop containers (unknown signals).");
-            PrintFormattedNumber(sb, nameof(settings.MinDropContainerRespawnTime), settings.MinDropContainerRespawnTime, DefaultSettings.MinDropContainerRespawnTime, false,
-                "Drop Container min spawn", " min", "Defines minimum respawn time for drop containers.");
-            PrintFormattedNumber(sb, nameof(settings.MaxDropContainerRespawnTime), settings.MaxDropContainerRespawnTime, DefaultSettings.MaxDropContainerRespawnTime, false,
-                "Drop Container max spawn", " min", "Defines maximum respawn time for drop containers.");
+            PrintRangeSetting(sb, nameof(settings.MinDropContainerRespawnTime), nameof(settings.MaxDropContainerRespawnTime),
+                                  settings.MinDropContainerRespawnTime, settings.MaxDropContainerRespawnTime,
+                                  DefaultSettings.MinDropContainerRespawnTime, DefaultSettings.MaxDropContainerRespawnTime, false,
+                                  "Drop Container Spawn Time", "min", "Randomly chosen number within this range for the next drop container spawn.",
+                                  GrayIfFalse(settings.EnableContainerDrops));
+            //PrintFormattedNumber(sb, nameof(settings.MinDropContainerRespawnTime), settings.MinDropContainerRespawnTime, DefaultSettings.MinDropContainerRespawnTime, false,
+            //    "Drop Container min spawn", " min", "Defines minimum respawn time for drop containers.");
+            //PrintFormattedNumber(sb, nameof(settings.MaxDropContainerRespawnTime), settings.MaxDropContainerRespawnTime, DefaultSettings.MaxDropContainerRespawnTime, false,
+            //    "Drop Container max spawn", " min", "Defines maximum respawn time for drop containers.");
+
             PrintFormattedNumber(sb, nameof(settings.NPCGridClaimTimeLimit), settings.NPCGridClaimTimeLimit, DefaultSettings.NPCGridClaimTimeLimit, false,
                 "Claim time for NPC grids", " min", "Time period in which player can claim NPC grid. NPC block do despawn after limit ends. Minutes");
             #endregion NPCs
@@ -1626,10 +1633,11 @@ namespace Digi.BuildInfo.Features.GUI
         }
 
         void PrintFormattedNumber(StringBuilder sb, string fieldName, float value, float defaultValue, bool shownInVanillaUI,
-            string displayName, string suffix, string description, Formatting formatting = Formatting.Normal)
+            string displayName, string suffix, string description = null, Formatting formatting = Formatting.Normal)
         {
-            string val = value.ToString("0.#####") + suffix;
-            string defVal = defaultValue.ToString("0.#####") + suffix;
+            const string Format = "0.#####";
+            string val = value.ToString(Format) + suffix;
+            string defVal = defaultValue.ToString(Format) + suffix;
 
             PrintSetting(sb, fieldName, val, defVal, shownInVanillaUI, displayName, description, formatting);
         }
@@ -1870,6 +1878,26 @@ namespace Digi.BuildInfo.Features.GUI
                 valueColor = ValueColorDisabled;
 
             sb.Color(valueColor).Append(value).Append('\n');
+        }
+
+        void PrintRangeSetting(StringBuilder sb, string fieldNameMin, string fieldNameMax,
+                                                 float min, float max,
+                                                 float defaultMin, float defaultMax, bool shownInVanillaUI,
+                                                 string displayName, string suffix, string description = null, Formatting formatting = Formatting.Normal)
+        {
+            if(TestRun)
+            {
+                KnownFields.Add(fieldNameMin);
+                KnownFields.Add(fieldNameMax);
+            }
+
+            string fieldName = $"{fieldNameMin} and {fieldNameMax}";
+
+            const string Format = "0.#####";
+            string val = $"{min.ToString(Format)} ~ {max.ToString(Format)} {suffix}";
+            string defVal = $"{defaultMin.ToString(Format)} ~ {defaultMax.ToString(Format)} {suffix}";
+
+            PrintSetting(sb, fieldName, val, defVal, shownInVanillaUI, displayName, description, formatting);
         }
 
         //void PrintDSSetting<T>(StringBuilder sb, T value, T defaultValue, string displayName, string description = null, Formatting formatting = Formatting.Normal)
