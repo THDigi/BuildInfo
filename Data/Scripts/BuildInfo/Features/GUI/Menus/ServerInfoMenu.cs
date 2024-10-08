@@ -960,6 +960,7 @@ namespace Digi.BuildInfo.Features.GUI
             }
 
 
+            #region General
             Header(sb, "General");
 
             PrintSetting(sb, nameof(settings.GameMode), settings.GameMode, DefaultSettings.GameMode, true,
@@ -1006,8 +1007,10 @@ namespace Digi.BuildInfo.Features.GUI
             //    "Spam messages time", "The time threshold for spam. If elapsed time between messages is less they are considered spam (seconds)");
             //PrintDSSetting(sb, dsConfig?.SpamMessagesTimeout, dsConfigDefault.SpamMessagesTimeout,
             //    "Spam messages timeout", "If player is considered a spammer based on SpamMessagesTime they cannot send any messages for the duration of this timeout (seconds)");
+            #endregion General
 
 
+            #region Characters
             Header(sb, "Characters");
 
             PrintSetting(sb, nameof(settings.EnableJetpack), settings.EnableJetpack, DefaultSettings.EnableJetpack, true,
@@ -1020,8 +1023,10 @@ namespace Digi.BuildInfo.Features.GUI
                 "Environment Damage Multiplier", "x", "This multiplier only applies for damage caused to a character by environment (affects NPCs too).");
             PrintFormattedNumber(sb, nameof(settings.BackpackDespawnTimer), settings.BackpackDespawnTimer, DefaultSettings.BackpackDespawnTimer, false,
                 "Backpack Despawn Time", " min", "Sets the timer (minutes) for the backpack to be removed from the world. Default is 5 minutes.");
+            #endregion Characters
 
 
+            #region Respawn
             Header(sb, "Respawn");
 
             PrintSetting(sb, nameof(settings.PermanentDeath), settings.PermanentDeath, DefaultSettings.PermanentDeath, true,
@@ -1038,8 +1043,10 @@ namespace Digi.BuildInfo.Features.GUI
                 "Respawn Ship Time Multiplier", "x", "The multiplier for respawn ship timer.");
             PrintSetting(sb, nameof(settings.RespawnShipDelete), settings.RespawnShipDelete, DefaultSettings.RespawnShipDelete, true,
                 "Remove Respawn Ships on Logoff", "When enabled, respawn ship is removed after player logout.");
+            #endregion Respawn
 
 
+            #region Ships & blocks
             Header(sb, "Ships & blocks");
 
             MyEnvironmentDefinition envDef = MyDefinitionManager.Static.EnvironmentDefinition;
@@ -1088,8 +1095,10 @@ namespace Digi.BuildInfo.Features.GUI
                 "Broadcast Controller Offline Range", " m", "The maximum range for Broadcast Controller blocks that have offline owners.");
             PrintSetting(sb, nameof(settings.EnableSupergridding), settings.EnableSupergridding, DefaultSettings.EnableSupergridding, false,
                 "Supergridding", "Allows supergridding exploit to be used (placing block on wrong size grid, e.g. jumpdrive on smallgrid).");
+            #endregion Ships & blocks
 
 
+            #region PvP
             Header(sb, "PvP");
 
             PrintSetting(sb, nameof(settings.EnableMatchComponent), settings.EnableMatchComponent, DefaultSettings.EnableMatchComponent, false,
@@ -1125,11 +1134,13 @@ namespace Digi.BuildInfo.Features.GUI
                 "Gamepad Aim Assist", "Enable aim assist for gamepad.");
             PrintFormattedNumber(sb, nameof(settings.EnemyTargetIndicatorDistance), settings.EnemyTargetIndicatorDistance, DefaultSettings.EnemyTargetIndicatorDistance, false,
                 "Aimed Enemy Indicator Distance", " m", "Max distance to show enemy indicator when aiming at a character.");
+            #endregion PvP
 
 
             sb = NextColumn(); // ------------------------------------------------------------------------------------------------------------------------------
 
 
+            #region Multipliers
             Header(sb, "Multipliers");
 
             PrintFormattedNumber(sb, nameof(settings.BlocksInventorySizeMultiplier), settings.BlocksInventorySizeMultiplier, DefaultSettings.BlocksInventorySizeMultiplier, false,
@@ -1152,8 +1163,10 @@ namespace Digi.BuildInfo.Features.GUI
                 "Refinery Speed", "x", "Speed multiplier for all refineries.");
             PrintFormattedNumber(sb, string.Empty, MyPerGameSettings.CharacterGravityMultiplier, Hardcoded.DefaultCharacterGravityMultiplier, false,
                 "Character Gravity Multiplier", "x", "Gravity acceleration is multiplied by this value only for characters." + TooltipSettingModdable);
+            #endregion Multipliers
 
 
+            #region Environment
             Header(sb, "Environment");
 
             PrintSetting(sb, nameof(settings.EnableSunRotation), settings.EnableSunRotation, DefaultSettings.EnableSunRotation, true,
@@ -1193,8 +1206,10 @@ namespace Digi.BuildInfo.Features.GUI
             PrintSetting(sb, nameof(settings.DepositSizeDenominator), settings.DepositSizeDenominator, DefaultSettings.DepositSizeDenominator, false,
                 "Deposit Size Denominator", "Resource deposit size denominator for generated world content (voxel generator version > 2).",
                 GrayIfFalse(settings.VoxelGeneratorVersion > 2));
+            #endregion Environment
 
 
+            #region NPCs
             Header(sb, "NPCs");
 
             PrintSetting(sb, nameof(settings.CargoShipsEnabled), settings.CargoShipsEnabled, DefaultSettings.CargoShipsEnabled, true,
@@ -1231,8 +1246,10 @@ namespace Digi.BuildInfo.Features.GUI
                 "Drop Container max spawn", " min", "Defines maximum respawn time for drop containers.");
             PrintFormattedNumber(sb, nameof(settings.NPCGridClaimTimeLimit), settings.NPCGridClaimTimeLimit, DefaultSettings.NPCGridClaimTimeLimit, false,
                 "Claim time for NPC grids", " min", "Time period in which player can claim NPC grid. NPC block do despawn after limit ends. Minutes");
+            #endregion NPCs
 
 
+            #region Combat
             Header(sb, "Combat");
 
             PrintSetting(sb, nameof(settings.WeaponsEnabled), settings.WeaponsEnabled, DefaultSettings.WeaponsEnabled, true,
@@ -1247,8 +1264,10 @@ namespace Digi.BuildInfo.Features.GUI
                 "Enable Scrap Drops", "Allow scrap to be dropped from destroyed blocks");
             PrintSetting(sb, nameof(settings.TemporaryContainers), settings.TemporaryContainers, DefaultSettings.TemporaryContainers, false,
                 "Enable Temporary Containers", "Enable Temporary Containers to spawn after destroying block with inventory.");
+            #endregion NPCs
 
 
+            #region Misc
             Header(sb, "Misc.");
 
             PrintSetting(sb, nameof(settings.EnableSpectator), settings.EnableSpectator, DefaultSettings.EnableSpectator, true,
@@ -1262,11 +1281,13 @@ namespace Digi.BuildInfo.Features.GUI
                 "Suppressed Warnings", "Makes players ignore certain warnings from top-right red box popup, but not from the fully opened Shift+F1 menu.");
             PrintSetting(sb, string.Empty, "(hover)", null, false,
                 "Undisclosed settings", "There are some settings that were intentionally not disclosed in this menu:" + UndisclosedSettingsList);
+            #endregion Misc
 
 
             sb = NextColumn(); // ------------------------------------------------------------------------------------------------------------------------------
 
 
+            #region Limits
             Header(sb, "Limits");
 
             PrintSetting(sb, nameof(settings.BlockLimitsEnabled), GetLimitsModeName(settings.BlockLimitsEnabled), GetLimitsModeName(DefaultSettings.BlockLimitsEnabled), true,
@@ -1316,8 +1337,10 @@ namespace Digi.BuildInfo.Features.GUI
                 "Console PCU", "To conserve memory, some of the blocks have different PCU values for consoles."); // cannot easily identify which definitions have console PCU because it's only in the OB
             PrintSetting(sb, nameof(settings.PiratePCU), settings.PiratePCU, DefaultSettings.PiratePCU, false,
                 "PCU for NPCs", "Number of Performance Cost Units allocated for NPCs.");
+            #endregion Limits
 
 
+            #region Cleanup
             Header(sb, "Cleanup");
 
             PrintSetting(sb, nameof(settings.EnableRemoteBlockRemoval), settings.EnableRemoteBlockRemoval, DefaultSettings.EnableRemoteBlockRemoval, true,
@@ -1336,8 +1359,10 @@ namespace Digi.BuildInfo.Features.GUI
                 "Platform Trash Setting Override", "Enable trash settings to be overriden by console specific settings.");
             PrintSetting(sb, nameof(settings.TrashCleanerCargoBagsMaxLiveTime), settings.TrashCleanerCargoBagsMaxLiveTime, DefaultSettings.TrashCleanerCargoBagsMaxLiveTime, false,
                 "Max Cargo Bags Lifetime", "The maximum amount of time (in minutes) allowed for cargo bags to be alive before deletion.");
+            #endregion Cleanup
 
 
+            #region Grids Cleanup
             Header(sb, "Grids Cleanup");
 
             PrintSetting(sb, nameof(settings.TrashRemovalEnabled), settings.TrashRemovalEnabled, DefaultSettings.TrashRemovalEnabled, false,
@@ -1382,8 +1407,10 @@ namespace Digi.BuildInfo.Features.GUI
                                                          "\nWARNING: This will remove all grids that are owned by the player." +
                                                          "\n0 means off.",
                 GrayOrWarn(settings.TrashRemovalEnabled, settings.PlayerInactivityThreshold > 0));
+            #endregion Grids Cleanup
 
 
+            #region Voxel Cleanup
             Header(sb, "Voxel Cleanup");
 
             PrintSetting(sb, nameof(settings.VoxelTrashRemovalEnabled), settings.VoxelTrashRemovalEnabled, DefaultSettings.VoxelTrashRemovalEnabled, false,
@@ -1412,8 +1439,10 @@ namespace Digi.BuildInfo.Features.GUI
             PrintFormattedNumber(sb, nameof(settings.VoxelAgeThreshold), settings.VoxelAgeThreshold, DefaultSettings.VoxelAgeThreshold, false,
                 "Voxel Age", " min", "Voxel chunks older than this will be reverted.",
                 GrayIfFalse(settings.VoxelTrashRemovalEnabled));
+            #endregion Voxel Cleanup
 
 
+            #region Performance
             Header(sb, "Performance");
 
             PrintEnvGraphicsChanges(sb, envDef, DefaultEnvDef,
@@ -1447,6 +1476,7 @@ namespace Digi.BuildInfo.Features.GUI
                 "Prefetch Voxels Range Limit", " m", "Defines at what maximum distance weapons could interact with voxels." +
                                                      "\n\nIn technical terms: prevents MyPlanet.PrefetchShapeOnRay() from prefetching voxels if the line is longer than this." +
                                                      "\nThis call is used by bullet projectiles, targeting systems and mods can use it too.");
+            #endregion Performance
         }
 
         void CheckSettings()
@@ -1504,6 +1534,7 @@ namespace Digi.BuildInfo.Features.GUI
                 Log.Info("[DEV] Done, found nothing new.");
         }
 
+        #region Print setting methods
         enum Formatting
         {
             Normal = 0,
@@ -1578,18 +1609,267 @@ namespace Digi.BuildInfo.Features.GUI
         const string FalseValue = "off";
         const string NullValue = "null";
 
-        void PrintSetting(StringBuilder sb, string fieldName, bool value, bool defaultValue, bool shownInVanillaUI, string displayName, string description = null, Formatting formatting = Formatting.Normal)
+        void PrintSetting(StringBuilder sb, string fieldName, bool value, bool defaultValue, bool shownInVanillaUI,
+            string displayName, string description = null, Formatting formatting = Formatting.Normal)
         {
             string v = value ? TrueValue : FalseValue;
             string dv = defaultValue ? TrueValue : FalseValue;
             PrintSetting(sb, fieldName, v, dv, shownInVanillaUI, displayName, description, formatting);
         }
 
-        void PrintSetting(StringBuilder sb, string fieldName, bool? value, bool? defaultValue, bool shownInVanillaUI, string displayName, string description = null, Formatting formatting = Formatting.Normal)
+        void PrintSetting(StringBuilder sb, string fieldName, bool? value, bool? defaultValue, bool shownInVanillaUI,
+            string displayName, string description = null, Formatting formatting = Formatting.Normal)
         {
             string v = value == null ? NullValue : value.Value ? TrueValue : FalseValue;
             string dv = defaultValue == null ? NullValue : defaultValue.Value ? TrueValue : FalseValue;
             PrintSetting(sb, fieldName, v, dv, shownInVanillaUI, displayName, description, formatting);
+        }
+
+        void PrintFormattedNumber(StringBuilder sb, string fieldName, float value, float defaultValue, bool shownInVanillaUI,
+            string displayName, string suffix, string description, Formatting formatting = Formatting.Normal)
+        {
+            string val = value.ToString("0.#####") + suffix;
+            string defVal = defaultValue.ToString("0.#####") + suffix;
+
+            PrintSetting(sb, fieldName, val, defVal, shownInVanillaUI, displayName, description, formatting);
+        }
+
+        void PrintBlockLimits(StringBuilder sb, string fieldName, SerializableDictionary<string, short> value, SerializableDictionary<string, short> defaultValue, bool shownInVanillaUI,
+            string displayName, string description = null, Formatting formatting = Formatting.Normal)
+        {
+            if(TestRun)
+            {
+                KnownFields.Add(fieldName);
+                return;
+            }
+
+            PrintSetting<string>(sb, fieldName, null, null, shownInVanillaUI, displayName, description, formatting);
+
+            bool valuePresent = (value?.Dictionary != null && value.Dictionary.Count > 0);
+            bool defaultPresent = (defaultValue?.Dictionary != null && defaultValue.Dictionary.Count > 0);
+
+            Color valueColor = ValueColorDefault;
+            if(formatting == Formatting.GrayedOut)
+                valueColor = ValueColorDisabled;
+            else if(formatting == Formatting.Warning)
+                valueColor = ValueColorWarning;
+            else if(defaultPresent != valuePresent)
+                valueColor = ValueColorChanged;
+
+            ScrollableBlockLimits.Reset();
+            bool scroll = valuePresent && value.Dictionary.Count > ScrollableBlockLimits.DisplayLines;
+
+            sb.Append('\n');
+
+            int sbIndex = sb.Length;
+
+            if(!valuePresent)
+            {
+                sb.Append(LabelPrefix).Append("  (Empty)\n");
+            }
+            else
+            {
+                foreach(KeyValuePair<string, short> kv in value.Dictionary)
+                {
+                    string blockPairName = kv.Key;
+                    short limit = kv.Value;
+
+                    MyCubeBlockDefinitionGroup pairDef = MyDefinitionManager.Static.TryGetDefinitionGroup(blockPairName);
+                    string tooltip;
+
+                    int startIndex = sb.Length;
+
+                    sb.Append(LabelPrefix).Append("  ");
+
+                    if(pairDef != null)
+                    {
+                        sb.Color(valueColor).Append(limit).Append("x ");
+
+                        string nameLarge = pairDef.Large?.DisplayNameText;
+                        string nameSmall = pairDef.Small?.DisplayNameText;
+
+                        if(nameLarge == nameSmall)
+                            sb.Append(nameLarge).Append(" (L+S)");
+                        else if(nameLarge != null && nameSmall == null)
+                            sb.AppendMaxLength(nameLarge, 24).Append(" (L)");
+                        else if(nameLarge == null && nameSmall != null)
+                            sb.AppendMaxLength(nameSmall, 24).Append(" (S)");
+                        else
+                            sb.AppendMaxLength(nameSmall, 16).Append(" & ").AppendMaxLength(nameSmall, 16);
+
+                        tooltip = $"BlockPairName: {blockPairName}";
+                    }
+                    else
+                    {
+                        sb.Color(Color.Gray).Append(limit).Append("x ").Append(blockPairName);
+                        tooltip = "This BlockPairName is not used by any block.";
+                    }
+
+                    if(scroll)
+                    {
+                        int len = sb.Length - startIndex;
+                        ScrollableBlockLimits.Add(sb.ToString(startIndex, len), tooltip);
+                        sb.Length -= len; // erase!
+                    }
+                    else
+                    {
+                        CurrentColumn.AddTooltip(sb, tooltip);
+
+                        sb.Append('\n');
+                    }
+                }
+            }
+
+            if(scroll)
+            {
+                ScrollableBlockLimits.Finish(CurrentColumn, sbIndex);
+            }
+        }
+
+        void PrintSuppressedWarnings(StringBuilder sb, string fieldName, List<string> value, List<string> defaultValue, bool shownInVanillaUI, string displayName, string description = null)
+        {
+            if(TestRun)
+            {
+                KnownFields.Add(fieldName);
+                return;
+            }
+
+            PrintSetting<string>(sb, fieldName, null, null, shownInVanillaUI, displayName, description);
+
+            bool valuePresent = (value != null && value.Count > 0);
+            bool defaultPresent = (defaultValue != null && defaultValue.Count > 0);
+
+            if(defaultPresent == valuePresent)
+                sb.Color(ValueColorDefault);
+            else
+                sb.Color(ValueColorChanged);
+
+            sb.Append('\n');
+
+            if(!valuePresent)
+            {
+                sb.Append(LabelPrefix).Append("  (Empty)\n");
+            }
+            else
+            {
+                ScrollableWarnings.Reset();
+                bool scroll = value.Count > ScrollableWarnings.DisplayLines;
+                int sbIndex = sb.Length;
+
+                int line = GetLine(sb);
+
+                for(int i = 0; i < value.Count; i++)
+                {
+                    string text = value[i];
+                    int startIdx = sb.Length;
+                    sb.Append(LabelPrefix).Append("  ").Append(MyTexts.GetString(text));
+
+                    string tooltip = $"Value name: {text}";
+
+                    if(scroll)
+                    {
+                        int len = sb.Length - startIdx;
+                        ScrollableWarnings.Add(sb.ToString(startIdx, len), tooltip);
+                        sb.Length -= len; // erase!
+                    }
+                    else
+                    {
+                        CurrentColumn.SetTooltip(line + i, tooltip);
+
+                        sb.Append('\n');
+                    }
+                }
+
+                ScrollableWarnings.Finish(CurrentColumn, sbIndex);
+            }
+        }
+
+        void PrintTrashFlag(StringBuilder sb, MyTrashRemovalFlags flag,
+            string displayName, string description = null, Formatting formatting = Formatting.Normal)
+        {
+            bool val = MyAPIGateway.Session.SessionSettings.TrashFlags.HasFlags(flag);
+            bool defVal = DefaultSettings.TrashFlags.HasFlags(flag);
+            string flagName = nameof(MyTrashRemovalFlags) + "." + MyEnum<MyTrashRemovalFlags>.GetName(flag);
+
+            if(Main.Config.InternalInfo.Value)
+            {
+                description += (!string.IsNullOrEmpty(description) ? "\n" : "") + $"Internal setting name: TrashFlagsValue\nFlag integer: {(int)flag} (add all flag integers to make the final value for TrashFlagsValue)";
+            }
+
+            PrintSetting(sb, flagName, val, defVal, false, displayName, description, formatting);
+        }
+
+        void PrintEnvGraphicsChanges(StringBuilder sb, MyEnvironmentDefinition envDef, MyEnvironmentDefinition defaultEnvDef,
+            string displayName, string description = null, Formatting formatting = Formatting.Normal)
+        {
+            if(sb == null)
+                return;
+
+            bool hasChanges = false;
+
+            if(!envDef.LowLoddingSettings.Equals(defaultEnvDef.LowLoddingSettings))
+            {
+                hasChanges = true;
+                description += "\n- Low model detail has changes";
+            }
+
+            if(!envDef.MediumLoddingSettings.Equals(defaultEnvDef.MediumLoddingSettings))
+            {
+                hasChanges = true;
+                description += "\n- Medium model detail has changes";
+            }
+
+            if(!envDef.HighLoddingSettings.Equals(defaultEnvDef.HighLoddingSettings))
+            {
+                hasChanges = true;
+                description += "\n- High model detail has changes";
+            }
+
+            if(!envDef.ExtremeLoddingSettings.Equals(defaultEnvDef.ExtremeLoddingSettings))
+            {
+                hasChanges = true;
+                description += "\n- Extreme model detail has changes";
+            }
+
+            bool hasShadowChanges = false;
+            if(!envDef.ShadowSettings.ShadowCascadeFrozen.SequenceEqual(defaultEnvDef.ShadowSettings.ShadowCascadeFrozen)
+            || !envDef.ShadowSettings.ShadowCascadeSmallSkipThresholds.SequenceEqual(defaultEnvDef.ShadowSettings.ShadowCascadeSmallSkipThresholds)
+            || !envDef.ShadowSettings.Cascades.SequenceEqual(defaultEnvDef.ShadowSettings.Cascades))
+            {
+                hasShadowChanges = true;
+            }
+            else
+            {
+                string current = MyAPIGateway.Utilities.SerializeToXML(envDef.ShadowSettings.Data);
+                string defaults = MyAPIGateway.Utilities.SerializeToXML(defaultEnvDef.ShadowSettings.Data);
+                if(current != defaults)
+                {
+                    hasShadowChanges = true;
+                }
+            }
+
+            if(hasShadowChanges)
+            {
+                hasChanges = true;
+                description += "\n- Shadow details have changes\n";
+            }
+
+            PrintSetting<string>(sb, string.Empty, null, null, true,
+               displayName, description, formatting);
+
+            Color valueColor = ValueColorDefault;
+            string value = "Default";
+
+            if(hasChanges)
+            {
+                valueColor = ValueColorChanged;
+                value = "Changes (hover)";
+            }
+
+            if(formatting == Formatting.GrayedOut)
+                valueColor = ValueColorDisabled;
+
+            sb.Color(valueColor).Append(value).Append('\n');
         }
 
         //void PrintDSSetting<T>(StringBuilder sb, T value, T defaultValue, string displayName, string description = null, Formatting formatting = Formatting.Normal)
@@ -1609,14 +1889,64 @@ namespace Digi.BuildInfo.Features.GUI
         //
         //    PrintSetting(sb, string.Empty, valStr, defStr, false, displayName, description, formatting);
         //}
+        #endregion Print setting methods
 
-        void PrintFormattedNumber(StringBuilder sb, string fieldName, float value, float defaultValue, bool shownInVanillaUI,
-        string displayName, string suffix, string description, Formatting formatting = Formatting.Normal)
+        class Column
         {
-            string val = value.ToString("0.#####") + suffix;
-            string defVal = defaultValue.ToString("0.#####") + suffix;
+            public struct Tooltip
+            {
+                public string Text;
+                public Action ClickAction;
+            }
 
-            PrintSetting(sb, fieldName, val, defVal, shownInVanillaUI, displayName, description, formatting);
+            public TextAPI.TextPackage Render;
+            public Vector2D TextSize;
+            public Dictionary<int, Tooltip> Tooltips;
+
+            public Column(bool debug = false)
+            {
+                Render = new TextAPI.TextPackage(512, false, debug ? MyStringId.GetOrCompute("BuildInfo_UI_Square") : (MyStringId?)null);
+                Render.HideWithHUD = false;
+                Render.Scale = TextScale;
+
+                if(debug)
+                    Render.Background.BillBoardColor = Color.Red * 0.25f;
+
+                Tooltips = new Dictionary<int, Tooltip>();
+            }
+
+            public void Reset()
+            {
+                Render.Visible = false;
+                Render.TextStringBuilder.Clear();
+                Tooltips.Clear();
+            }
+
+            /// <summary>
+            /// Must be called before the ending newline
+            /// </summary>
+            public void AddTooltip(StringBuilder sb, string tooltip, Action clickAction = null)
+            {
+                int line = GetLine(sb);
+
+                if(Tooltips.ContainsKey(line))
+                    Log.Error($"Tooltip for line {line} already exists! New tooltip: {tooltip}");
+
+                Tooltips[line] = new Tooltip()
+                {
+                    Text = tooltip,
+                    ClickAction = clickAction,
+                };
+            }
+
+            public void SetTooltip(int line, string tooltip, Action clickAction = null)
+            {
+                Tooltips[line] = new Tooltip()
+                {
+                    Text = tooltip,
+                    ClickAction = clickAction,
+                };
+            }
         }
 
         class ScrollableSection
@@ -1874,302 +2204,6 @@ namespace Digi.BuildInfo.Features.GUI
                 double scrollRatio = -(Scroll / (double)maxScrollIndex);
                 ScrollbarRender.Origin = new Vector2D(0, scrollRatio * ScrollableHeight);
                 return true;
-            }
-        }
-
-        void PrintBlockLimits(StringBuilder sb, string fieldName, SerializableDictionary<string, short> value, SerializableDictionary<string, short> defaultValue,
-        bool shownInVanillaUI, string displayName, string description = null, Formatting formatting = Formatting.Normal)
-        {
-            if(TestRun)
-            {
-                KnownFields.Add(fieldName);
-                return;
-            }
-
-            PrintSetting<string>(sb, fieldName, null, null, shownInVanillaUI, displayName, description, formatting);
-
-            bool valuePresent = (value?.Dictionary != null && value.Dictionary.Count > 0);
-            bool defaultPresent = (defaultValue?.Dictionary != null && defaultValue.Dictionary.Count > 0);
-
-            Color valueColor = ValueColorDefault;
-            if(formatting == Formatting.GrayedOut)
-                valueColor = ValueColorDisabled;
-            else if(formatting == Formatting.Warning)
-                valueColor = ValueColorWarning;
-            else if(defaultPresent != valuePresent)
-                valueColor = ValueColorChanged;
-
-            ScrollableBlockLimits.Reset();
-            bool scroll = valuePresent && value.Dictionary.Count > ScrollableBlockLimits.DisplayLines;
-
-            sb.Append('\n');
-
-            int sbIndex = sb.Length;
-
-            if(!valuePresent)
-            {
-                sb.Append(LabelPrefix).Append("  (Empty)\n");
-            }
-            else
-            {
-                foreach(KeyValuePair<string, short> kv in value.Dictionary)
-                {
-                    string blockPairName = kv.Key;
-                    short limit = kv.Value;
-
-                    MyCubeBlockDefinitionGroup pairDef = MyDefinitionManager.Static.TryGetDefinitionGroup(blockPairName);
-                    string tooltip;
-
-                    int startIndex = sb.Length;
-
-                    sb.Append(LabelPrefix).Append("  ");
-
-                    if(pairDef != null)
-                    {
-                        sb.Color(valueColor).Append(limit).Append("x ");
-
-                        string nameLarge = pairDef.Large?.DisplayNameText;
-                        string nameSmall = pairDef.Small?.DisplayNameText;
-
-                        if(nameLarge == nameSmall)
-                            sb.Append(nameLarge).Append(" (L+S)");
-                        else if(nameLarge != null && nameSmall == null)
-                            sb.AppendMaxLength(nameLarge, 24).Append(" (L)");
-                        else if(nameLarge == null && nameSmall != null)
-                            sb.AppendMaxLength(nameSmall, 24).Append(" (S)");
-                        else
-                            sb.AppendMaxLength(nameSmall, 16).Append(" & ").AppendMaxLength(nameSmall, 16);
-
-                        tooltip = $"BlockPairName: {blockPairName}";
-                    }
-                    else
-                    {
-                        sb.Color(Color.Gray).Append(limit).Append("x ").Append(blockPairName);
-                        tooltip = "This BlockPairName is not used by any block.";
-                    }
-
-                    if(scroll)
-                    {
-                        int len = sb.Length - startIndex;
-                        ScrollableBlockLimits.Add(sb.ToString(startIndex, len), tooltip);
-                        sb.Length -= len; // erase!
-                    }
-                    else
-                    {
-                        CurrentColumn.AddTooltip(sb, tooltip);
-
-                        sb.Append('\n');
-                    }
-                }
-            }
-
-            if(scroll)
-            {
-                ScrollableBlockLimits.Finish(CurrentColumn, sbIndex);
-            }
-        }
-
-        void PrintSuppressedWarnings(StringBuilder sb, string fieldName, List<string> value, List<string> defaultValue, bool shownInVanillaUI, string displayName, string description = null)
-        {
-            if(TestRun)
-            {
-                KnownFields.Add(fieldName);
-                return;
-            }
-
-            PrintSetting<string>(sb, fieldName, null, null, shownInVanillaUI, displayName, description);
-
-            bool valuePresent = (value != null && value.Count > 0);
-            bool defaultPresent = (defaultValue != null && defaultValue.Count > 0);
-
-            if(defaultPresent == valuePresent)
-                sb.Color(ValueColorDefault);
-            else
-                sb.Color(ValueColorChanged);
-
-            sb.Append('\n');
-
-            if(!valuePresent)
-            {
-                sb.Append(LabelPrefix).Append("  (Empty)\n");
-            }
-            else
-            {
-                ScrollableWarnings.Reset();
-                bool scroll = value.Count > ScrollableWarnings.DisplayLines;
-                int sbIndex = sb.Length;
-
-                int line = GetLine(sb);
-
-                for(int i = 0; i < value.Count; i++)
-                {
-                    string text = value[i];
-                    int startIdx = sb.Length;
-                    sb.Append(LabelPrefix).Append("  ").Append(MyTexts.GetString(text));
-
-                    string tooltip = $"Value name: {text}";
-
-                    if(scroll)
-                    {
-                        int len = sb.Length - startIdx;
-                        ScrollableWarnings.Add(sb.ToString(startIdx, len), tooltip);
-                        sb.Length -= len; // erase!
-                    }
-                    else
-                    {
-                        CurrentColumn.SetTooltip(line + i, tooltip);
-
-                        sb.Append('\n');
-                    }
-                }
-
-                ScrollableWarnings.Finish(CurrentColumn, sbIndex);
-            }
-        }
-
-        void PrintTrashFlag(StringBuilder sb, MyTrashRemovalFlags flag,
-            string displayName, string description = null, Formatting formatting = Formatting.Normal)
-        {
-            bool val = MyAPIGateway.Session.SessionSettings.TrashFlags.HasFlags(flag);
-            bool defVal = DefaultSettings.TrashFlags.HasFlags(flag);
-            string flagName = nameof(MyTrashRemovalFlags) + "." + MyEnum<MyTrashRemovalFlags>.GetName(flag);
-
-            if(Main.Config.InternalInfo.Value)
-            {
-                description += (!string.IsNullOrEmpty(description) ? "\n" : "") + $"Internal setting name: TrashFlagsValue\nFlag integer: {(int)flag} (add all flag integers to make the final value for TrashFlagsValue)";
-            }
-
-            PrintSetting(sb, flagName, val, defVal, false, displayName, description, formatting);
-        }
-
-        void PrintEnvGraphicsChanges(StringBuilder sb, MyEnvironmentDefinition envDef, MyEnvironmentDefinition defaultEnvDef,
-            string displayName, string description = null, Formatting formatting = Formatting.Normal)
-        {
-            if(sb == null)
-                return;
-
-            bool hasChanges = false;
-
-            if(!envDef.LowLoddingSettings.Equals(defaultEnvDef.LowLoddingSettings))
-            {
-                hasChanges = true;
-                description += "\n- Low model detail has changes";
-            }
-
-            if(!envDef.MediumLoddingSettings.Equals(defaultEnvDef.MediumLoddingSettings))
-            {
-                hasChanges = true;
-                description += "\n- Medium model detail has changes";
-            }
-
-            if(!envDef.HighLoddingSettings.Equals(defaultEnvDef.HighLoddingSettings))
-            {
-                hasChanges = true;
-                description += "\n- High model detail has changes";
-            }
-
-            if(!envDef.ExtremeLoddingSettings.Equals(defaultEnvDef.ExtremeLoddingSettings))
-            {
-                hasChanges = true;
-                description += "\n- Extreme model detail has changes";
-            }
-
-            bool hasShadowChanges = false;
-            if(!envDef.ShadowSettings.ShadowCascadeFrozen.SequenceEqual(defaultEnvDef.ShadowSettings.ShadowCascadeFrozen)
-            || !envDef.ShadowSettings.ShadowCascadeSmallSkipThresholds.SequenceEqual(defaultEnvDef.ShadowSettings.ShadowCascadeSmallSkipThresholds)
-            || !envDef.ShadowSettings.Cascades.SequenceEqual(defaultEnvDef.ShadowSettings.Cascades))
-            {
-                hasShadowChanges = true;
-            }
-            else
-            {
-                string current = MyAPIGateway.Utilities.SerializeToXML(envDef.ShadowSettings.Data);
-                string defaults = MyAPIGateway.Utilities.SerializeToXML(defaultEnvDef.ShadowSettings.Data);
-                if(current != defaults)
-                {
-                    hasShadowChanges = true;
-                }
-            }
-
-            if(hasShadowChanges)
-            {
-                hasChanges = true;
-                description += "\n- Shadow details have changes\n";
-            }
-
-            PrintSetting<string>(sb, string.Empty, null, null, true,
-               displayName, description, formatting);
-
-            Color valueColor = ValueColorDefault;
-            string value = "Default";
-
-            if(hasChanges)
-            {
-                valueColor = ValueColorChanged;
-                value = "Changes (hover)";
-            }
-
-            if(formatting == Formatting.GrayedOut)
-                valueColor = ValueColorDisabled;
-
-            sb.Color(valueColor).Append(value).Append('\n');
-        }
-
-        class Column
-        {
-            public struct Tooltip
-            {
-                public string Text;
-                public Action ClickAction;
-            }
-
-            public TextAPI.TextPackage Render;
-            public Vector2D TextSize;
-            public Dictionary<int, Tooltip> Tooltips;
-
-            public Column(bool debug = false)
-            {
-                Render = new TextAPI.TextPackage(512, false, debug ? MyStringId.GetOrCompute("BuildInfo_UI_Square") : (MyStringId?)null);
-                Render.HideWithHUD = false;
-                Render.Scale = TextScale;
-
-                if(debug)
-                    Render.Background.BillBoardColor = Color.Red * 0.25f;
-
-                Tooltips = new Dictionary<int, Tooltip>();
-            }
-
-            public void Reset()
-            {
-                Render.Visible = false;
-                Render.TextStringBuilder.Clear();
-                Tooltips.Clear();
-            }
-
-            /// <summary>
-            /// Must be called before the ending newline
-            /// </summary>
-            public void AddTooltip(StringBuilder sb, string tooltip, Action clickAction = null)
-            {
-                int line = GetLine(sb);
-
-                if(Tooltips.ContainsKey(line))
-                    Log.Error($"Tooltip for line {line} already exists! New tooltip: {tooltip}");
-
-                Tooltips[line] = new Tooltip()
-                {
-                    Text = tooltip,
-                    ClickAction = clickAction,
-                };
-            }
-
-            public void SetTooltip(int line, string tooltip, Action clickAction = null)
-            {
-                Tooltips[line] = new Tooltip()
-                {
-                    Text = tooltip,
-                    ClickAction = clickAction,
-                };
             }
         }
 
