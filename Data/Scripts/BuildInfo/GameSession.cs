@@ -223,8 +223,6 @@ namespace Digi.ComponentLib
         {
             try
             {
-                MyLog.Default.WriteLineAndConsole($"{BuildInfoMod.ModName} mod: Checking mods list for duplicates");
-
                 bool isDS = MyAPIGateway.Utilities.IsDedicated;
 
                 HashSet<string> uniqueMods = new HashSet<string>();
@@ -248,7 +246,12 @@ namespace Digi.ComponentLib
 
                 if(dupe > 0 && !isDS && MyAPIGateway.Session.PromoteLevel >= MyPromoteLevel.Moderator)
                 {
+                    MyLog.Default.WriteLineAndConsole($"{BuildInfoMod.ModName} mod: Checking mods list for duplicates... found {dupe} duplicated!");
                     MyAPIGateway.Utilities.ShowMessage(BuildInfoMod.ModName, $"World has {dupe} duplicated mods!");
+                }
+                else
+                {
+                    MyLog.Default.WriteLineAndConsole($"{BuildInfoMod.ModName} mod: Checking mods list for duplicates... found none!");
                 }
             }
             catch(Exception e)
