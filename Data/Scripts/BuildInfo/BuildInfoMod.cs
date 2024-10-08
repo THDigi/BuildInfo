@@ -44,6 +44,7 @@ namespace Digi.BuildInfo
         public readonly GUIMonitor GUIMonitor;
         public readonly GameConfig GameConfig;
         public readonly BlockMonitor BlockMonitor;
+        public readonly PlanetMonitor PlanetMonitor;
         public readonly InputLibHandler InputLibHandler;
         public readonly EquipmentMonitor EquipmentMonitor;
         public readonly GameBlockInfoHandler GameBlockInfoHandler;
@@ -144,6 +145,7 @@ namespace Digi.BuildInfo
             GUIMonitor = new GUIMonitor(this);
             GameConfig = new GameConfig(this);
             BlockMonitor = new BlockMonitor(this);
+            PlanetMonitor = new PlanetMonitor(this);
             EquipmentMonitor = new EquipmentMonitor(this);
             GameBlockInfoHandler = new GameBlockInfoHandler(this);
             CoreSystemsAPIHandler = new CoreSystemsAPIHandler(this);
