@@ -9,7 +9,10 @@ using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Draygo.API;
 using Sandbox.Definitions;
+using Sandbox.Engine.Physics;
 using Sandbox.Game;
+using Sandbox.Game.Entities;
+using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using VRage;
 using VRage.Collections;
@@ -48,7 +51,8 @@ namespace Digi.BuildInfo.Features.GUI
 
         HashSet<string> KnownFields = new HashSet<string>();
         bool TestRun = false;
-        MyObjectBuilder_SessionSettings DefaultSettings = new MyObjectBuilder_SessionSettings();
+        MyObjectBuilder_SessionSettings DefaultSettings;
+        string DefaultFrom;
         MyEnvironmentDefinition DefaultEnvDef = null;
 
         HudAPIv2.BillBoardHUDMessage WindowBG;
@@ -82,8 +86,14 @@ namespace Digi.BuildInfo.Features.GUI
         static readonly Color ValueColorChanged = new Color(255, 230, 180);
         static readonly Color ValueColorDisabled = Color.Gray;
         static readonly Color ValueColorWarning = new Color(255, 60, 25);
+        static readonly Color NewSettingColor = new Color(100, 255, 155);
+        static readonly Color SearchHighlightColor = new Color(60, 76, 82);
         const bool DebugDrawBoxes = false;
         const float CloseButtonScale = 1.2f;
+
+        const string NewSettingTag = "NEW:";
+
+        bool ShowInternal => true; // Main.Config.InternalInfo.Value;
 
         const string TooltipSettingModdable = "\n<color=gray>This is only changeable using mods.<reset>";
         //const string TooltipSettingGameUI = "\n<color=gray>This is a world setting. This in particular can be changed in the world options screen.<reset>";
@@ -100,13 +110,22 @@ namespace Digi.BuildInfo.Features.GUI
 
         void ReadDefaults()
         {
-            var starSystemConfig = ReadGameXML<MyObjectBuilder_WorldConfiguration>(@"CustomWorlds\Star System\sandbox_config.sbc");
-            if(starSystemConfig != null)
+            const string WorldForDefaults = @"CustomWorlds\Star System\sandbox_config.sbc";
+            var worldConfig = ReadGameXML<MyObjectBuilder_WorldConfiguration>(WorldForDefaults);
+            if(worldConfig != null)
             {
-                DefaultSettings = starSystemConfig.Settings;
+                DefaultSettings = worldConfig.Settings;
+                DefaultFrom = "Star System template";
+            }
+            else
+            {
+                DefaultSettings = new MyObjectBuilder_SessionSettings();
+                DefaultFrom = "(ERROR)";
+                // errors will be logged by ReadGameXML() 
             }
 
-            var envDef = ReadGameXML<MyObjectBuilder_Definitions>(@"Data\Environment.sbc");
+            const string EnvSBC = @"Data\Environment.sbc";
+            var envDef = ReadGameXML<MyObjectBuilder_Definitions>(EnvSBC);
             if(envDef != null)
             {
                 var defOB = envDef.Definitions[0] as MyObjectBuilder_EnvironmentDefinition;
@@ -117,7 +136,7 @@ namespace Digi.BuildInfo.Features.GUI
                 }
                 else
                 {
-                    Log.Error("Game's Environment.sbc does not contain the expected EnvironmentDefinition!");
+                    Log.Error($"Game's '{EnvSBC}' does not contain the expected EnvironmentDefinition!");
                 }
             }
 
@@ -200,7 +219,7 @@ namespace Digi.BuildInfo.Features.GUI
             CloseButton.Refresh(Vector2D.Zero);
 
             SearchBar = new TextPackage(128, false, MyStringId.GetOrCompute("BuildInfo_UI_Square"));
-            SearchBar.Background.BillBoardColor = new Color(60, 76, 82);
+            SearchBar.Background.BillBoardColor = SearchHighlightColor;
             SearchBar.HideWithHUD = false;
             SearchBar.Position = new Vector2D(-0.9, 0.4);
             SearchBar.Font = FontsHandler.TextAPI_OutlinedFont;
@@ -840,19 +859,21 @@ namespace Digi.BuildInfo.Features.GUI
                 {
                     // HACK: hardcodedly filled in details from GetExperimentalReason() and GetSettingsExperimentalReason()
                     case ExperimentalReason.Mods: name = "Mods present"; break;
+                    case ExperimentalReason.Plugins: name = "DS plugins active"; break;
+                    case ExperimentalReason.InsufficientHardware: name = "DS insufficient hardware"; break;
                     case ExperimentalReason.ExperimentalMode: name = "Experimental mode forced on"; break;
                     case ExperimentalReason.AdaptiveSimulationQuality: name = "AdaptiveSimulation OFF"; break;
                     case ExperimentalReason.BlockLimitsEnabled: name = "BlockLimits OFF"; break;
                     case ExperimentalReason.ProceduralDensity: name = "ProceduralDensity >0.35"; break;
                     case ExperimentalReason.MaxFloatingObjects: name = "MaxFloatingObjects >100"; break;
                     case ExperimentalReason.PhysicsIterations: name = "PhysicsIterations not 8"; break;
-                    case ExperimentalReason.TotalPCU: name = $"TotalPCU >{MyObjectBuilder_SessionSettings.MaxSafePCU}"; break;
-                    case ExperimentalReason.MaxPlayers: name = $"MaxPlayers >{MyObjectBuilder_SessionSettings.MaxSafePlayers}"; break;
+                    case ExperimentalReason.TotalPCU: name = $"TotalPCU >{MyObjectBuilder_SessionSettings.MaxSafePCU.ToString(NumberFormat)} for lobbies or >{MyObjectBuilder_SessionSettings.MaxSafePCU_Remote.ToString(NumberFormat)} for DS"; break;
+                    case ExperimentalReason.MaxPlayers: name = $"MaxPlayers is 0 or >{MyObjectBuilder_SessionSettings.MaxSafePlayers.ToString(NumberFormat)} for lobbies or >{MyObjectBuilder_SessionSettings.MaxSafePlayers_Remote.ToString(NumberFormat)} for DS"; break;
                     case ExperimentalReason.SunRotationIntervalMinutes: name = "SunRotationIntervalMinutes <=29"; break;
                     case ExperimentalReason.TotalBotLimit: name = "TotalBotLimit >32"; break;
                     case ExperimentalReason.EnableIngameScripts: name = "Programmable Block scripts ON"; break;
                     case ExperimentalReason.EnableSubgridDamage: name = "Sub-Grid Physical Damage ON"; break;
-                    case ExperimentalReason.EnableSpectator: name = "Everyone spectator camera ON"; break;
+                    case ExperimentalReason.EnableSpectator: name = "Everyone Spectator Camera ON"; break;
                     case ExperimentalReason.StationVoxelSupport: name = "Maintain static on split ON (StationVoxelSupport)"; break;
                     //case ExperimentalReason.SyncDistance: name = "SyncDistance not 3000"; break;
                     default: name = MyEnum<ExperimentalReason>.GetName(reason); break;
@@ -874,29 +895,13 @@ namespace Digi.BuildInfo.Features.GUI
                                                    "\n- MaxBackupSaves" +
                                                    "\n- ResetOwnership (would always be false anyway)" +
                                                    "\n- EnableSaving" +
-                                                   "\n- TradeFactionsCount" +
-                                                   "\n- StationsDistanceInnerRadius/End/Start";
+                                                   "\n- MinimumWorldSize (it's completely useless)";
 
             if(TestRun)
             {
-                KnownFields.Add("TotalPCU"); // calculated PCU shown instead, and this value is shown in its tooltip
-
                 //PrintTrashFlags(sb, nameof(settings.TrashFlagsValue), (MyTrashRemovalFlags)settings.TrashFlagsValue, (MyTrashRemovalFlags)DefSettings.TrashFlagsValue, false,
                 //    "Trash Removal Flags", "Defines flags for trash removal system.", () => settings.TrashRemovalEnabled);
                 KnownFields.Add("TrashFlagsValue"); // individual relevant flags are shown instead
-
-                //PrintSetting(sb, nameof(settings.TradeFactionsCount), settings.TradeFactionsCount, defaults.TradeFactionsCount, false,
-                //    "NPC Factions Count", "The number of NPC factions generated on the start of the world.");
-                //PrintSetting(sb, nameof(settings.StationsDistanceInnerRadius), settings.StationsDistanceInnerRadius, defaults.StationsDistanceInnerRadius, false,
-                //    "Stations Inner Radius", "The inner radius [m] (center is in 0,0,0), where stations can spawn. Does not affect planet-bound stations (surface Outposts and Orbital stations).");
-                //PrintSetting(sb, nameof(settings.StationsDistanceOuterRadiusEnd), settings.StationsDistanceOuterRadiusEnd, defaults.StationsDistanceOuterRadiusEnd, false,
-                //    "Stations Outer Radius End", "The outer radius [m] (center is in 0,0,0), where stations can spawn. Does not affect planet-bound stations (surface Outposts and Orbital stations).");
-                //PrintSetting(sb, nameof(settings.StationsDistanceOuterRadiusStart), settings.StationsDistanceOuterRadiusStart, defaults.StationsDistanceOuterRadiusStart, false,
-                //    "Stations Outer Radius Start", "The outer radius [m] (center is in 0,0,0), where stations can spawn. Does not affect planet-bound stations (surface Outposts and Orbital stations).");
-                KnownFields.Add("TradeFactionsCount");
-                KnownFields.Add("StationsDistanceInnerRadius");
-                KnownFields.Add("StationsDistanceOuterRadiusEnd");
-                KnownFields.Add("StationsDistanceOuterRadiusStart");
 
                 //PrintSetting(sb, nameof(settings.MaxBackupSaves), settings.MaxBackupSaves, defaults.MaxBackupSaves, false,
                 //    "Max Backup Saves", "The maximum number of backup saves.");
@@ -952,13 +957,15 @@ namespace Digi.BuildInfo.Features.GUI
 
             if(sb != null)
             {
-                sb.Color(ValueColorDefault).Append("(StarSystem default)\n");
-                sb.Color(ValueColorChanged).Append("(Changed)\n");
-                sb.Color(ValueColorDisabled).Append("(Relies on something else)\n");
-                sb.Append("\n<reset>");
-                sb.Append("Open chat and start typing to search in this window\n");
+                sb.Color(ValueColorDefault).Append("(").Append(DefaultFrom).Append("'s default)\n");
+                sb.Color(ValueColorChanged).Append("(Different)\n");
+                sb.Color(ValueColorDisabled).Append("(Requires something else)\n");
+                sb.Color(NewSettingColor).Append("*<reset> new settings in SE v205\n");
+                //sb.Append("\n<reset>");
+                sb.Color(SearchHighlightColor).Append("Search<reset> by opening chat.\n");
             }
 
+            bool globalEncountersOn = settings.GlobalEncounterCap > 0;
 
             #region General
             Header(sb, "General");
@@ -972,13 +979,13 @@ namespace Digi.BuildInfo.Features.GUI
                 "Max Players", "The maximum number of players that can play at the same time in this server.",
                 GrayIfFalse(settings.OnlineMode != MyOnlineModeEnum.OFFLINE && settings.OnlineMode != MyOnlineModeEnum.PRIVATE));
             PrintFormattedNumber(sb, nameof(settings.AutoSaveInMinutes), settings.AutoSaveInMinutes, DefaultSettings.AutoSaveInMinutes, true,
-                "Autosave interval", " min", "Defines autosave interval in minutes.");
+                "Autosave interval", " min", "Defines autosave interval in minutes. 0 disables.", valueForZero: FalseValue);
             PrintSetting(sb, nameof(settings.ExperimentalMode), settings.ExperimentalMode, DefaultSettings.ExperimentalMode, false,
                 "Experimental (hover for reason)", GetExperimentalTooltip());
             PrintSetting(sb, nameof(settings.FamilySharing), settings.FamilySharing, DefaultSettings.FamilySharing, false,
-                "Allow family sharing", "Allow players that have the game from family sharing (they don't own it themselves) to join this server.");
+                "Family Sharing Accounts", "Allow players that have the game from family sharing (they don't own it themselves) to join this server.");
             PrintSetting(sb, nameof(settings.Enable3rdPersonView), settings.Enable3rdPersonView, DefaultSettings.Enable3rdPersonView, true,
-                "Allow 3rd Person Camera", "Enables 3rd person camera.");
+                "3rd Person Camera", "Enables 3rd person camera.");
             PrintSetting(sb, nameof(settings.EnableGoodBotHints), settings.EnableGoodBotHints, DefaultSettings.EnableGoodBotHints, false,
                 "Good.bot Hints", "Enables Good.bot hints in the world. If user has disabled hints, this will not override that.");
             //PrintDSSetting(sb, dsConfig?.ServerDescription, dsConfigDefault.ServerDescription,
@@ -993,10 +1000,12 @@ namespace Digi.BuildInfo.Features.GUI
                 "Blueprint Share", "Allows players to send local blueprints to a specific player in this server using the blueprint menu (F10).");
             PrintFormattedNumber(sb, nameof(settings.BlueprintShareTimeout), settings.BlueprintShareTimeout, DefaultSettings.BlueprintShareTimeout, false,
                 "Blueprint Share Timeout", " sec", "Time until player can send another blueprint.",
-                GrayIfFalse(settings.BlueprintShare));
+                GrayIfFalse(settings.BlueprintShare), valueForZero: FalseValue);
 
             //Header(sb, "Chat");
 
+            PrintSetting(sb, nameof(settings.MaxHudChatMessageCount), settings.MaxHudChatMessageCount, DefaultSettings.MaxHudChatMessageCount, false,
+                NewSettingTag + "Max messages in HUD chat", "Maximum number of messages displayed in HUD chat");
             PrintSetting(sb, nameof(settings.OffensiveWordsFiltering), settings.OffensiveWordsFiltering, DefaultSettings.OffensiveWordsFiltering, false,
                 "Offensive Words Filtering", "Filter offensive words from all input methods.");
             //PrintDSSetting(sb, dsConfig?.ChatAntiSpamEnabled, dsConfigDefault.ChatAntiSpamEnabled,
@@ -1018,11 +1027,15 @@ namespace Digi.BuildInfo.Features.GUI
             PrintSetting(sb, nameof(settings.SpawnWithTools), settings.SpawnWithTools, DefaultSettings.SpawnWithTools, true,
                 "Spawn with Tools", "Enables spawning with tools in the inventory.");
             PrintFormattedNumber(sb, nameof(settings.CharacterSpeedMultiplier), settings.CharacterSpeedMultiplier, DefaultSettings.CharacterSpeedMultiplier, false,
-                "On-foot speed Multiplier", "x", "Affects NPCs too.");
+                "On-foot Speed Multiplier", "x", "Modifier for walking,running,etc and affects NPCs too." +
+                                                 "\nJetpack flight not affected.");
             PrintFormattedNumber(sb, nameof(settings.EnvironmentDamageMultiplier), settings.EnvironmentDamageMultiplier, DefaultSettings.EnvironmentDamageMultiplier, false,
-                "Environment Damage Multiplier", "x", "This multiplier only applies for damage caused to a character by environment (affects NPCs too).");
+                "Environment Damage Multiplier", "x", "This multiplier only applies for damage caused to a character by Environment damage types." +
+                                                      "\nAffects NPCs too.");
             PrintFormattedNumber(sb, nameof(settings.BackpackDespawnTimer), settings.BackpackDespawnTimer, DefaultSettings.BackpackDespawnTimer, false,
-                "Backpack Despawn Time", " min", "Sets the timer (minutes) for the backpack to be removed from the world. Default is 5 minutes.");
+                "Backpack Despawn Time", " min", "Sets the timer (minutes) for the backpack to be removed from the world."); // TODO: zero might despawn instantly, negative might never despawn? ... needs testing
+            PrintFormattedNumber(sb, string.Empty, MyPerGameSettings.CharacterGravityMultiplier, Hardcoded.DefaultCharacterGravityMultiplier, false,
+                "Character Gravity Multiplier", "x", "Gravity acceleration is multiplied by this value only for characters." + TooltipSettingModdable);
             #endregion Characters
 
 
@@ -1038,11 +1051,14 @@ namespace Digi.BuildInfo.Features.GUI
             PrintSetting(sb, nameof(settings.EnableSpaceSuitRespawn), settings.EnableSpaceSuitRespawn, DefaultSettings.EnableSpaceSuitRespawn, false,
                 "Space Suit Spawn", "Enables player to spawn in space suit");
             PrintSetting(sb, nameof(settings.EnableRespawnShips), settings.EnableRespawnShips, DefaultSettings.EnableRespawnShips, true,
-                "Respawn ships", "Enables respawn ships.");
+                "Respawn Ships", "Enables respawn ships.");
             PrintFormattedNumber(sb, nameof(settings.SpawnShipTimeMultiplier), settings.SpawnShipTimeMultiplier, DefaultSettings.SpawnShipTimeMultiplier, true,
-                "Respawn Ship Time Multiplier", "x", "The multiplier for respawn ship timer.");
+                "Respawn Ship Cooldown Multiplier", "x", "A multiplier to how frequent you can summon a new respawn ship again." +
+                                                         "\nEach respawn ship has its own timer, however for planet spawns the shortest cooldown is used.",
+                GrayIfFalse(settings.EnableRespawnShips), valueForZero: FalseValue);
             PrintSetting(sb, nameof(settings.RespawnShipDelete), settings.RespawnShipDelete, DefaultSettings.RespawnShipDelete, true,
-                "Remove Respawn Ships on Logoff", "When enabled, respawn ship is removed after player logout.");
+                "Remove Respawn Ships on Logoff", "When enabled, respawn ship is removed after player logout.",
+                GrayIfFalse(settings.EnableRespawnShips));
             #endregion Respawn
 
 
@@ -1069,7 +1085,7 @@ namespace Digi.BuildInfo.Features.GUI
             PrintSetting(sb, nameof(settings.EnableResearch), settings.EnableResearch, DefaultSettings.EnableResearch, false,
                 "Progression", "If enabled, blocks must be unlocked by building other blocks.\nSee progression tab in toolbar config menu.");
             PrintSetting(sb, nameof(settings.EnableTurretsFriendlyFire), settings.EnableTurretsFriendlyFire, DefaultSettings.EnableTurretsFriendlyFire, false,
-                "Friendly missile damage", "Enable explosion damage from missiles being applied to its own grid.");
+                "Rocket self-damage", "Whether rockets can damage the ship they're fired from (attached grids included).");
             PrintSetting(sb, nameof(settings.DestructibleBlocks), settings.DestructibleBlocks, DefaultSettings.DestructibleBlocks, true,
                 "Destructible blocks", "Allows blocks to be destroyed.");
             PrintSetting(sb, nameof(settings.AdjustableMaxVehicleSpeed), settings.AdjustableMaxVehicleSpeed, DefaultSettings.AdjustableMaxVehicleSpeed, false,
@@ -1089,12 +1105,14 @@ namespace Digi.BuildInfo.Features.GUI
             PrintSetting(sb, nameof(settings.EnableIngameScripts), settings.EnableIngameScripts, DefaultSettings.EnableIngameScripts, true,
                 "Programmable Block Scripts", "Allows players to use scripts in programmable block (decoration otherwise).");
             PrintSetting(sb, nameof(settings.EnableScripterRole), settings.EnableScripterRole, DefaultSettings.EnableScripterRole, true,
-                "Scripter Role", "Adds a Scripter role, only Scripters and higher ranks will be able to paste and modify scripts in programmable block.",
+                "Scripter Role", "Adds a Scripter role, only Scripters and higher ranks will be able to paste and modify scripts in programmable blocks.",
                 GrayIfFalse(settings.EnableIngameScripts));
             PrintFormattedNumber(sb, nameof(settings.BroadcastControllerMaxOfflineTransmitDistance), settings.BroadcastControllerMaxOfflineTransmitDistance, DefaultSettings.BroadcastControllerMaxOfflineTransmitDistance, false,
                 "Broadcast Controller Offline Range", " m", "The maximum range for Broadcast Controller blocks that have offline owners.");
             PrintSetting(sb, nameof(settings.EnableSupergridding), settings.EnableSupergridding, DefaultSettings.EnableSupergridding, false,
                 "Supergridding", "Allows supergridding exploit to be used (placing block on wrong size grid, e.g. jumpdrive on smallgrid).");
+            PrintSetting(sb, nameof(settings.EnableOrca), settings.EnableOrca, DefaultSettings.EnableOrca, false,
+                "Advanced ORCA algorithm", "Enable advanced Optimal Reciprocal Collision Avoidance algorithm.");
             #endregion Ships & blocks
 
 
@@ -1118,10 +1136,8 @@ namespace Digi.BuildInfo.Features.GUI
             PrintSetting(sb, nameof(settings.EnableTeamScoreCounters), settings.EnableTeamScoreCounters, DefaultSettings.EnableTeamScoreCounters, false,
                 "Team Score Counters", "Show team scores at the top of the screen.",
                 GrayIfFalse(settings.EnableMatchComponent));
-
-
             PrintSetting(sb, nameof(settings.EnableFriendlyFire), settings.EnableFriendlyFire, DefaultSettings.EnableFriendlyFire, false,
-                "Friendly Fire", "If disabled, character damage from friendlies is reduced.");
+                "Friendly Fire", "If disabled, characters do not get damaged by friends with hand weapons or hand tools.");
             PrintSetting(sb, nameof(settings.EnableFactionVoiceChat), settings.EnableFactionVoiceChat, DefaultSettings.EnableFactionVoiceChat, false,
                 "Faction Voice Chat", "Faction Voice Chat removes the need of antennas and broadcasting of the character for faction.");
             PrintSetting(sb, nameof(settings.EnableTeamBalancing), settings.EnableTeamBalancing, DefaultSettings.EnableTeamBalancing, false,
@@ -1135,6 +1151,18 @@ namespace Digi.BuildInfo.Features.GUI
             PrintFormattedNumber(sb, nameof(settings.EnemyTargetIndicatorDistance), settings.EnemyTargetIndicatorDistance, DefaultSettings.EnemyTargetIndicatorDistance, false,
                 "Aimed Enemy Indicator Distance", " m", "Max distance to show enemy indicator when aiming at a character.");
             #endregion PvP
+
+
+            #region Bots
+            Header(sb, "Bots");
+
+            PrintSetting(sb, nameof(settings.TotalBotLimit), settings.TotalBotLimit, DefaultSettings.TotalBotLimit, false,
+                "Animal NPC Limit", "Maximum number of organic bots in the world");
+            PrintSetting(sb, nameof(settings.EnableSpiders), settings.EnableSpiders, DefaultSettings.EnableSpiders, true,
+                "Spiders", "Enables spawning of spiders in the world.");
+            PrintSetting(sb, nameof(settings.EnableWolfs), settings.EnableWolfs, DefaultSettings.EnableWolfs, true,
+                "Wolves", "Enables spawning of wolves in the world.");
+            #endregion
 
 
             sb = NextColumn(); // ------------------------------------------------------------------------------------------------------------------------------
@@ -1161,86 +1189,156 @@ namespace Digi.BuildInfo.Features.GUI
                 "Assembler Speed", "x", "Speed multiplier for reducing all assembler crafting times, including survival kit.");
             PrintFormattedNumber(sb, nameof(settings.RefinerySpeedMultiplier), settings.RefinerySpeedMultiplier, DefaultSettings.RefinerySpeedMultiplier, true,
                 "Refinery Speed", "x", "Speed multiplier for all refineries.");
-            PrintFormattedNumber(sb, string.Empty, MyPerGameSettings.CharacterGravityMultiplier, Hardcoded.DefaultCharacterGravityMultiplier, false,
-                "Character Gravity Multiplier", "x", "Gravity acceleration is multiplied by this value only for characters." + TooltipSettingModdable);
             #endregion Multipliers
 
 
             #region Environment
             Header(sb, "Environment");
 
-            PrintSetting(sb, nameof(settings.EnableSunRotation), settings.EnableSunRotation, DefaultSettings.EnableSunRotation, true,
-                "Sun Rotation", "Sun rotates in skybox based on sun rotation interval setting.");
-            PrintFormattedNumber(sb, nameof(settings.SunRotationIntervalMinutes), settings.SunRotationIntervalMinutes, DefaultSettings.SunRotationIntervalMinutes, true,
-                "Sun Rotation Interval", " min", "Defines interval of one rotation of the sun.",
-                GrayIfFalse(settings.EnableSunRotation));
+            {
+                KnownFields.Add(nameof(settings.EnableSunRotation));
+                KnownFields.Add(nameof(settings.SunRotationIntervalMinutes));
+
+                string val = settings.EnableSunRotation && settings.SunRotationIntervalMinutes != 0 ? settings.SunRotationIntervalMinutes.ToString(NumberFormat) : FalseValue;
+                string defVal = DefaultSettings.EnableSunRotation && DefaultSettings.SunRotationIntervalMinutes != 0 ? DefaultSettings.SunRotationIntervalMinutes.ToString(NumberFormat) : FalseValue;
+                PrintSetting(sb, $"{nameof(settings.EnableSunRotation)} and {nameof(settings.SunRotationIntervalMinutes)}", val, defVal, true,
+                    "Sun Rotation", "Whether the Sun rotates in the skybox around the world, otherwise it's static.");
+                //PrintSetting(sb, nameof(settings.EnableSunRotation), settings.EnableSunRotation, DefaultSettings.EnableSunRotation, true,
+                //    "Sun Rotation", "Sun rotates in skybox based on sun rotation interval setting.");
+                //PrintFormattedNumber(sb, nameof(settings.SunRotationIntervalMinutes), settings.SunRotationIntervalMinutes, DefaultSettings.SunRotationIntervalMinutes, true,
+                //    "Sun Rotation Interval", " min", "Defines interval of one rotation of the sun.",
+                //    GrayIfFalse(settings.EnableSunRotation));
+            }
+
             PrintSetting(sb, nameof(settings.RealisticSound), settings.RealisticSound, DefaultSettings.RealisticSound, true,
-                "Realistic Sound", "Enables sounds to be muffled or not heard at all depending on the medium sound travels through (air, contact, void)");
+                "Realistic Sound", "Enables sounds to be muffled or not heard at all depending on the medium sound travels through (air, contact, void)" +
+                                   "\nOff is arcade sound mode, sounds can be heard clear regardless.");
             PrintSetting(sb, nameof(settings.EnableOxygen), settings.EnableOxygen, DefaultSettings.EnableOxygen, true,
                 "Oxygen", "Enables oxygen in the world.");
             PrintSetting(sb, nameof(settings.EnableOxygenPressurization), settings.EnableOxygenPressurization, DefaultSettings.EnableOxygenPressurization, true,
                 "Airtightness", "Enables grids interiors to be processed for airtightness (requires oxygen to be enabled)",
                 GrayIfFalse(settings.EnableOxygen));
             PrintFormattedNumber(sb, nameof(settings.WorldSizeKm), settings.WorldSizeKm, DefaultSettings.WorldSizeKm, true,
-                "Space boundary", " km", "Defines how far you can go outwards from center of the map." + TooltipOriginalName("ServerDetails_WorldSizeKm"));
+                "Space Boundary", " km", "Defines how far you can go outwards from center of the map." + TooltipOriginalName("ServerDetails_WorldSizeKm"), valueForZero: FalseValue);
             PrintSetting(sb, nameof(settings.WeatherSystem), settings.WeatherSystem, DefaultSettings.WeatherSystem, false,
-                "Automatic weather system", "Enable automatic weather generation on planets.");
+                "Automatic Weather System", "Enable automatic weather generation on planets.");
             PrintSetting(sb, nameof(settings.EnvironmentHostility), settings.EnvironmentHostility, DefaultSettings.EnvironmentHostility, true,
-                "Meteorite showers", $"Enables meteorites, available difficulties: {string.Join(", ", Enum.GetNames(typeof(MyEnvironmentHostilityEnum)))}" + TooltipOriginalName("WorldSettings_EnvironmentHostility"));
+                "Meteorite Showers", $"Enables meteorites, available difficulties: {string.Join(", ", Enum.GetNames(typeof(MyEnvironmentHostilityEnum)))}" + TooltipOriginalName("WorldSettings_EnvironmentHostility"));
             PrintSetting(sb, nameof(settings.WeatherLightingDamage), settings.WeatherLightingDamage, DefaultSettings.WeatherLightingDamage, false,
                 "Enable lightning damage", "Lightning strikes from weather can damage grids.");
             PrintSetting(sb, nameof(settings.EnableVoxelDestruction), settings.EnableVoxelDestruction, DefaultSettings.EnableVoxelDestruction, true,
                 "Voxel Destruction", "Enables voxel destructions.");
-            PrintSetting(sb, nameof(settings.VoxelGeneratorVersion), settings.VoxelGeneratorVersion.ToString(), null, false,
-                "Voxel Generator version", "Voxel generator determines what shapes voxels have for a given seed number." +
-                                           "\nIt exists to maintain how voxels look in existing worlds when new voxel generators are added by developers." +
-                                           "\nShould not be changed unless you understand how voxels are generated." +
-                                          $"\nLatest version: {new MyObjectBuilder_SessionSettings().VoxelGeneratorVersion}"); // HACK: this is more reliably going to be set to latest than StarSystem's version.
-            PrintSetting(sb, nameof(settings.ProceduralDensity), settings.ProceduralDensity, DefaultSettings.ProceduralDensity, true,
-                "Procedural Density", "Defines density of the procedurally generated content.");
             PrintSetting(sb, nameof(settings.ProceduralSeed), settings.ProceduralSeed, DefaultSettings.ProceduralSeed, false,
-                "Procedural Seed", "Defines unique starting seed for the procedurally generated content.");
+                "Procedural Content Seed", "Defines unique starting seed for the procedurally generated content (voxels and encounters).");
+
+            const string GeneratorVersioning = "\nVersioning allows devs to change things that would break existing worlds without breaking existing worlds." +
+                                               "\nHigher numbers don't necessarily mean newer or better, it could be a less intensive variant for lower-end hardware for example." +
+                                               "\nExisting worlds should not modify this number. It is shown here for awareness.";
+
+            bool proceduralAsteroids = settings.ProceduralDensity > 0;
+            PrintSetting(sb, nameof(settings.VoxelGeneratorVersion), settings.VoxelGeneratorVersion, DefaultSettings.VoxelGeneratorVersion, false,
+                "Voxel Generator Version", "Voxel generator determines what shapes voxels have for a given seed number." +
+                                           GeneratorVersioning,
+                GrayIfFalse(proceduralAsteroids));
+            PrintSetting(sb, nameof(settings.ProceduralDensity), settings.ProceduralDensity, DefaultSettings.ProceduralDensity, true,
+                "Procedural Asteroids Density", "Defines density of the procedurally generated asteroids.");
             PrintSetting(sb, nameof(settings.DepositsCountCoefficient), settings.DepositsCountCoefficient, DefaultSettings.DepositsCountCoefficient, false,
-                "Deposits Count Coefficient", "Resource deposits count coefficient for generated world content (voxel generator version > 2).",
-                GrayIfFalse(settings.VoxelGeneratorVersion > 2));
+                "Deposits Count Coefficient", "Resource deposits count coefficient for generated world content (voxel generator v3 or higher).",
+                GrayIfFalse(proceduralAsteroids && settings.VoxelGeneratorVersion >= 3));
             PrintSetting(sb, nameof(settings.DepositSizeDenominator), settings.DepositSizeDenominator, DefaultSettings.DepositSizeDenominator, false,
-                "Deposit Size Denominator", "Resource deposit size denominator for generated world content (voxel generator version > 2).",
-                GrayIfFalse(settings.VoxelGeneratorVersion > 2));
+                "Deposit Size Denominator", "Resource deposit size denominator for generated world content (voxel generator v3 or higher).",
+                GrayIfFalse(proceduralAsteroids && settings.VoxelGeneratorVersion >= 3));
             #endregion Environment
 
 
-            #region NPCs
-            Header(sb, "NPCs");
+            #region Economy
+            Header(sb, "Economy");
 
-            PrintSetting(sb, nameof(settings.CargoShipsEnabled), settings.CargoShipsEnabled, DefaultSettings.CargoShipsEnabled, true,
-                "Cargo Ships", "Enables spawning of cargo ships.");
-            PrintSetting(sb, nameof(settings.EnableEncounters), settings.EnableEncounters, DefaultSettings.EnableEncounters, true,
-                "Encounters", "Enables random encounters in the world.");
-            PrintSetting(sb, nameof(settings.EnableSpiders), settings.EnableSpiders, DefaultSettings.EnableSpiders, true,
-                "Spiders", "Enables spawning of spiders in the world.");
-            PrintSetting(sb, nameof(settings.EnableWolfs), settings.EnableWolfs, DefaultSettings.EnableWolfs, true,
-                "Wolves", "Enables spawning of wolves in the world.");
-            PrintSetting(sb, nameof(settings.TotalBotLimit), settings.TotalBotLimit, DefaultSettings.TotalBotLimit, false,
-                "Max Bots", "Maximum number of organic bots in the world");
-            PrintSetting(sb, nameof(settings.EnableDrones), settings.EnableDrones, DefaultSettings.EnableDrones, true,
-                "Drones", "Enables spawning of drones in the world.");
-            PrintSetting(sb, nameof(settings.MaxDrones), settings.MaxDrones, DefaultSettings.MaxDrones, false,
-                "Max Drones", "");
+            bool economyOn = settings.EnableEconomy;
+
             PrintSetting(sb, nameof(settings.EnableEconomy), settings.EnableEconomy, DefaultSettings.EnableEconomy, false,
                 "Economy", "Enables economy features:" +
-                           "\n- Generated hidden NPC factions." +
-                           "\n- Generated space and planet-side stations (only on planets that were in world when this feature was turned on)." +
+                           "\n- Generated NPC factions that need to be discovered." +
+                           "\n- Generated space and planet-bound trade stations (with safe zones)." +
+                           "\n -- Only planets that existed when economy was first turned on" +
                            "\n- Enables currency system for players, ATMs, shop blocks, etc." +
                            "\nNote: this adds 4MB+ of save file bulk from the generated data, which does not get removed when economy is turned off.");
-            PrintFormattedNumber(sb, nameof(settings.EconomyTickInSeconds), settings.EconomyTickInSeconds, DefaultSettings.EconomyTickInSeconds, false,
-                "Economy update time", " sec", "Seconds between two economy updates (station contracts, etc)",
-                GrayIfFalse(settings.EnableEconomy));
+            PrintFormattedNumber(sb, nameof(settings.EconomyTickInSeconds), settings.EconomyTickInSeconds / 60d, DefaultSettings.EconomyTickInSeconds / 60d, false,
+                "Economy Update Frequency", " min", "Time between two economy updates (station contracts, etc)" +
+                                                    (ShowInternal ? "\nNote: internal setting is in seconds, this is shown in minutes for readability." : ""),
+                GrayIfFalse(economyOn));
             PrintSetting(sb, nameof(settings.EnableBountyContracts), settings.EnableBountyContracts, DefaultSettings.EnableBountyContracts, false,
-                "Bounty Contracts", "If trading outposts generate kill contracts for players that have low standing with that faction.",
-                GrayIfFalse(settings.EnableEconomy));
+                "Kill Contracts on Players", "If trading outposts generate kill contracts against players that are friends with the pirate faction.",
+                GrayIfFalse(economyOn));
+            PrintSetting(sb, nameof(settings.TradeFactionsCount), settings.TradeFactionsCount, DefaultSettings.TradeFactionsCount, false,
+                "Trade Factions", "The number of NPC factions for trade stations generated on the start of the world." +
+                                  "\nYou need to find one of their grids to see the faction in the factions menu.",
+                GrayIfFalse(economyOn));
+            PrintFormattedNumber(sb, nameof(settings.StationsDistanceInnerRadius), settings.StationsDistanceInnerRadius / 1000d, DefaultSettings.StationsDistanceInnerRadius / 1000d, false,
+                "Trade Space Stations", "km", "The inner radius around 0,0,0 where trading space stations (with safezones) can spawn." +
+                                               "\nDoes not affect planet-bound stations (surface Outposts and Orbital stations)." +
+                                               (ShowInternal ? "\nNote: internal setting uses meters, this is shown in km for readability." : ""),
+                GrayIfFalse(economyOn));
+            {
+                PrintRangeSetting(sb, nameof(settings.StationsDistanceOuterRadiusStart), nameof(settings.StationsDistanceOuterRadiusEnd),
+                                      settings.StationsDistanceOuterRadiusStart / 1000, settings.StationsDistanceOuterRadiusEnd / 1000d,
+                                      DefaultSettings.StationsDistanceOuterRadiusStart / 1000, DefaultSettings.StationsDistanceOuterRadiusEnd / 1000d, false,
+                                      "Trade Deep-Space Stations", "km", "The belt around 0,0,0 where trading deep-space stations (with safezones) can spawn." +
+                                                                        "\nDoes not affect planet-bound stations (surface Outposts and Orbital stations)." +
+                                                                         (ShowInternal ? "\nNote: internal setting uses meters, this is shown in km for readability." : ""),
+                                      GrayIfFalse(economyOn));
+                //PrintFormattedNumber(sb, nameof(settings.StationsDistanceOuterRadiusStart), settings.StationsDistanceOuterRadiusStart, DefaultSettings.StationsDistanceOuterRadiusStart, false,
+                //    "Stations Outer Radius Start", "m", "The outer radius [m] (center is in 0,0,0), where stations can spawn. Does not affect planet-bound stations (surface Outposts and Orbital stations).");
+                //PrintFormattedNumber(sb, nameof(settings.StationsDistanceOuterRadiusEnd), settings.StationsDistanceOuterRadiusEnd, DefaultSettings.StationsDistanceOuterRadiusEnd, false,
+                //    "Stations Outer Radius End", "m", "The outer radius [m] (center is in 0,0,0), where stations can spawn. Does not affect planet-bound stations (surface Outposts and Orbital stations).");
+            }
+
+            #endregion Economy
+
+
+            #region Encounters
+            Header(sb, "Encounters");
+
+            bool encountersOn = settings.EnableEncounters && settings.EncounterDensity > 0f;
+
+            PrintSetting(sb, nameof(settings.CargoShipsEnabled), settings.CargoShipsEnabled, DefaultSettings.CargoShipsEnabled, true,
+                "Cargo Ships", "Cargo ships only spawn in space and .");
+
+            PrintSetting(sb, nameof(settings.EnableEncounters), settings.EnableEncounters, DefaultSettings.EnableEncounters, true,
+                "Encounters", "Enables random encounters in the world.");
+
+            PrintSetting(sb, nameof(settings.EncounterDensity), settings.EncounterDensity, DefaultSettings.EncounterDensity, false,
+                NewSettingTag + "Encounter Density", "", // TODO description?
+                GrayIfFalse(encountersOn));
+
+            PrintSetting(sb, nameof(settings.EncounterGeneratorVersion), settings.EncounterGeneratorVersion, DefaultSettings.EncounterGeneratorVersion, false,
+                NewSettingTag + "Encounter Generator version", "Encounter generator determines how the encounters are generated for a given seed number." +
+                                           GeneratorVersioning,
+                GrayIfFalse(encountersOn));
+
+            {
+                KnownFields.Add(nameof(settings.EnableDrones));
+                KnownFields.Add(nameof(settings.MaxDrones));
+
+                int maxDrones = settings.EnableDrones ? settings.MaxDrones : 0;
+                int defMaxDrones = DefaultSettings.EnableDrones ? DefaultSettings.MaxDrones : 0;
+
+                PrintSetting(sb, $"{nameof(settings.MaxDrones)} and {nameof(settings.EnableDrones)}", maxDrones, defMaxDrones, false,
+                    "Drones", "Drones can be spawned by enemy encounters to defend against attackers." +
+                                        "\nThis setting limits how many of those can be active at any one time in the world.");
+                //PrintSetting(sb, nameof(settings.EnableDrones), settings.EnableDrones, DefaultSettings.EnableDrones, true,
+                //    "Pirate Drones", "Enables spawning of drones in the world from pirate antennas.",
+                //    GrayIfFalse(settings.MaxDrones > 0));
+                //PrintSetting(sb, nameof(settings.MaxDrones), settings.MaxDrones, DefaultSettings.MaxDrones, false,
+                //    "Max Pirate Drones", "Maximum number of pirate drones at one time.",
+                //    GrayIfFalse(settings.EnableDrones && settings.MaxDrones > 0));
+            }
 
             PrintSetting(sb, nameof(settings.EnableContainerDrops), settings.EnableContainerDrops, DefaultSettings.EnableContainerDrops, false,
-                "Drop Containers", "Enables drop containers (unknown signals).");
+                "Drop Containers", "Allows drop containers (unknown signal) to spawn in space and on planets." +
+                                   "\nThese are very small pods that contain some resources and a button to claim a random character/tool skin item." +
+                                   "\nStrong signals are visible to everyone, the green ones only you can see the marker but other players can find them the old fashioned way too.");
+
             PrintRangeSetting(sb, nameof(settings.MinDropContainerRespawnTime), nameof(settings.MaxDropContainerRespawnTime),
                                   settings.MinDropContainerRespawnTime, settings.MaxDropContainerRespawnTime,
                                   DefaultSettings.MinDropContainerRespawnTime, DefaultSettings.MaxDropContainerRespawnTime, false,
@@ -1252,8 +1350,107 @@ namespace Digi.BuildInfo.Features.GUI
             //    "Drop Container max spawn", " min", "Defines maximum respawn time for drop containers.");
 
             PrintFormattedNumber(sb, nameof(settings.NPCGridClaimTimeLimit), settings.NPCGridClaimTimeLimit, DefaultSettings.NPCGridClaimTimeLimit, false,
-                "Claim time for NPC grids", " min", "Time period in which player can claim NPC grid. NPC block do despawn after limit ends. Minutes");
-            #endregion NPCs
+                "Claim time for NPC grids", " min", "NPC grids despawn if not claimed within this amount of time since their spawn.");
+
+            PrintFormattedNumber(sb, nameof(settings.GlobalEncounterCap), settings.GlobalEncounterCap, DefaultSettings.GlobalEncounterCap, false,
+                NewSettingTag + "Global Encounter Cap", "", "Maximum of active Global Encounters (unidentified signal) at the same time. Turned off when 0.",
+                GrayIfFalse(globalEncountersOn), valueForZero: FalseValue);
+
+            PrintFormattedNumber(sb, nameof(settings.GlobalEncounterTimer), settings.GlobalEncounterTimer, DefaultSettings.GlobalEncounterTimer, false,
+                NewSettingTag + "GE Spawn Timer", " min", "Global Encounters will try to spawn every this many minutes. The cap and global-encounter-specific PCU apply.",
+                GrayIfFalse(globalEncountersOn));
+
+
+            {
+                // HACK: from MyGlobalEncountersGenerator.RegisterEncounter()
+                const int LimitLow = 90;
+                const int LimitHigh = 180;
+                int max = MyUtils.GetClampInt(settings.GlobalEncounterMaxRemovalTimer, LimitLow + 1, LimitHigh);
+                int min = MyUtils.GetClampInt(settings.GlobalEncounterMinRemovalTimer, LimitLow, max);
+                int defaultMax = MyUtils.GetClampInt(DefaultSettings.GlobalEncounterMaxRemovalTimer, LimitLow + 1, LimitHigh);
+                int defaultMin = MyUtils.GetClampInt(DefaultSettings.GlobalEncounterMinRemovalTimer, LimitLow, defaultMax);
+
+                KnownFields.Add(nameof(settings.GlobalEncounterEnableRemovalTimer));
+                KnownFields.Add(nameof(settings.GlobalEncounterMinRemovalTimer));
+                KnownFields.Add(nameof(settings.GlobalEncounterMaxRemovalTimer));
+
+                const string label = NewSettingTag + "GE Removal Timer";
+                string description = $"This combines 3 settings: {nameof(settings.GlobalEncounterMinRemovalTimer)}, {nameof(settings.GlobalEncounterMinRemovalTimer)} and {nameof(settings.GlobalEncounterMaxRemovalTimer)}" +
+                                     "\nThey all control the same thing so it can be narrowed down to either off or a range between 2 values." +
+                                     "\nThe time range means it will pick a random number between those values, and that will decide how long until the encounter vanishes." +
+                                     $"\nThe range cannot be smaller than {LimitLow} or larger than {LimitHigh} (hardcoded).";
+
+                const string suffix = " min";
+
+                string val = !settings.GlobalEncounterEnableRemovalTimer ? FalseValue : $"{min.ToString(NumberFormat)} ~ {max.ToString(NumberFormat)} {suffix}";
+                string defVal = !settings.GlobalEncounterEnableRemovalTimer ? FalseValue : $"{defaultMin.ToString(NumberFormat)} ~ {defaultMax.ToString(NumberFormat)} {suffix}";
+
+                PrintSetting(sb, null, val, defVal, false, label, description, GrayIfFalse(globalEncountersOn));
+
+                //PrintSetting(sb, nameof(settings.GlobalEncounterEnableRemovalTimer), settings.GlobalEncounterEnableRemovalTimer, DefaultSettings.GlobalEncounterEnableRemovalTimer, false,
+                //    NewSettingTag + "Global Encounter Removal Timer", "Auto-removal of Global Encounters after their timer runs out.",
+                //    GrayIfFalse(globalEncountersOn));
+                //PrintFormattedNumber(sb, nameof(settings.GlobalEncounterMinRemovalTimer), settings.GlobalEncounterMinRemovalTimer, DefaultSettings.GlobalEncounterMinRemovalTimer, false,
+                //    NewSettingTag + "Removal Timer Minimum", " min", "Minimum removal timer for Global Encounters.",
+                //    GrayIfFalse(globalEncountersOn));
+                //PrintFormattedNumber(sb, nameof(settings.GlobalEncounterMaxRemovalTimer), settings.GlobalEncounterMaxRemovalTimer, DefaultSettings.GlobalEncounterMaxRemovalTimer, false,
+                //    NewSettingTag + "Removal Timer Maximum", " min", "Maximum removal timer for Global Encounters.",
+                //    GrayIfFalse(globalEncountersOn));
+            }
+
+            PrintFormattedNumber(sb, nameof(settings.GlobalEncounterRemovalTimeClock), settings.GlobalEncounterRemovalTimeClock, DefaultSettings.GlobalEncounterRemovalTimeClock, false,
+                NewSettingTag + "GE Display Timer", " min", "Show global encounter's remaining time on its GPS marker if it's under this many minutes.",
+                GrayIfFalse(globalEncountersOn && settings.GlobalEncounterEnableRemovalTimer));
+
+
+            bool planetaryEncountersOn = settings.EnablePlanetaryEncounters;
+
+            PrintSetting(sb, nameof(settings.EnablePlanetaryEncounters), settings.EnablePlanetaryEncounters, DefaultSettings.EnablePlanetaryEncounters, false,
+                NewSettingTag + "Planetary Encounters", "Whether planetary installations/stations (no safezone) are allowed to spawn.");
+
+            {
+                // HACK: from MyPlanetaryEncountersGenerator.Init()
+                float min = settings.PlanetaryEncounterTimerMin;
+                float max = Math.Max(min, settings.PlanetaryEncounterTimerMax);
+                float defMin = DefaultSettings.PlanetaryEncounterTimerMin;
+                float defMax = Math.Max(defMin, DefaultSettings.PlanetaryEncounterTimerMax);
+
+                PrintRangeSetting(sb, nameof(settings.PlanetaryEncounterTimerMin), nameof(settings.PlanetaryEncounterTimerMax),
+                                      min, max,
+                                      defMin, defMax, false,
+                                      NewSettingTag + "Spawn Timer Range", " min", "Random number within this range is chosen for the next planetary encounter spawn.",
+                                      GrayIfFalse(planetaryEncountersOn));
+
+                //PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterTimerMin), settings.PlanetaryEncounterTimerMin, DefaultSettings.PlanetaryEncounterTimerMin, false,
+                //    NewSettingTag + "Installations Timer Min", " min", "Minimum [minutes] for Planetary Encounter spawn timer.",
+                //    GrayIfFalse(planetaryEncountersOn));
+                //PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterTimerMax), settings.PlanetaryEncounterTimerMax, DefaultSettings.PlanetaryEncounterTimerMax, false,
+                //    NewSettingTag + "Installations Timer Max", " min", "Maximum [minutes] for Planetary Encounter spawn timer.",
+                //    GrayIfFalse(planetaryEncountersOn));
+            }
+
+            PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterDesiredSpawnRange), settings.PlanetaryEncounterDesiredSpawnRange, DefaultSettings.PlanetaryEncounterDesiredSpawnRange, false,
+                NewSettingTag + "PE Spawn Distance To Players", "m", "Player-based distance for Planetary Encounter spawns.",
+                GrayIfFalse(planetaryEncountersOn));
+
+            PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterAreaLockdownRange), settings.PlanetaryEncounterAreaLockdownRange, DefaultSettings.PlanetaryEncounterAreaLockdownRange, false,
+                NewSettingTag + "PE Denial Area", "m", "Spawned planetary encounters claim this radius around them where no other planetary encounters can spawn, until the encounter despawns.",
+                GrayIfFalse(planetaryEncountersOn));
+
+            PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterExistingStructuresRange), settings.PlanetaryEncounterExistingStructuresRange, DefaultSettings.PlanetaryEncounterExistingStructuresRange, false,
+                NewSettingTag + "Other Grids Denial Area", "m", "Static grids that are not planetary encounters will claim this radius around them where no planetary encounters can spawn.",
+                GrayIfFalse(planetaryEncountersOn));
+
+            PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterDespawnTimeout), settings.PlanetaryEncounterDespawnTimeout, DefaultSettings.PlanetaryEncounterDespawnTimeout, false,
+                NewSettingTag + "PE Despawn Time", " min", "How many minutes a planetary encounter will stay until it despawns.",
+                GrayIfFalse(planetaryEncountersOn));
+
+            PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterPresenceRange), settings.PlanetaryEncounterPresenceRange, DefaultSettings.PlanetaryEncounterPresenceRange, false,
+                NewSettingTag + "PE Despawn Presence", "m", "Player presence within this range prevents planetary encounter auto-removal.",
+                GrayIfFalse(planetaryEncountersOn));
+
+            PrintPlanetsHavingEncounters(sb, NewSettingTag + "PE on Planets", planetaryEncountersOn);
+            #endregion Encounters
 
 
             #region Combat
@@ -1271,14 +1468,15 @@ namespace Digi.BuildInfo.Features.GUI
                 "Enable Scrap Drops", "Allow scrap to be dropped from destroyed blocks");
             PrintSetting(sb, nameof(settings.TemporaryContainers), settings.TemporaryContainers, DefaultSettings.TemporaryContainers, false,
                 "Enable Temporary Containers", "Enable Temporary Containers to spawn after destroying block with inventory.");
-            #endregion NPCs
+            #endregion Combat
+
 
 
             #region Misc
             Header(sb, "Misc.");
 
             PrintSetting(sb, nameof(settings.EnableSpectator), settings.EnableSpectator, DefaultSettings.EnableSpectator, true,
-                "Everyone spectator camera", "Allows <color=yellow>all players<reset> to use spectator camera (F6-F9).\nWith this off, spectator is still allowed in creative mode or admin creative tools.",
+                "Everyone Spectator Camera", "Allows all players to use spectator camera (F6-F9).\nWith this off, spectator is still allowed in creative mode or admin creative tools.",
                 GrayOrWarn(true, MyAPIGateway.Session.SurvivalMode && settings.EnableSpectator));
             PrintSetting(sb, nameof(settings.EnableVoxelHand), settings.EnableVoxelHand, DefaultSettings.EnableVoxelHand, false,
                 "Voxel Hands", "Only usable in creative mode or admin creative tools.\nAllows use of voxel hand tools to manipulate voxels (in toolbar config menu).");
@@ -1298,7 +1496,7 @@ namespace Digi.BuildInfo.Features.GUI
             Header(sb, "Limits");
 
             PrintSetting(sb, nameof(settings.BlockLimitsEnabled), GetLimitsModeName(settings.BlockLimitsEnabled), GetLimitsModeName(DefaultSettings.BlockLimitsEnabled), true,
-                "Limits mode", "Defines the mode that block&PCU limits use." +
+                "Limits Mode", "Defines the mode that block&PCU limits use." +
                                "\nA few other settings rely on this aswell like Max Grid Blocks and Max Blocks per Player." +
                                "\nPerformance Cost Units (PCU) is a way to limit block counts based on their potential performance impact.");
 
@@ -1312,38 +1510,59 @@ namespace Digi.BuildInfo.Features.GUI
 
             // HACK: similar to MyGuiScreenServerDetailsBase.AddAdditionalSettings()
             int pcu = settings.BlockLimitsEnabled == MyBlockLimitsEnabledEnum.NONE ? 0 : MyObjectBuilder_SessionSettings.GetInitialPCU(MyAPIGateway.Session.SessionSettings);
+            bool blocksAreLimited = settings.BlockLimitsEnabled != MyBlockLimitsEnabledEnum.NONE;
 
-            PrintSetting(sb, "", pcu.ToString(), null, true,
+            KnownFields.Add(nameof(settings.TotalPCU));
+            PrintSetting(sb, string.Empty, pcu.ToString(), null, true,
                 labelInitialPCU, "Not the actual setting but a calculation depending on Limits mode:" +
                                 $"\n  {GetLimitsModeName(MyBlockLimitsEnabledEnum.GLOBALLY)} = TotalPCU" +
                                 $"\n  {GetLimitsModeName(MyBlockLimitsEnabledEnum.PER_PLAYER)} = TotalPCU / MaxPlayers" +
                                 $"\n  {GetLimitsModeName(MyBlockLimitsEnabledEnum.PER_FACTION)} = TotalPCU / MaxFactions (MaxFactions cannot be lower than 1 in this mode)" +
                                 $"\nTotalPCU is set to: {settings.TotalPCU} (default: {DefaultSettings.TotalPCU})",
-                GrayIfFalse(settings.BlockLimitsEnabled != MyBlockLimitsEnabledEnum.NONE));
+                GrayIfFalse(blocksAreLimited));
 
+            //PrintSetting(sb, nameof(settings.LimitBlocksBy), settings.LimitBlocksBy, DefaultSettings.LimitBlocksBy, false,
+            //    NewSettingTag + "Limit Blocks by", "Which block attribute is used for defining the block limits." +
+            //                                       $"\nOptions can be: {string.Join(", ", MyEnum<MyObjectBuilder_SessionSettings.LimitBlocksByOption>.Values)}",
+            //    GrayIfFalse(blocksAreLimited));
+
+            KnownFields.Add(nameof(settings.LimitBlocksBy));
+
+            PrintBlockLimits(sb, nameof(settings.BlockTypeLimits), settings.BlockTypeLimits, DefaultSettings.BlockTypeLimits,
+                                 nameof(settings.LimitBlocksBy), settings.LimitBlocksBy, DefaultSettings.LimitBlocksBy, true,
+                NewSettingTag + "Block limits", "Additional limits for specific blocks, respects Limit mode." +
+                                                $"\nThis world is using block's {settings.LimitBlocksBy} for the limits (as set by {nameof(settings.LimitBlocksBy)} setting)",
+                GrayIfFalse(blocksAreLimited));
 
             PrintSetting(sb, nameof(settings.MaxGridSize), settings.MaxGridSize, DefaultSettings.MaxGridSize, true,
                 "Max blocks per grid", "The maximum number of blocks in one grid. 0 means no limit.",
-                GrayIfFalse(settings.BlockLimitsEnabled != MyBlockLimitsEnabledEnum.NONE));
+                GrayIfFalse(blocksAreLimited)); // it does indeed check if limits are enabled before allowing this check
+
             PrintSetting(sb, nameof(settings.MaxBlocksPerPlayer), settings.MaxBlocksPerPlayer, DefaultSettings.MaxBlocksPerPlayer, true,
                 "Max blocks per player", "The maximum number of blocks per player. 0 means no limit.",
-                GrayIfFalse(settings.BlockLimitsEnabled != MyBlockLimitsEnabledEnum.NONE));
-
-            PrintBlockLimits(sb, nameof(settings.BlockTypeLimits), settings.BlockTypeLimits, DefaultSettings.BlockTypeLimits, true,
-                "Block limits", "Additional limits for specific blocks, respects Limit mode.",
-                GrayIfFalse(settings.BlockLimitsEnabled != MyBlockLimitsEnabledEnum.NONE));
+                GrayIfFalse(blocksAreLimited));
 
             // HACK: like in MySession.MaxFactionsCount
             int maxFactions = (settings.BlockLimitsEnabled != MyBlockLimitsEnabledEnum.PER_FACTION ? settings.MaxFactionsCount : Math.Max(1, settings.MaxFactionsCount));
             PrintSetting(sb, nameof(settings.MaxFactionsCount), maxFactions, DefaultSettings.MaxFactionsCount, true,
                 "Max player factions", "The max number of player factions. 0 means no limit." +
                                        "\nIf Limit mode is Per-Faction, this setting cannot be lower than 1.");
+
             PrintSetting(sb, nameof(settings.EnablePcuTrading), settings.EnablePcuTrading, DefaultSettings.EnablePcuTrading, false,
                 "Allow PCU trading", "Enable trading of PCUs between players or factions depending on PCU settings.");
+
+            // cannot easily identify which definitions have console PCU because it's only in the OB
             PrintSetting(sb, nameof(settings.UseConsolePCU), settings.UseConsolePCU, DefaultSettings.UseConsolePCU, false,
-                "Console PCU", "To conserve memory, some of the blocks have different PCU values for consoles."); // cannot easily identify which definitions have console PCU because it's only in the OB
+                "Using Console PCU", "To conserve memory, some of the blocks have different PCU values for consoles." +
+                                     "\nIn vanilla blocks, all armor blocks have 2 PCU with this enabled instead of 1." +
+                                     "\nAny mod can choose to have a console-specific PCU, however it's not practical to identify because only the final PCU is stored.");
+
             PrintSetting(sb, nameof(settings.PiratePCU), settings.PiratePCU, DefaultSettings.PiratePCU, false,
-                "PCU for NPCs", "Number of Performance Cost Units allocated for NPCs.");
+                "PCU for NPCs", "Number of Performance Cost Units allocated for NPCs ships, except Global Encounters.");
+
+            PrintSetting(sb, nameof(settings.GlobalEncounterPCU), settings.GlobalEncounterPCU, DefaultSettings.GlobalEncounterPCU, false,
+                NewSettingTag + "Global Encounters PCU", "Number of Performance Cost Units allocated for Global Encounters.",
+                GrayIfFalse(globalEncountersOn));
             #endregion Limits
 
 
@@ -1352,20 +1571,32 @@ namespace Digi.BuildInfo.Features.GUI
 
             PrintSetting(sb, nameof(settings.EnableRemoteBlockRemoval), settings.EnableRemoteBlockRemoval, DefaultSettings.EnableRemoteBlockRemoval, true,
                 "Player manual grid removal", "Allows grid author to remotely remove grids from the info tab in terminal.");
+
             PrintFormattedNumber(sb, nameof(settings.AFKTimeountMin), settings.AFKTimeountMin, DefaultSettings.AFKTimeountMin, false,
                 "AFK Timeout", " min", "Defines time in minutes after which inactive players will be kicked. 0 is off.");
+
             PrintFormattedNumber(sb, nameof(settings.StopGridsPeriodMin), settings.StopGridsPeriodMin, DefaultSettings.StopGridsPeriodMin, false,
                 "Stop grids after", " min", "Defines time in minutes after which grids will be stopped if far from player.\n0 means off.");
+
             PrintFormattedNumber(sb, nameof(settings.PlayerCharacterRemovalThreshold), settings.PlayerCharacterRemovalThreshold, DefaultSettings.PlayerCharacterRemovalThreshold, false,
                 "Character Removal Threshold", " min", "Defines character removal threshold for trash removal system." +
                                                "\nIf player disconnects it will remove his character after this time." +
                                                "\n0 means off.");
+
             PrintFormattedNumber(sb, nameof(settings.RemoveOldIdentitiesH), settings.RemoveOldIdentitiesH, DefaultSettings.RemoveOldIdentitiesH, false,
                 "Remove Old Identities", " hours", "Defines time in hours after which inactive identities that do not own any grids will be removed.\n0 means off.");
+
             PrintSetting(sb, nameof(settings.EnableTrashSettingsPlatformOverride), settings.EnableTrashSettingsPlatformOverride, DefaultSettings.EnableTrashSettingsPlatformOverride, false,
                 "Platform Trash Setting Override", "Enable trash settings to be overriden by console specific settings.");
+
             PrintSetting(sb, nameof(settings.TrashCleanerCargoBagsMaxLiveTime), settings.TrashCleanerCargoBagsMaxLiveTime, DefaultSettings.TrashCleanerCargoBagsMaxLiveTime, false,
                 "Max Cargo Bags Lifetime", "The maximum amount of time (in minutes) allowed for cargo bags to be alive before deletion.");
+
+            PrintSetting(sb, nameof(settings.MaxCargoBags), settings.MaxCargoBags, DefaultSettings.MaxCargoBags, false,
+                "Max Cargo Bags", "The maximum number of existing cargo bags.");
+
+            PrintSetting(sb, nameof(settings.MaxFloatingObjects), settings.MaxFloatingObjects, DefaultSettings.MaxFloatingObjects, true,
+                "Max Floating Objects", "The maximum number of concurrent loose items.\nOlder floating objects are removed when newer ones need to spawn.");
             #endregion Cleanup
 
 
@@ -1422,27 +1653,35 @@ namespace Digi.BuildInfo.Features.GUI
 
             PrintSetting(sb, nameof(settings.VoxelTrashRemovalEnabled), settings.VoxelTrashRemovalEnabled, DefaultSettings.VoxelTrashRemovalEnabled, false,
                 "Voxel reverting", "Enables system for voxel reverting.");
+
             PrintTrashFlag(sb, MyTrashRemovalFlags.RevertAsteroids,
                 "Revert asteroids", "",
                 GrayIfFalse(settings.VoxelTrashRemovalEnabled));
+
             PrintTrashFlag(sb, MyTrashRemovalFlags.RevertBoulders,
                 "Revert planet-side boulders", "",
                 GrayIfFalse(settings.VoxelTrashRemovalEnabled));
+
             PrintTrashFlag(sb, MyTrashRemovalFlags.RevertMaterials,
                 "Revert materials", "",
                 GrayIfFalse(settings.VoxelTrashRemovalEnabled));
+
             PrintTrashFlag(sb, MyTrashRemovalFlags.RevertCloseToNPCGrids,
                 "Close to NPC grids", "Revert voxel chunks close to NPC grids.",
                 GrayIfFalse(settings.VoxelTrashRemovalEnabled));
+
             PrintTrashFlag(sb, MyTrashRemovalFlags.RevertWithFloatingsPresent,
                 "Close to floating objects", "Revert voxel chunks close to floating objects.",
                 GrayIfFalse(settings.VoxelTrashRemovalEnabled));
+
             PrintFormattedNumber(sb, nameof(settings.VoxelGridDistanceThreshold), settings.VoxelGridDistanceThreshold, DefaultSettings.VoxelGridDistanceThreshold, false,
                 "Distance from grid", " m", "Only voxel chunks that are further from any grid will be reverted.",
                 GrayIfFalse(settings.VoxelTrashRemovalEnabled));
+
             PrintFormattedNumber(sb, nameof(settings.VoxelPlayerDistanceThreshold), settings.VoxelPlayerDistanceThreshold, DefaultSettings.VoxelPlayerDistanceThreshold, false,
                 "Distance from player", " m", "Only voxel chunks that are further from player will be reverted.",
                 GrayIfFalse(settings.VoxelTrashRemovalEnabled));
+
             PrintFormattedNumber(sb, nameof(settings.VoxelAgeThreshold), settings.VoxelAgeThreshold, DefaultSettings.VoxelAgeThreshold, false,
                 "Voxel Age", " min", "Voxel chunks older than this will be reverted.",
                 GrayIfFalse(settings.VoxelTrashRemovalEnabled));
@@ -1456,10 +1695,6 @@ namespace Digi.BuildInfo.Features.GUI
                 "LOD&Shadow distances", "This can only be changed by mods.\nInfluences how model detail and shadow graphics option behave.\nThis is merely a notice, compare with mods list to ensure it's intended.");
             PrintFormattedNumber(sb, nameof(settings.ViewDistance), settings.ViewDistance, DefaultSettings.ViewDistance, true,
                 "View Distance", " m", "");
-            PrintSetting(sb, nameof(settings.MaxFloatingObjects), settings.MaxFloatingObjects, DefaultSettings.MaxFloatingObjects, true,
-                "Max Floating Objects", "The maximum number of concurrent loose items.\nOlder floating objects are removed when newer ones need to spawn.");
-            PrintSetting(sb, nameof(settings.MaxCargoBags), settings.MaxCargoBags, DefaultSettings.MaxCargoBags, false,
-                "Max Cargo Bags", "The maximum number of existing cargo bags.");
             PrintSetting(sb, nameof(settings.AdaptiveSimulationQuality), settings.AdaptiveSimulationQuality, DefaultSettings.AdaptiveSimulationQuality, false,
                 "Adaptive Simulation Quality", "If enabled and CPU load (locally) is higher than 90% sustained, then a few things stop happening:" +
                                                "\nBlock deformations, some voxel cutouts, voxel cutouts from explosions, projectiles update less frequent, character limb IK and ragdoll, some grid impact details.");
@@ -1470,10 +1705,9 @@ namespace Digi.BuildInfo.Features.GUI
                                          "\nResources are not properly consumed, inventories are not updated and ammunition is not consumed.");
             PrintSetting(sb, nameof(settings.PhysicsIterations), settings.PhysicsIterations, DefaultSettings.PhysicsIterations, false,
                 "Physics Iterations", $"Havok physics engine solver iterations, higher would have slightly more accurate physics but require more CPU power. It cannot be lower than {Hardcoded.SolverIterationsMin}.");
-            PrintSetting(sb, nameof(settings.EnableOrca), settings.EnableOrca, DefaultSettings.EnableOrca, false,
-                "Advanced ORCA algorithm", "Enable advanced Optimal Reciprocal Collision Avoidance algorithm.");
             PrintSetting(sb, nameof(settings.PredefinedAsteroids), settings.PredefinedAsteroids, DefaultSettings.PredefinedAsteroids, false,
-                "Load predefined asteroids", "Determines if admin spawn menu has predefined asteroids list.\nNot using predefined asteroids in world helps memory usage (this setting does not remove not prevent them from being spawned, by encounters, mods, etc.)");
+                "Spawn-menu predefined asteroids", "Determines if admin spawn menu has predefined asteroids list." +
+                                                   "\nNot using predefined asteroids in world helps memory usage (this setting does not remove not prevent them from being spawned, by encounters, mods, etc.)");
             PrintSetting(sb, nameof(settings.MaxPlanets), settings.MaxPlanets, DefaultSettings.MaxPlanets, false,
                 "Max Planet Types", "Limit maximum number of types of planets in the world.");
             PrintSetting(sb, nameof(settings.MaxProductionQueueLength), settings.MaxProductionQueueLength, DefaultSettings.MaxProductionQueueLength, false,
@@ -1542,6 +1776,11 @@ namespace Digi.BuildInfo.Features.GUI
         }
 
         #region Print setting methods
+        const string TrueValue = "on";
+        const string FalseValue = "off";
+        const string NullValue = "null";
+        const string NumberFormat = "###,###,###,###,###,##0.#####";
+
         enum Formatting
         {
             Normal = 0,
@@ -1552,6 +1791,18 @@ namespace Digi.BuildInfo.Features.GUI
         Formatting GrayIfFalse(bool enabled) => !enabled ? Formatting.GrayedOut : Formatting.Normal;
         Formatting GrayOrWarn(bool enabled, bool warn) => !enabled ? Formatting.GrayedOut : warn ? Formatting.Warning : Formatting.Normal;
 
+        /// <summary>
+        /// Note: if value is null, it will not add a newline.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="sb"></param>
+        /// <param name="fieldName"></param>
+        /// <param name="value"></param>
+        /// <param name="defaultValue"></param>
+        /// <param name="shownInVanillaUI"></param>
+        /// <param name="displayName"></param>
+        /// <param name="description"></param>
+        /// <param name="formatting"></param>
         void PrintSetting<T>(StringBuilder sb, string fieldName, T value, T defaultValue, bool shownInVanillaUI, string displayName, string description = null, Formatting formatting = Formatting.Normal)
         {
             if(TestRun)
@@ -1571,16 +1822,17 @@ namespace Digi.BuildInfo.Features.GUI
                 && type != typeof(MyGameModeEnum)
                 && type != typeof(MyOnlineModeEnum)
                 && type != typeof(MyBlockLimitsEnabledEnum)
-                && type != typeof(MyEnvironmentHostilityEnum))
+                && type != typeof(MyEnvironmentHostilityEnum)
+                && type != typeof(MyObjectBuilder_SessionSettings.LimitBlocksByOption))
                     Log.Error($"Setting {fieldName} is type: {type}");
 
                 return;
             }
 
             if(value != null && defaultValue != null)
-                description += (!string.IsNullOrEmpty(description) ? "\n" : "") + $"Default value: {defaultValue.ToString()}";
+                description += (!string.IsNullOrEmpty(description) ? "\n" : "") + $"Default: {defaultValue.ToString()}  (in {DefaultFrom})";
 
-            if(!string.IsNullOrEmpty(fieldName) && Main.Config.InternalInfo.Value)
+            if(!string.IsNullOrEmpty(fieldName) && ShowInternal)
             {
                 if(!fieldName.StartsWith(nameof(MyTrashRemovalFlags)))
                     description += (!string.IsNullOrEmpty(description) ? "\n" : "") + $"Internal setting name: {fieldName}";
@@ -1589,9 +1841,27 @@ namespace Digi.BuildInfo.Features.GUI
             if(!string.IsNullOrEmpty(description))
                 CurrentColumn.AddTooltip(sb, description);
 
+            #region Append display name
             bool enabled = formatting != Formatting.GrayedOut;
 
-            sb.Append(LabelPrefix).Color(enabled ? LabelColor : LabelColorDisabled).Append(displayName).Append(": ");
+            sb.Append(LabelPrefix);
+
+            bool isNew = displayName.StartsWith(NewSettingTag);
+
+            if(isNew)
+            {
+                sb.Color(NewSettingColor).Append("*<reset>");
+            }
+
+            sb.Color(enabled ? LabelColor : LabelColorDisabled);
+
+            if(isNew)
+                sb.Append(displayName, NewSettingTag.Length, displayName.Length - NewSettingTag.Length);
+            else
+                sb.Append(displayName);
+
+            sb.Append(": ");
+            #endregion
 
             if(value != null)
             {
@@ -1612,10 +1882,6 @@ namespace Digi.BuildInfo.Features.GUI
             }
         }
 
-        const string TrueValue = "on";
-        const string FalseValue = "off";
-        const string NullValue = "null";
-
         void PrintSetting(StringBuilder sb, string fieldName, bool value, bool defaultValue, bool shownInVanillaUI,
             string displayName, string description = null, Formatting formatting = Formatting.Normal)
         {
@@ -1632,29 +1898,39 @@ namespace Digi.BuildInfo.Features.GUI
             PrintSetting(sb, fieldName, v, dv, shownInVanillaUI, displayName, description, formatting);
         }
 
-        void PrintFormattedNumber(StringBuilder sb, string fieldName, float value, float defaultValue, bool shownInVanillaUI,
-            string displayName, string suffix, string description = null, Formatting formatting = Formatting.Normal)
+        void PrintFormattedNumber(StringBuilder sb, string fieldName, double value, double defaultValue, bool shownInVanillaUI,
+            string displayName, string suffix, string description = null, Formatting formatting = Formatting.Normal, string valueForZero = null)
         {
-            const string Format = "0.#####";
-            string val = value.ToString(Format) + suffix;
-            string defVal = defaultValue.ToString(Format) + suffix;
+            string val = value.ToString(NumberFormat) + suffix;
+            string defVal = defaultValue.ToString(NumberFormat) + suffix;
+
+            if(valueForZero != null)
+            {
+                if(value == 0)
+                    val = valueForZero;
+
+                if(defaultValue == 0)
+                    defVal = valueForZero;
+            }
 
             PrintSetting(sb, fieldName, val, defVal, shownInVanillaUI, displayName, description, formatting);
         }
 
-        void PrintBlockLimits(StringBuilder sb, string fieldName, SerializableDictionary<string, short> value, SerializableDictionary<string, short> defaultValue, bool shownInVanillaUI,
+        void PrintBlockLimits(StringBuilder sb, string fieldLimits, SerializableDictionary<string, short> limits, SerializableDictionary<string, short> defaultLimits,
+            string fieldLimitBy, MyObjectBuilder_SessionSettings.LimitBlocksByOption limitBy, MyObjectBuilder_SessionSettings.LimitBlocksByOption defaultLimitBy, bool shownInVanillaUI,
             string displayName, string description = null, Formatting formatting = Formatting.Normal)
         {
             if(TestRun)
             {
-                KnownFields.Add(fieldName);
+                KnownFields.Add(fieldLimits);
+                KnownFields.Add(fieldLimitBy);
                 return;
             }
 
-            PrintSetting<string>(sb, fieldName, null, null, shownInVanillaUI, displayName, description, formatting);
+            PrintSetting<string>(sb, $"{fieldLimits} and {fieldLimitBy}", $"(by {limitBy})", $"(by {defaultLimitBy})", shownInVanillaUI, displayName, description, formatting);
 
-            bool valuePresent = (value?.Dictionary != null && value.Dictionary.Count > 0);
-            bool defaultPresent = (defaultValue?.Dictionary != null && defaultValue.Dictionary.Count > 0);
+            bool valuePresent = (limits?.Dictionary != null && limits.Dictionary.Count > 0);
+            bool defaultPresent = (defaultLimits?.Dictionary != null && defaultLimits.Dictionary.Count > 0);
 
             Color valueColor = ValueColorDefault;
             if(formatting == Formatting.GrayedOut)
@@ -1665,63 +1941,132 @@ namespace Digi.BuildInfo.Features.GUI
                 valueColor = ValueColorChanged;
 
             ScrollableBlockLimits.Reset();
-            bool scroll = valuePresent && value.Dictionary.Count > ScrollableBlockLimits.DisplayLines;
-
-            sb.Append('\n');
+            bool scroll = valuePresent && limits.Dictionary.Count > ScrollableBlockLimits.DisplayLines;
 
             int sbIndex = sb.Length;
 
             if(!valuePresent)
             {
-                sb.Append(LabelPrefix).Append("  (Empty)\n");
+                sb.Append(LabelPrefix).Color(valueColor).Append("  (Empty)\n");
             }
             else
             {
-                foreach(KeyValuePair<string, short> kv in value.Dictionary)
+                HashSet<MyDefinitionId> skipBlocks = new HashSet<MyDefinitionId>();
+
+                StringBuilder tooltip = new StringBuilder(512);
+
+                foreach(KeyValuePair<string, short> kv in limits.Dictionary)
                 {
-                    string blockPairName = kv.Key;
+                    string key = kv.Key;
                     short limit = kv.Value;
 
-                    MyCubeBlockDefinitionGroup pairDef = MyDefinitionManager.Static.TryGetDefinitionGroup(blockPairName);
-                    string tooltip;
-
                     int startIndex = sb.Length;
+                    tooltip.Clear();
 
                     sb.Append(LabelPrefix).Append("  ");
 
-                    if(pairDef != null)
+                    if(limitBy == MyObjectBuilder_SessionSettings.LimitBlocksByOption.BlockPairName)
                     {
-                        sb.Color(valueColor).Append(limit).Append("x ");
+                        MyCubeBlockDefinitionGroup pairDef = MyDefinitionManager.Static.TryGetDefinitionGroup(key);
+                        if(pairDef != null)
+                        {
+                            sb.Color(valueColor).Number(limit).Append("x ");
 
-                        string nameLarge = pairDef.Large?.DisplayNameText;
-                        string nameSmall = pairDef.Small?.DisplayNameText;
+                            string nameLarge = pairDef.Large?.DisplayNameText;
+                            string nameSmall = pairDef.Small?.DisplayNameText;
 
-                        if(nameLarge == nameSmall)
-                            sb.Append(nameLarge).Append(" (L+S)");
-                        else if(nameLarge != null && nameSmall == null)
-                            sb.AppendMaxLength(nameLarge, 24).Append(" (L)");
-                        else if(nameLarge == null && nameSmall != null)
-                            sb.AppendMaxLength(nameSmall, 24).Append(" (S)");
+                            if(nameLarge == nameSmall)
+                                sb.Append(nameLarge).Append(" (L+S)");
+                            else if(nameLarge != null && nameSmall == null)
+                                sb.AppendMaxLength(nameLarge, 24).Append(" (L)");
+                            else if(nameLarge == null && nameSmall != null)
+                                sb.AppendMaxLength(nameSmall, 24).Append(" (S)");
+                            else
+                                sb.AppendMaxLength(nameSmall, 16).Append(" & ").AppendMaxLength(nameSmall, 16);
+
+                            tooltip.Append("BlockPairName: ").Append(key);
+                        }
                         else
-                            sb.AppendMaxLength(nameSmall, 16).Append(" & ").AppendMaxLength(nameSmall, 16);
+                        {
+                            sb.Color(Color.Gray).Number(limit).Append("x ").Append(key);
+                            tooltip.Append("This BlockPairName is not used by any block.");
+                        }
+                    }
+                    else if(limitBy == MyObjectBuilder_SessionSettings.LimitBlocksByOption.Tag)
+                    {
+                        MyCubeBlockTagDefinition tagDef = MyDefinitionManager.Static.GetTagDefinition(key);
+                        if(tagDef != null)
+                        {
+                            sb.Color(valueColor).Number(limit).Append("x ");
 
-                        tooltip = $"BlockPairName: {blockPairName}";
+                            sb.Append(tagDef.DisplayNameText).Append(" (covers ").Append(tagDef.Blocks.Length).Append(" blocks)");
+
+                            tooltip.Append("Blocks in this BlocksTag:\n");
+
+                            skipBlocks.Clear();
+
+                            foreach(MyDefinitionId blockId in tagDef.Blocks)
+                            {
+                                if(skipBlocks.Contains(blockId))
+                                    continue;
+
+                                MyCubeBlockDefinition blockDef;
+                                if(MyDefinitionManager.Static.TryGetCubeBlockDefinition(blockId, out blockDef))
+                                {
+                                    MyCubeBlockDefinitionGroup pairDef = MyDefinitionManager.Static.TryGetDefinitionGroup(blockDef.BlockPairName);
+                                    if(pairDef != null)
+                                    {
+                                        if(pairDef.Small != null)
+                                            skipBlocks.Add(pairDef.Small.Id);
+                                        if(pairDef.Large != null)
+                                            skipBlocks.Add(pairDef.Large.Id);
+
+                                        string nameLarge = pairDef.Large?.DisplayNameText;
+                                        string nameSmall = pairDef.Small?.DisplayNameText;
+
+                                        if(nameLarge == nameSmall)
+                                            tooltip.Append(nameLarge).Append(" (L+S)");
+                                        else if(nameLarge != null && nameSmall == null)
+                                            tooltip.AppendMaxLength(nameLarge, 24).Append(" (L)");
+                                        else if(nameLarge == null && nameSmall != null)
+                                            tooltip.AppendMaxLength(nameSmall, 24).Append(" (S)");
+                                        else
+                                            tooltip.AppendMaxLength(nameSmall, 16).Append(" & ").AppendMaxLength(nameSmall, 16);
+                                    }
+                                    else
+                                    {
+                                        tooltip.Append("  ").Append(blockDef.DisplayNameText).Append(" (").Append(blockDef.CubeSize == MyCubeSize.Large ? "L" : "S").Append(")");
+                                    }
+                                }
+                                else
+                                {
+                                    tooltip.Append("  ").Append("(Inexistent:").IdTypeSubtypeFormat(blockId).Append(")");
+                                }
+                                tooltip.Append('\n');
+                            }
+                        }
+                        else
+                        {
+                            sb.Color(Color.Gray).Number(limit).Append("x ").Append(key);
+                            tooltip.Append("This BlockTag does not exist.");
+                        }
                     }
                     else
                     {
-                        sb.Color(Color.Gray).Append(limit).Append("x ").Append(blockPairName);
-                        tooltip = "This BlockPairName is not used by any block.";
+                        sb.Color(Color.Red).Append($"Not implemented for a new LimitBlocksBy value: {limitBy}").ResetFormatting();
                     }
+
+                    tooltip.TrimEndWhitespace();
 
                     if(scroll)
                     {
                         int len = sb.Length - startIndex;
-                        ScrollableBlockLimits.Add(sb.ToString(startIndex, len), tooltip);
+                        ScrollableBlockLimits.Add(sb.ToString(startIndex, len), tooltip.ToString());
                         sb.Length -= len; // erase!
                     }
                     else
                     {
-                        CurrentColumn.AddTooltip(sb, tooltip);
+                        CurrentColumn.AddTooltip(sb, tooltip.ToString());
 
                         sb.Append('\n');
                     }
@@ -1799,7 +2144,7 @@ namespace Digi.BuildInfo.Features.GUI
             bool defVal = DefaultSettings.TrashFlags.HasFlags(flag);
             string flagName = nameof(MyTrashRemovalFlags) + "." + MyEnum<MyTrashRemovalFlags>.GetName(flag);
 
-            if(Main.Config.InternalInfo.Value)
+            if(ShowInternal)
             {
                 description += (!string.IsNullOrEmpty(description) ? "\n" : "") + $"Internal setting name: TrashFlagsValue\nFlag integer: {(int)flag} (add all flag integers to make the final value for TrashFlagsValue)";
             }
@@ -1810,7 +2155,7 @@ namespace Digi.BuildInfo.Features.GUI
         void PrintEnvGraphicsChanges(StringBuilder sb, MyEnvironmentDefinition envDef, MyEnvironmentDefinition defaultEnvDef,
             string displayName, string description = null, Formatting formatting = Formatting.Normal)
         {
-            if(sb == null)
+            if(TestRun)
                 return;
 
             bool hasChanges = false;
@@ -1862,7 +2207,7 @@ namespace Digi.BuildInfo.Features.GUI
                 description += "\n- Shadow details have changes\n";
             }
 
-            PrintSetting<string>(sb, string.Empty, null, null, true,
+            PrintSetting<string>(sb, string.Empty, null, null, false,
                displayName, description, formatting);
 
             Color valueColor = ValueColorDefault;
@@ -1880,22 +2225,184 @@ namespace Digi.BuildInfo.Features.GUI
             sb.Color(valueColor).Append(value).Append('\n');
         }
 
-        void PrintRangeSetting(StringBuilder sb, string fieldNameMin, string fieldNameMax,
-                                                 float min, float max,
-                                                 float defaultMin, float defaultMax, bool shownInVanillaUI,
-                                                 string displayName, string suffix, string description = null, Formatting formatting = Formatting.Normal)
+        void PrintPlanetsHavingEncounters(StringBuilder sb, string displayName, bool planetaryEncountersOn)
         {
             if(TestRun)
+                return;
+
+            StringBuilder description = new StringBuilder(512);
+
+            description.Append("Not an actual setting, just computed information.\n");
+            description.Append("All spawned planets are checked for compatibility with the\n  current planetary encounters (including mod ones if they use this system).\n");
+            description.Append("\n");
+
+            if(!planetaryEncountersOn)
             {
-                KnownFields.Add(fieldNameMin);
-                KnownFields.Add(fieldNameMax);
+                description.Color(Color.Red).Append("Note: ").ResetFormatting()
+                    .Append("Planetary encounters are OFF, therefore no planets in this world will actually have them.").NewCleanLine();
+            }
+            //else
+            //{
+            //    description.Color(Color.Lime).Append("Note: ").ResetFormatting()
+            //        .Append("This is computed manually from cloned code, it might be inaccurate.").NewCleanLine();
+            //}
+
+            string value = "";
+
+            List<MyPlanet> spawnedPlanets = Main.PlanetMonitor.Planets;
+
+            if(spawnedPlanets.Count == 0)
+            {
+                value = "(No planets present)";
+                description.Append("There are no planets spawned in this world.\n");
+            }
+            else
+            {
+                HashSet<string> voxelMats = new HashSet<string>();
+                HashSet<string> voxelMatTypes = new HashSet<string>();
+
+                if(planetaryEncountersOn)
+                    description.Append("Planets that get planetary encounters:\n");
+                else
+                    description.Append("Planets that would've gotten planetary encounters:\n");
+
+                int num = 0;
+
+                // HACK: checks from MyPlanetaryEncountersGenerator.SpawnAreaChecker
+                foreach(MyPlanet planet in spawnedPlanets)
+                {
+                    bool hasPlanteryEncounters = false;
+
+                    foreach(var spawnDef in MyDefinitionManager.Static.GetSpawnGroupDefinitions())
+                    {
+                        if(!spawnDef.IsPlanetaryEncounter)
+                            continue;
+
+                        var allowedPlanets = spawnDef.PlanetaryInstallationSettings.Planets;
+                        if(allowedPlanets != null && allowedPlanets.Count > 0)
+                        {
+                            if(!allowedPlanets.Any((s) => planet.Name.Contains(s)))
+                                continue;
+                        }
+
+                        var allowedMatTypes = spawnDef.PlanetaryInstallationSettings.VoxelMaterials;
+                        if(allowedMatTypes != null && allowedMatTypes.Count > 0)
+                        {
+                            voxelMats.Clear();
+                            voxelMatTypes.Clear();
+
+                            foreach(MyPlanetMaterialDefinition mat in planet.Generator.SurfaceMaterialTable) // <CustomMaterialTable>
+                            {
+                                if(mat.Material != null)
+                                    voxelMats.Add(mat.Material);
+
+                                if(mat.HasLayers)
+                                {
+                                    foreach(var layer in mat.Layers)
+                                    {
+                                        if(layer.Material != null)
+                                            voxelMats.Add(layer.Material);
+                                    }
+                                }
+                            }
+
+                            foreach(var matGroup in planet.Generator.MaterialGroups) // <ComplexMaterials>
+                            {
+                                foreach(var rule in matGroup.MaterialRules)
+                                {
+                                    if(rule.Material != null)
+                                        voxelMats.Add(rule.Material);
+
+                                    if(rule.HasLayers)
+                                    {
+                                        foreach(var layer in rule.Layers)
+                                        {
+                                            if(layer.Material != null)
+                                                voxelMats.Add(layer.Material);
+                                        }
+                                    }
+                                }
+                            }
+
+                            foreach(var mat in voxelMats)
+                            {
+                                MyVoxelMaterialDefinition matDef;
+                                if(MyDefinitionManager.Static.TryGetVoxelMaterialDefinition(mat, out matDef))
+                                {
+                                    voxelMatTypes.Add(matDef.MaterialTypeName);
+                                }
+                                else
+                                {
+                                    Log.Error($"Planet '{planet.Generator.Id.SubtypeName}' has unknown voxel material: '{mat}'");
+                                }
+                            }
+
+                            bool found = false;
+
+                            foreach(var matType in allowedMatTypes)
+                            {
+                                if(voxelMatTypes.Contains(matType))
+                                {
+                                    found = true;
+                                    break;
+                                }
+                            }
+
+                            if(!found)
+                                continue;
+                        }
+
+                        hasPlanteryEncounters = true;
+                        break;
+                    }
+
+                    if(hasPlanteryEncounters)
+                    {
+                        description.Append("• ").Append(planet.Generator.Id.SubtypeName).Append('\n');
+                        num++;
+                    }
+                }
+
+                if(num == 0)
+                {
+                    description.Append("  (none)\n");
+                }
+
+                if(num < spawnedPlanets.Count)
+                {
+                    description.Append("The other ").Append(spawnedPlanets.Count - num).Append(" don't support planetary encounters.");
+                }
+
+                value = $"{num} of {spawnedPlanets.Count} (hover)";
             }
 
-            string fieldName = $"{fieldNameMin} and {fieldNameMax}";
+            description.TrimEndWhitespace();
 
-            const string Format = "0.#####";
-            string val = $"{min.ToString(Format)} ~ {max.ToString(Format)} {suffix}";
-            string defVal = $"{defaultMin.ToString(Format)} ~ {defaultMax.ToString(Format)} {suffix}";
+            PrintSetting<string>(sb, string.Empty, value, null, false,
+                displayName, description.ToString(),
+                GrayIfFalse(planetaryEncountersOn));
+        }
+
+        void PrintRangeSetting(StringBuilder sb, string fieldNameMin, string fieldNameMax,
+                                                 double min, double max,
+                                                 double defaultMin, double defaultMax, bool shownInVanillaUI,
+                                                 string displayName, string suffix, string description = null, Formatting formatting = Formatting.Normal)
+        {
+            string fieldName = null;
+
+            if(fieldNameMin != null && fieldNameMax != null)
+            {
+                if(TestRun)
+                {
+                    KnownFields.Add(fieldNameMin);
+                    KnownFields.Add(fieldNameMax);
+                }
+
+                fieldName = $"{fieldNameMin} and {fieldNameMax}";
+            }
+
+            string val = $"{min.ToString(NumberFormat)} ~ {max.ToString(NumberFormat)} {suffix}";
+            string defVal = $"{defaultMin.ToString(NumberFormat)} ~ {defaultMax.ToString(NumberFormat)} {suffix}";
 
             PrintSetting(sb, fieldName, val, defVal, shownInVanillaUI, displayName, description, formatting);
         }
@@ -2330,6 +2837,11 @@ namespace Digi.BuildInfo.Features.GUI
             {
                 Log.Error($"Failed to deserialize: '<SE>\\Content\\{filePath}'\n{e}");
                 return null;
+            }
+
+            if(deserialized == null)
+            {
+                Log.Error($"Failed to deserialize: '<SE>\\Content\\{filePath}'\nSerializeFromXML() returned null.");
             }
 
             return deserialized;

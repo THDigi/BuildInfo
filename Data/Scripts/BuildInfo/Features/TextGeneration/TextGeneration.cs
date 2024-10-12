@@ -2037,6 +2037,83 @@ namespace Digi.BuildInfo.Features
             }
             #endregion Optional - voxel placement restrictions
 
+#if false // TODO: show block limits here? serverinfo GUI should be enough.
+            #region Optional - block limits
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            {
+                var settings = MyAPIGateway.Session?.SessionSettings;
+                if(settings == null)
+                {
+                    Log.Error((MyAPIGateway.Session == null ? "Session" : "SessionSettings") + " is null, what gives?");
+                }
+                else
+                {
+                    StringBuilder sb = AddLine().Label("Limits");
+
+                    if(settings.BlockLimitsEnabled != MyBlockLimitsEnabledEnum.NONE)
+                    {
+                        string tag = def.GetLimitType();
+
+                        short limit;
+                        if(settings.BlockTypeLimits.Dictionary.TryGetValue(tag, out limit))
+                        {
+                            if(settings.LimitBlocksBy == MyObjectBuilder_SessionSettings.LimitBlocksByOption.BlockPairName)
+                            {
+                                MyCubeBlockDefinitionGroup blockPair = MyDefinitionManager.Static.TryGetDefinitionGroup(tag);
+
+                                if(blockPair != null && blockPair.Small != null && blockPair.Large != null)
+                                {
+                                    sb.Append(limit).Append(" shared for both sizes");
+                                }
+                                else
+                                {
+                                    sb.Append(limit);
+                                }
+                            }
+                            else if(settings.LimitBlocksBy == MyObjectBuilder_SessionSettings.LimitBlocksByOption.Tag)
+                            {
+                                if(def.TagDefinition != null)
+                                {
+                                    sb.Append(limit).Append(" shared in a group called '").Append(def.TagDefinition.DescriptionText).Append("'");
+                                }
+                                else
+                                {
+                                    sb.Append("Unlimited");
+                                }
+                            }
+                            else
+                            {
+                                sb.Color(COLOR_BAD).Append("(Unknown)").ResetFormatting();
+                            }
+                        }
+                        else
+                        {
+                            sb.Append("Unlimited");
+                        }
+                    }
+
+                    switch(settings.BlockLimitsEnabled)
+                    {
+                        case MyBlockLimitsEnabledEnum.NONE: sb.Color(COLOR_GOOD).Append("None"); break;
+                        case MyBlockLimitsEnabledEnum.GLOBALLY: sb.Color(COLOR_WARNING).Append("Global"); break;
+                        case MyBlockLimitsEnabledEnum.PER_PLAYER: sb.Append("Per-Player"); break;
+                        case MyBlockLimitsEnabledEnum.PER_FACTION: sb.Append("Per-Faction"); break;
+                    }
+
+                    // not the kind of thing I want to refresh text for
+                    //MyAdminSettingsEnum adminFlags;
+                    //if(MyAPIGateway.Session.TryGetAdminSettings(MyAPIGateway.Multiplayer.MyId, out adminFlags))
+                    //{
+                    //    if((adminFlags & MyAdminSettingsEnum.IgnorePcu) != 0)
+                    //    {
+                    //        sb.Append(" (IgnorePCU enabled in admin menu)");
+                    //    }
+                    //}
+                }
+            }
+            #endregion
+#endif
+
             // TODO: cache needs clearing for this to get added/removed as creative tools are on/off
             #region Optional - creative-only stuff
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Mirroring) && (MyAPIGateway.Session.CreativeMode || MyAPIGateway.Session.EnableCopyPaste)) // HACK Session.EnableCopyPaste used as spacemaster check

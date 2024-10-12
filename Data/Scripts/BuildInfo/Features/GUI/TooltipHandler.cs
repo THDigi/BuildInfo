@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using Digi.BuildInfo.Systems;
 using VRage.Utils;
 using VRageMath;
@@ -52,8 +53,17 @@ namespace Digi.BuildInfo.Features.GUI
             if((tooltip == null && PrevTooltipRef != null) || !object.ReferenceEquals(tooltip, PrevTooltipRef))
             {
                 PrevTooltipRef = tooltip;
-                Label.Text.Message.Clear().Append(tooltip);
-                TextSize = Label.Text.GetTextLength();
+
+                StringBuilder sb = Label.Text.Message.Clear();
+                if(tooltip != null)
+                {
+                    sb.Append(tooltip);
+                    TextSize = Label.Text.GetTextLength();
+                }
+                else
+                {
+                    TextSize = Vector2D.Zero;
+                }
             }
 
             // tooltip's Draw() needs to happen after all the buttons's Draw().
@@ -98,10 +108,15 @@ namespace Digi.BuildInfo.Features.GUI
                 pos.X -= (mouseOnScreen.X + absTextSize.X + tooltipOffset) - ScreenLimitMax.X; // prevent tooltip from exiting scren on the right
             }
 
-            if((mouseOnScreen.Y - absTextSize.Y - tooltipOffset) < -ScreenLimitMax.Y) // box collides with bottom of screen
+            if(absTextSize.Y < 1) // only flip pivot if tooltip is reasonably sized, if it's larger than the screen then just leave it be.
             {
-                offset.Y = -TextSize.Y + tooltipOffset; // flip pivot to bottom, so it's above the mouse
+                if((mouseOnScreen.Y - absTextSize.Y - tooltipOffset) < -ScreenLimitMax.Y) // box collides with bottom of screen
+                {
+                    offset.Y = -TextSize.Y + tooltipOffset; // flip pivot to bottom, so it's above the mouse
+                }
             }
+
+            //DebugDraw.DrawHudText(new System.Text.StringBuilder($"textSize={absTextSize}\npos={pos}\noffset={offset}"), new Vector2D(0, 0), 1.0);
 
             Label.Text.Offset = offset;
 

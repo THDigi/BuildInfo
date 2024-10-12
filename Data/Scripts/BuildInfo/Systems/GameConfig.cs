@@ -127,6 +127,8 @@ namespace Digi.BuildInfo.Systems
             {
                 if(OriginalHudState == null)
                 {
+                    // FIXME: does not hide everything, horizon indicator and chat for example.
+
                     OriginalHudState = HudState;
                     SetHudState(HudState.OFF, isTemporary: true);
                 }
