@@ -1050,9 +1050,7 @@ namespace Digi.BuildInfo.Features.Terminal
             MyShipControllerDefinition def = (MyShipControllerDefinition)block.SlimBlock.BlockDefinition;
             if(def.EnableShipControl)
             {
-                MyShipController internalController = (MyShipController)block;
-                MyResourceDistributorComponent distributor = internalController.GridResourceDistributor;
-                Suffix_PowerSources(block, info, distributor);
+                Suffix_PowerSources(block, info, (MyResourceDistributorComponent)block.CubeGrid.ResourceDistributor);
             }
         }
 
@@ -1477,13 +1475,9 @@ namespace Digi.BuildInfo.Features.Terminal
             Suffix_PowerSourceGridStats(block, info);
         }
 
-        MyShipController _fakeController = new MyShipController();
         void Suffix_PowerSourceGridStats(IMyTerminalBlock block, StringBuilder info)
         {
-            // HACK: trickery to get resource distributor
-            _fakeController.SlimBlock = Utils.CastHax(_fakeController.SlimBlock, block.SlimBlock);
-            MyResourceDistributorComponent distributor = _fakeController.GridResourceDistributor;
-            Suffix_PowerSources(block, info, distributor, lite: true);
+            Suffix_PowerSources(block, info, (MyResourceDistributorComponent)block.CubeGrid.ResourceDistributor, lite: true);
         }
 
         //void Format_Gyro(IMyTerminalBlock block, StringBuilder info)
