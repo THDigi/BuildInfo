@@ -4,6 +4,7 @@ using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Utilities;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
+using SpaceEngineers.Game.ModAPI;
 using VRage;
 using VRage.Game.ModAPI;
 
@@ -280,15 +281,25 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 }
             }
 
-            //if(block is IMyParachute)
-            //{
-            //    switch(action.Id)
-            //    {
-            //        case "Open": return "Toggle Deploy";
-            //        case "Open_On": return "Deploy";
-            //        case "Open_Off": return "Close";
-            //    }
-            //}
+            if(block is IMyParachute)
+            {
+                switch(action.Id)
+                {
+                    case "Open": return "Toggle Deploy";
+                    case "Open_On": return "Deploy";
+                    case "Open_Off": return "Close";
+                }
+            }
+
+            if(block is IMyDoor)
+            {
+                switch(action.Id)
+                {
+                    case "Open": return "Open/Close";
+                    case "Open_On": return "Open";
+                    case "Open_Off": return "Close";
+                }
+            }
 
             // applies to all blocks
             //switch(action.Id)

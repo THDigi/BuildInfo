@@ -245,52 +245,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(eventController != null)
             {
                 IMyEventControllerEntityComponent eventComp = eventController.SelectedEvent;
-
-                //foreach(MyComponentBase comp in eventController.Components)
-                //{
-                //    IMyEventControllerEntityComponent ev = comp as IMyEventControllerEntityComponent;
-                //    if(ev != null)
-                //    {
-                //        var compGui = ev as IMyEventComponentWithGui;
-                //        if(compGui != null)
-                //        {
-                //            DebugLog.PrintHUD(this, $"{ev.GetType().Name,-34} uses BlockList={compGui.IsBlocksListUsed,-5} | Threshold={compGui.IsThresholdUsed,-5} | Condition={compGui.IsConditionSelectionUsed,-5}", log: true);
-                //        }
-                //        else
-                //        {
-                //            DebugLog.PrintHUD(this, $"{ev.GetType().Name,-34} does does NOT implement IMyEventComponentWithGui", log: true);
-                //        }
-                //    }
-                //}
-                /* results of above code:
-                    MyEventBlockAddedRemoved           does does NOT implement IMyEventComponentWithGui
-                    
-                    MyEventSurfaceHeight               uses BlockList=False | Threshold=False | Condition=True 
-                    MyEventGridSpeedChanged            uses BlockList=False | Threshold=False | Condition=True 
-                    MyEventNaturalGravityChanged       uses BlockList=False | Threshold=False | Condition=True 
-                    
-                    MyEventCargoFilledEntityComponent  uses BlockList=True  | Threshold=True  | Condition=True 
-                    MyEventBlockIntegrity              uses BlockList=True  | Threshold=True  | Condition=True 
-                    MyEventGasTankFilled               uses BlockList=True  | Threshold=True  | Condition=True 
-                    MyEventStoredPower                 uses BlockList=True  | Threshold=True  | Condition=True 
-                    MyEventPistonPosition              uses BlockList=True  | Threshold=True  | Condition=True 
-                    MyEventPowerOutput                 uses BlockList=True  | Threshold=True  | Condition=True 
-                    MyEventThrustPercentage            uses BlockList=True  | Threshold=True  | Condition=True 
-                    
-                    MyEventAngleChanged                uses BlockList=True  | Threshold=False | Condition=True 
-                    MyEventDistanceToLockedTarget      uses BlockList=True  | Threshold=False | Condition=True 
-                    
-                    MyEventCockpitOccupied             uses BlockList=True  | Threshold=False | Condition=False
-                    MyEventConnectorConnected          uses BlockList=True  | Threshold=False | Condition=False
-                    MyEventLandingGearLocked           uses BlockList=True  | Threshold=False | Condition=False
-                    MyEventDoorOpened                  uses BlockList=True  | Threshold=False | Condition=False
-                    MyEventBlockOnOff                  uses BlockList=True  | Threshold=False | Condition=False
-                    MyEventRotorHingeAttachedDetached  uses BlockList=True  | Threshold=False | Condition=False
-                    MyEventMerged                      uses BlockList=True  | Threshold=False | Condition=False
-                    MyEventMagneticLockReady           uses BlockList=True  | Threshold=False | Condition=False
-                    MyEventConnectorReadyToLock        uses BlockList=True  | Threshold=False | Condition=False
-                */
-
                 if(eventComp != null)
                 {
                     string eventName = MyTexts.GetString(eventComp.EventDisplayName);
@@ -304,393 +258,22 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                     RenderBoxHeader(sb, blocks.Count, title);
 
-                    // only for IMyEventComponentWithGui.IsBlocksListUsed
-                    bool andMode = eventController.IsAndModeEnabled;
+                    StringBuilder slot1 = new StringBuilder(128);
+                    StringBuilder slot2 = new StringBuilder(128);
+                    StringBuilder note = new StringBuilder(128);
+                    GetEventControllerSlotInfo(eventController, slot1, slot2, note);
 
-                    // only for IMyEventComponentWithGui.IsConditionSelectionUsed
-                    string conditionInfoTrue = (eventController.IsLowerOrEqualCondition ? "<= " : ">= ");
-                    string conditionInfoFalse = (eventController.IsLowerOrEqualCondition ? "> " : "< ");
+                    sb.Color(SlotColor).Append("Left slots").ResetFormatting().Append(": when ").AppendStringBuilder(slot1).Append('\n');
+                    sb.Color(SlotColor).Append("Right slots").ResetFormatting().Append(": when ").AppendStringBuilder(slot2).Append('\n');
 
-                    string note = null;
-
-                    StringBuilder slot1 = new StringBuilder(256);
-                    StringBuilder slot2 = new StringBuilder(256);
-
-                    // HACK: hardcoded events, needs updating when new vanilla ones get added
-                    /* dumped via C# interactive:
-
-                    #r "C:\Steam\steamapps\common\SpaceEngineers\Bin64\SpaceEngineers.Game.dll"
-                    using Sandbox.ModAPI;
-                    var types = typeof(SpaceEngineers.Game.EntityComponents.Blocks.MyEventAngleChanged).Assembly.GetTypes();
-
-                    foreach(var type in types)
-                    {
-                        if(typeof(IMyEventControllerEntityComponent).IsAssignableFrom(type))
-                        {
-                            Console.WriteLine($"case \"{type.Name}\":");
-                        }
-                    }
-
-                    // add result the end of the switch to quickly verify if any are new, the ones without a red highlight.
-                    */
-
-                    string typeName = eventComp.GetType().Name;
-                    switch(typeName)
-                    {
-                        case "MyEventBlockAddedRemoved":
-                        {
-                            slot1.Append("when a block is added");
-                            slot2.Append("when a block is removed/destroyed");
-                            break;
-                        }
-
-                        case "MyEventBlockOnOff":
-                        {
-                            if(andMode)
-                            {
-                                slot1.Append("when all blocks are ");
-                                slot2.Append("when each block is ");
-                            }
-                            else // default
-                            {
-                                slot1.Append("when each block is ");
-                                slot2.Append("when all blocks are ");
-                            }
-
-                            slot1.Append("turned on");
-                            slot2.Append("turned off");
-                            break;
-                        }
-
-                        case "MyEventCockpitOccupied":
-                        {
-                            if(andMode)
-                            {
-                                slot1.Append("when all cockpits are ");
-                                slot2.Append("when each cockpit is ");
-                            }
-                            else // default
-                            {
-                                slot1.Append("when each cockpit is ");
-                                slot2.Append("when all cockpits are ");
-                            }
-
-                            slot1.Append("occupied");
-                            slot2.Append("emptied");
-                            break;
-                        }
-
-                        case "MyEventConnectorConnected":
-                        {
-                            if(andMode)
-                            {
-                                slot1.Append("when all connectors are ");
-                                slot2.Append("when each connector is ");
-                            }
-                            else // default
-                            {
-                                slot1.Append("when each connector is ");
-                                slot2.Append("when all connectors are ");
-                            }
-
-                            slot1.Append("connected");
-                            slot2.Append("disconnected");
-                            break;
-                        }
-
-                        case "MyEventConnectorReadyToLock":
-                        {
-                            if(andMode)
-                            {
-                                slot1.Append("when all connectors are ");
-                                slot2.Append("when each connector is ");
-                            }
-                            else // default
-                            {
-                                slot1.Append("when each connector is ");
-                                slot2.Append("when all connectors are ");
-                            }
-
-                            slot1.Append("ready to lock");
-                            slot2.Append("turned idle");
-                            break;
-                        }
-
-                        case "MyEventDoorOpened":
-                        {
-                            if(andMode)
-                            {
-                                slot1.Append("when all doors are ");
-                                slot2.Append("when each door is ");
-                            }
-                            else // default
-                            {
-                                slot1.Append("when each door is ");
-                                slot2.Append("when all doors are ");
-                            }
-
-                            slot1.Append("fully open");
-                            slot2.Append("fully closed");
-                            break;
-                        }
-
-                        case "MyEventGridSpeedChanged":
-                        {
-                            float speed = eventController.GetValue<float>("Speed");
-                            slot1.Append("when speed ").Append(conditionInfoTrue).SpeedFormat(speed, 2);
-                            slot2.Append("when speed ").Append(conditionInfoFalse).SpeedFormat(speed, 2);
-                            break;
-                        }
-
-                        case "MyEventLandingGearLocked":
-                        {
-                            if(andMode)
-                            {
-                                slot1.Append("when all landing gears are ");
-                                slot2.Append("when each landing gear is ");
-                            }
-                            else // default
-                            {
-                                slot1.Append("when each landing gear is ");
-                                slot2.Append("when all landing gears are ");
-                            }
-
-                            slot1.Append("locked");
-                            slot2.Append("unlocked");
-                            break;
-                        }
-
-                        case "MyEventMagneticLockReady":
-                        {
-                            if(andMode)
-                            {
-                                slot1.Append("when all landing gears are ");
-                                slot2.Append("when each landing gear is ");
-                            }
-                            else // default
-                            {
-                                slot1.Append("when each landing gear is ");
-                                slot2.Append("when all landing gears are ");
-                            }
-
-                            slot1.Append("ready to lock");
-                            slot2.Append("turned idle");
-                            break;
-                        }
-
-                        case "MyEventMerged":
-                        {
-                            if(andMode)
-                            {
-                                slot1.Append("when all blocks are ");
-                                slot2.Append("when each block is ");
-                            }
-                            else // default
-                            {
-                                slot1.Append("when each block is ");
-                                slot2.Append("when all blocks are ");
-                            }
-
-                            slot1.Append("merged");
-                            slot2.Append("unmerged");
-                            break;
-                        }
-
-                        case "MyEventRotorHingeAttachedDetached":
-                        {
-                            if(andMode)
-                            {
-                                slot1.Append("when all blocks are ");
-                                slot2.Append("when each block is ");
-                            }
-                            else // default
-                            {
-                                slot1.Append("when each block is ");
-                                slot2.Append("when all blocks are ");
-                            }
-
-                            slot1.Append("attached");
-                            slot2.Append("detached");
-                            break;
-                        }
-
-                        case "MyEventDistanceToLockedTarget":
-                        {
-                            if(andMode)
-                            {
-                                slot1.Append("when all locked-on targets are ");
-                                slot2.Append("when each locked-on target is ");
-                            }
-                            else // default
-                            {
-                                slot1.Append("when each locked-on target is ");
-                                slot2.Append("when all locked-on targets are ");
-                            }
-
-                            // HACK: the game adds 2x NaturalGravityChangedSlider and the 2nd one is this comp's...
-                            ITerminalProperty sliderProp = null;
-                            {
-                                var props = new List<ITerminalProperty>(2);
-                                eventController.GetProperties(props, (p) => p.Id == "NaturalGravityChangedSlider");
-                                if(props.Count >= 2)
-                                    sliderProp = props[1];
-                            }
-
-                            if(sliderProp == null)
-                            {
-                                slot1.Append(conditionInfoTrue).Append("<distance slider>");
-                                slot2.Append(conditionInfoFalse).Append("<distance slider>");
-                            }
-                            else
-                            {
-                                float distance = sliderProp.As<float>().GetValue(eventController);
-                                slot1.Append(conditionInfoTrue).DistanceFormat(distance, 2);
-                                slot2.Append(conditionInfoFalse).DistanceFormat(distance, 2);
-                            }
-                            break;
-                        }
-
-                        case "MyEventAngleChanged":
-                        {
-                            if(andMode)
-                            {
-                                slot1.Append("when all blocks are ");
-                                slot2.Append("when each block is ");
-                            }
-                            else // default
-                            {
-                                slot1.Append("when each block is ");
-                                slot2.Append("when all blocks are ");
-                            }
-
-                            float angle = eventController.GetValue<float>("Angle");
-                            slot1.Append(conditionInfoTrue).AngleFormatDeg(angle, 1);
-                            slot2.Append(conditionInfoFalse).AngleFormatDeg(angle, 1);
-                            break;
-                        }
-
-                        case "MyEventSurfaceHeight":
-                        {
-                            float height = eventController.GetValue<float>("SurfaceheightSlider");
-                            slot1.Append("when altitude ").Append(conditionInfoTrue).DistanceFormat(height, 2);
-                            slot2.Append("when altitude ").Append(conditionInfoFalse).DistanceFormat(height, 2);
-                            break;
-                        }
-
-                        case "MyEventNaturalGravityChanged":
-                        {
-                            float g = eventController.GetValue<float>("NaturalGravityChangedSlider");
-                            slot1.Append("when gravity ").Append(conditionInfoTrue).RoundedNumber(g, 2).Append(" g");
-                            slot2.Append("when gravity ").Append(conditionInfoFalse).RoundedNumber(g, 2).Append(" g");
-                            break;
-                        }
-
-                        case "MyEventBlockIntegrity":
-                        case "MyEventCargoFilledEntityComponent":
-                        case "MyEventGasTankFilled":
-                        case "MyEventPistonPosition":
-                        case "MyEventPowerOutput":
-                        case "MyEventStoredPower":
-                        case "MyEventThrustPercentage":
-                        {
-                            string singular = "block";
-                            string plural = "blocks";
-                            string suffix = "";
-
-                            switch(typeName)
-                            {
-                                case "MyEventBlockIntegrity": singular = "block"; plural = "blocks"; suffix = " integrity"; break;
-                                case "MyEventCargoFilledEntityComponent":
-                                    singular = "inventory"; plural = "inventories"; suffix = " filled";
-                                    note = "<color=255,220,155>Note:<reset> This acts per inventory, for example Refinery has 2.";
-                                    break;
-                                case "MyEventGasTankFilled": singular = "tank"; plural = "tanks"; suffix = " filled"; break;
-                                case "MyEventPistonPosition": singular = "piston's position"; plural = "pistons' position"; break;
-                                case "MyEventPowerOutput": suffix = " power output"; break;
-                                case "MyEventStoredPower": suffix = " stored"; break;
-                                case "MyEventThrustPercentage": singular = "thruster"; plural = "thrusters"; suffix = " thrust"; break;
-                            }
-
-                            if(andMode)
-                            {
-                                slot1.Append("when all ").Append(plural).Append(" are ");
-                                slot2.Append("when each ").Append(singular).Append(" is ");
-                            }
-                            else // default
-                            {
-                                slot1.Append("when each ").Append(singular).Append(" is ");
-                                slot2.Append("when all ").Append(plural).Append(" are ");
-                            }
-
-                            float threshold = eventController.Threshold;
-                            slot1.Append(conditionInfoTrue).ProportionToPercent(threshold, 2).Append(suffix);
-                            slot2.Append(conditionInfoFalse).ProportionToPercent(threshold, 2).Append(suffix);
-                            break;
-                        }
-
-                        default:
-                        {
-                            var compWithGUI = eventComp as IMyEventComponentWithGui;
-                            if(compWithGUI != null)
-                            {
-                                if(compWithGUI.IsBlocksListUsed)
-                                {
-                                    if(compWithGUI.IsThresholdUsed && compWithGUI.IsConditionSelectionUsed)
-                                    {
-                                        if(andMode)
-                                        {
-                                            slot1.Append("when all blocks are ");
-                                            slot2.Append("when each block is ");
-                                        }
-                                        else // default
-                                        {
-                                            slot1.Append("when each block is ");
-                                            slot2.Append("when all blocks are ");
-                                        }
-
-                                        float threshold = eventController.Threshold;
-                                        slot1.Append(conditionInfoTrue).ProportionToPercent(threshold, 2);
-                                        slot2.Append(conditionInfoFalse).ProportionToPercent(threshold, 2);
-                                    }
-                                    else if(compWithGUI.IsThresholdUsed && compWithGUI.IsConditionSelectionUsed)
-                                    {
-                                        // not much to guess here, likely has threshold as a custom slider or something else entirely
-                                    }
-                                    else
-                                    {
-                                        // not much to guess here
-                                    }
-                                }
-                                else
-                                {
-                                    // not much to guess here
-                                }
-                            }
-                            else
-                            {
-                                // not much to guess here
-                            }
-                            break;
-                        }
-                    }
-
-                    if(slot1.Length == 0)
-                        slot1.Append("when condition is true");
-
-                    if(slot2.Length == 0)
-                        slot2.Append("when condition is false");
-
-                    sb.Color(SlotColor).Append("Left slots").ResetFormatting().Append(": ").AppendStringBuilder(slot1).Append('\n');
-                    sb.Color(SlotColor).Append("Right slots").ResetFormatting().Append(": ").AppendStringBuilder(slot2).Append('\n');
-
-                    if(note != null)
-                        sb.Append(note).Append('\n');
+                    if(note.Length > 0)
+                        sb.Append("<color=255,220,155>Note:<reset> ").AppendStringBuilder(note).Append('\n');
                 }
                 else
                 {
                     RenderBoxHeader(sb, blocks.Count, "'(No event)' toolbar for ");
-                    sb.Color(SlotColor).Append("Left slots").ResetFormatting().Append(": ").Append("when condition is true").Append('\n');
-                    sb.Color(SlotColor).Append("Right slots").ResetFormatting().Append(": ").Append("when condition is false").Append('\n');
+                    sb.Color(SlotColor).Append("Left slots").ResetFormatting().Append(": when condition is true").Append('\n');
+                    sb.Color(SlotColor).Append("Right slots").ResetFormatting().Append(": when condition is false").Append('\n');
                 }
 
                 sb.NewCleanLine();
@@ -937,6 +520,431 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 }
             }
             #endregion
+        }
+
+        /// <summary>
+        /// Appends short precise descriptions of what each slot triggers from depending on the event controller's event and settings.
+        /// If event is unknown or combination of settings cannot be identified, the <paramref name="slot1"/> and <paramref name="slot2"/> will get a generic info and the method returns false.
+        /// The <paramref name="note"/> is optional (can be null) and occassionaly has some extra info.
+        /// </summary>
+        public static bool GetEventControllerSlotInfo(IMyEventControllerBlock eventController, StringBuilder slot1, StringBuilder slot2, StringBuilder note = null)
+        {
+            IMyEventControllerEntityComponent eventComp = eventController.SelectedEvent;
+            if(eventComp == null)
+            {
+                slot1.Append("condition is true");
+                slot2.Append("condition is false");
+                return false;
+            }
+
+            //foreach(MyComponentBase comp in eventController.Components)
+            //{
+            //    IMyEventControllerEntityComponent ev = comp as IMyEventControllerEntityComponent;
+            //    if(ev != null)
+            //    {
+            //        var compGui = ev as IMyEventComponentWithGui;
+            //        if(compGui != null)
+            //        {
+            //            DebugLog.PrintHUD(this, $"{ev.GetType().Name,-34} uses BlockList={compGui.IsBlocksListUsed,-5} | Threshold={compGui.IsThresholdUsed,-5} | Condition={compGui.IsConditionSelectionUsed,-5}", log: true);
+            //        }
+            //        else
+            //        {
+            //            DebugLog.PrintHUD(this, $"{ev.GetType().Name,-34} does does NOT implement IMyEventComponentWithGui", log: true);
+            //        }
+            //    }
+            //}
+            /* results of above code:
+                MyEventBlockAddedRemoved           does does NOT implement IMyEventComponentWithGui
+
+                MyEventSurfaceHeight               uses BlockList=False | Threshold=False | Condition=True 
+                MyEventGridSpeedChanged            uses BlockList=False | Threshold=False | Condition=True 
+                MyEventNaturalGravityChanged       uses BlockList=False | Threshold=False | Condition=True 
+
+                MyEventCargoFilledEntityComponent  uses BlockList=True  | Threshold=True  | Condition=True 
+                MyEventBlockIntegrity              uses BlockList=True  | Threshold=True  | Condition=True 
+                MyEventGasTankFilled               uses BlockList=True  | Threshold=True  | Condition=True 
+                MyEventStoredPower                 uses BlockList=True  | Threshold=True  | Condition=True 
+                MyEventPistonPosition              uses BlockList=True  | Threshold=True  | Condition=True 
+                MyEventPowerOutput                 uses BlockList=True  | Threshold=True  | Condition=True 
+                MyEventThrustPercentage            uses BlockList=True  | Threshold=True  | Condition=True 
+
+                MyEventAngleChanged                uses BlockList=True  | Threshold=False | Condition=True 
+                MyEventDistanceToLockedTarget      uses BlockList=True  | Threshold=False | Condition=True 
+
+                MyEventCockpitOccupied             uses BlockList=True  | Threshold=False | Condition=False
+                MyEventConnectorConnected          uses BlockList=True  | Threshold=False | Condition=False
+                MyEventLandingGearLocked           uses BlockList=True  | Threshold=False | Condition=False
+                MyEventDoorOpened                  uses BlockList=True  | Threshold=False | Condition=False
+                MyEventBlockOnOff                  uses BlockList=True  | Threshold=False | Condition=False
+                MyEventRotorHingeAttachedDetached  uses BlockList=True  | Threshold=False | Condition=False
+                MyEventMerged                      uses BlockList=True  | Threshold=False | Condition=False
+                MyEventMagneticLockReady           uses BlockList=True  | Threshold=False | Condition=False
+                MyEventConnectorReadyToLock        uses BlockList=True  | Threshold=False | Condition=False
+            */
+
+
+
+            // HACK: hardcoded events, needs updating when new vanilla ones get added
+            /* dumped via C# interactive:
+
+            #r "C:\Steam\steamapps\common\SpaceEngineers\Bin64\SpaceEngineers.Game.dll"
+            using Sandbox.ModAPI;
+            var types = typeof(SpaceEngineers.Game.EntityComponents.Blocks.MyEventAngleChanged).Assembly.GetTypes();
+
+            foreach(var type in types)
+            {
+                if(typeof(IMyEventControllerEntityComponent).IsAssignableFrom(type))
+                {
+                    Console.WriteLine($"case \"{type.Name}\":");
+                }
+            }
+
+            // add result the end of the switch to quickly verify if any are new, the ones without a red highlight.
+            */
+
+            // only for IMyEventComponentWithGui.IsBlocksListUsed
+            bool andMode = eventController.IsAndModeEnabled;
+
+            // only for IMyEventComponentWithGui.IsConditionSelectionUsed
+            string conditionInfoTrue = (eventController.IsLowerOrEqualCondition ? "<= " : ">= ");
+            string conditionInfoFalse = (eventController.IsLowerOrEqualCondition ? "> " : "< ");
+
+            string typeName = eventComp.GetType().Name;
+            switch(typeName)
+            {
+                case "MyEventBlockAddedRemoved":
+                {
+                    slot1.Append("a block is added");
+                    slot2.Append("a block is removed/destroyed");
+                    break;
+                }
+
+                case "MyEventBlockOnOff":
+                {
+                    if(andMode)
+                    {
+                        slot1.Append("all blocks are ");
+                        slot2.Append("each block is ");
+                    }
+                    else // default
+                    {
+                        slot1.Append("each block is ");
+                        slot2.Append("all blocks are ");
+                    }
+
+                    slot1.Append("turned on");
+                    slot2.Append("turned off");
+                    break;
+                }
+
+                case "MyEventCockpitOccupied":
+                {
+                    if(andMode)
+                    {
+                        slot1.Append("all seats are ");
+                        slot2.Append("each seat is ");
+                    }
+                    else // default
+                    {
+                        slot1.Append("each seat is ");
+                        slot2.Append("all seats are ");
+                    }
+
+                    slot1.Append("occupied");
+                    slot2.Append("emptied");
+                    break;
+                }
+
+                case "MyEventConnectorConnected":
+                case "MyEventConnectorReadyToLock":
+                {
+                    if(andMode)
+                    {
+                        slot1.Append("all connectors are ");
+                        slot2.Append("each connector is ");
+                    }
+                    else // default
+                    {
+                        slot1.Append("each connector is ");
+                        slot2.Append("all connectors are ");
+                    }
+
+                    if(typeName == "MyEventConnectorConnected")
+                    {
+                        slot1.Append("connected");
+                        slot2.Append("disconnected");
+                    }
+                    else
+                    {
+                        slot1.Append("ready to lock");
+                        slot2.Append("turned idle");
+                    }
+                    break;
+                }
+
+                case "MyEventDoorOpened":
+                {
+                    if(andMode)
+                    {
+                        slot1.Append("all doors are ");
+                        slot2.Append("each door is ");
+                    }
+                    else // default
+                    {
+                        slot1.Append("each door is ");
+                        slot2.Append("all doors are ");
+                    }
+
+                    slot1.Append("fully open");
+                    slot2.Append("fully closed");
+                    break;
+                }
+
+                case "MyEventGridSpeedChanged":
+                {
+                    float speed = eventController.GetValue<float>("Speed");
+                    slot1.Append("speed ").Append(conditionInfoTrue).SpeedFormat(speed, 2);
+                    slot2.Append("speed ").Append(conditionInfoFalse).SpeedFormat(speed, 2);
+                    break;
+                }
+
+                case "MyEventLandingGearLocked":
+                case "MyEventMagneticLockReady":
+                {
+                    if(andMode)
+                    {
+                        slot1.Append("all landing gears are ");
+                        slot2.Append("each landing gear is ");
+                    }
+                    else // default
+                    {
+                        slot1.Append("each landing gear is ");
+                        slot2.Append("all landing gears are ");
+                    }
+
+                    if(typeName == "MyEventLandingGearLocked")
+                    {
+                        slot1.Append("locked");
+                        slot2.Append("unlocked");
+                    }
+                    else
+                    {
+                        slot1.Append("ready to lock");
+                        slot2.Append("turned idle");
+                    }
+                    break;
+                }
+
+                case "MyEventMerged":
+                {
+                    if(andMode)
+                    {
+                        slot1.Append("all blocks are ");
+                        slot2.Append("each block is ");
+                    }
+                    else // default
+                    {
+                        slot1.Append("each block is ");
+                        slot2.Append("all blocks are ");
+                    }
+
+                    slot1.Append("merged");
+                    slot2.Append("unmerged");
+                    break;
+                }
+
+                case "MyEventRotorHingeAttachedDetached":
+                {
+                    if(andMode)
+                    {
+                        slot1.Append("all blocks are ");
+                        slot2.Append("each block is ");
+                    }
+                    else // default
+                    {
+                        slot1.Append("each block is ");
+                        slot2.Append("all blocks are ");
+                    }
+
+                    slot1.Append("attached");
+                    slot2.Append("detached");
+                    break;
+                }
+
+                case "MyEventDistanceToLockedTarget":
+                {
+                    if(andMode)
+                    {
+                        slot1.Append("all locked-on targets are ");
+                        slot2.Append("each locked-on target is ");
+                    }
+                    else // default
+                    {
+                        slot1.Append("each locked-on target is ");
+                        slot2.Append("all locked-on targets are ");
+                    }
+
+                    // HACK: the game adds 2x NaturalGravityChangedSlider and the 2nd one is this comp's...
+                    ITerminalProperty sliderProp = null;
+                    {
+                        var props = new List<ITerminalProperty>(2);
+                        eventController.GetProperties(props, (p) => p.Id == "NaturalGravityChangedSlider");
+                        if(props.Count >= 2)
+                            sliderProp = props[1];
+                    }
+
+                    if(sliderProp == null)
+                    {
+                        slot1.Append(conditionInfoTrue).Append("<distance slider>");
+                        slot2.Append(conditionInfoFalse).Append("<distance slider>");
+                    }
+                    else
+                    {
+                        float distance = sliderProp.As<float>().GetValue(eventController);
+                        slot1.Append(conditionInfoTrue).DistanceFormat(distance, 2);
+                        slot2.Append(conditionInfoFalse).DistanceFormat(distance, 2);
+                    }
+                    break;
+                }
+
+                case "MyEventAngleChanged":
+                {
+                    if(andMode)
+                    {
+                        slot1.Append("all blocks are ");
+                        slot2.Append("each block is ");
+                    }
+                    else // default
+                    {
+                        slot1.Append("each block is ");
+                        slot2.Append("all blocks are ");
+                    }
+
+                    float angle = eventController.GetValue<float>("Angle");
+                    slot1.Append(conditionInfoTrue).AngleFormatDeg(angle, 1);
+                    slot2.Append(conditionInfoFalse).AngleFormatDeg(angle, 1);
+                    break;
+                }
+
+                case "MyEventSurfaceHeight":
+                {
+                    float height = eventController.GetValue<float>("SurfaceheightSlider");
+                    slot1.Append("altitude ").Append(conditionInfoTrue).DistanceFormat(height, 2);
+                    slot2.Append("altitude ").Append(conditionInfoFalse).DistanceFormat(height, 2);
+                    break;
+                }
+
+                case "MyEventNaturalGravityChanged":
+                {
+                    float g = eventController.GetValue<float>("NaturalGravityChangedSlider");
+                    slot1.Append("gravity ").Append(conditionInfoTrue).RoundedNumber(g, 2).Append(" g");
+                    slot2.Append("gravity ").Append(conditionInfoFalse).RoundedNumber(g, 2).Append(" g");
+                    break;
+                }
+
+                case "MyEventBlockIntegrity":
+                case "MyEventCargoFilledEntityComponent":
+                case "MyEventGasTankFilled":
+                case "MyEventPistonPosition":
+                case "MyEventPowerOutput":
+                case "MyEventStoredPower":
+                case "MyEventThrustPercentage":
+                {
+                    string singular = "block";
+                    string plural = "blocks";
+                    string suffix = "";
+
+                    switch(typeName)
+                    {
+                        case "MyEventBlockIntegrity": singular = "block"; plural = "blocks"; suffix = " integrity"; break;
+                        case "MyEventCargoFilledEntityComponent":
+                            singular = "inventory"; plural = "inventories"; suffix = " filled";
+                            note?.Append("This acts per inventory, for example Refinery has 2.");
+                            break;
+                        case "MyEventGasTankFilled": singular = "tank"; plural = "tanks"; suffix = " filled"; break;
+                        case "MyEventPistonPosition": singular = "piston's position"; plural = "pistons' position"; break;
+                        case "MyEventPowerOutput": suffix = " power output"; break;
+                        case "MyEventStoredPower": suffix = " stored"; break;
+                        case "MyEventThrustPercentage": singular = "thruster"; plural = "thrusters"; suffix = " thrust"; break;
+                    }
+
+                    if(andMode)
+                    {
+                        slot1.Append("all ").Append(plural).Append(" are ");
+                        slot2.Append("each ").Append(singular).Append(" is ");
+                    }
+                    else // default
+                    {
+                        slot1.Append("each ").Append(singular).Append(" is ");
+                        slot2.Append("all ").Append(plural).Append(" are ");
+                    }
+
+                    float threshold = eventController.Threshold;
+                    slot1.Append(conditionInfoTrue).ProportionToPercent(threshold, 2).Append(suffix);
+                    slot2.Append(conditionInfoFalse).ProportionToPercent(threshold, 2).Append(suffix);
+                    break;
+                }
+
+                // primarily for mod-added ones but can be useful for newly added game ones too
+                default:
+                {
+                    if(BuildInfoMod.IsDevMod)
+                    {
+                        Log.Error($"[DEV] New(?) EC event: {typeName} (unless it's from a mod then ignore this)");
+                    }
+
+                    var compWithGUI = eventComp as IMyEventComponentWithGui;
+                    if(compWithGUI != null)
+                    {
+                        if(compWithGUI.IsBlocksListUsed)
+                        {
+                            if(compWithGUI.IsThresholdUsed && compWithGUI.IsConditionSelectionUsed)
+                            {
+                                if(andMode)
+                                {
+                                    slot1.Append("all blocks are ");
+                                    slot2.Append("each block is ");
+                                }
+                                else // default
+                                {
+                                    slot1.Append("each block is ");
+                                    slot2.Append("all blocks are ");
+                                }
+
+                                float threshold = eventController.Threshold;
+                                slot1.Append(conditionInfoTrue).ProportionToPercent(threshold, 2);
+                                slot2.Append(conditionInfoFalse).ProportionToPercent(threshold, 2);
+                            }
+                            else if(compWithGUI.IsThresholdUsed && compWithGUI.IsConditionSelectionUsed)
+                            {
+                                // not much to guess here, likely has threshold as a custom slider or something else entirely
+                            }
+                            else
+                            {
+                                // not much to guess here
+                            }
+                        }
+                        else
+                        {
+                            // not much to guess here
+                        }
+                    }
+                    else
+                    {
+                        // not much to guess here
+                    }
+                    break;
+                }
+            }
+
+            bool hasInfo = slot1.Length > 0 && slot2.Length > 0;
+            if(!hasInfo)
+            {
+                slot1.Clear().Append("condition is true");
+                slot2.Clear().Append("condition is false");
+            }
+
+            return hasInfo;
         }
     }
 }
