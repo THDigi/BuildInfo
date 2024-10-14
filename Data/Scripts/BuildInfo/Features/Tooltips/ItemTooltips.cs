@@ -235,9 +235,12 @@ namespace Digi.BuildInfo.Features.Tooltips
             {
                 const int MaxWidth = 70;
                 string desc = physDef.DescriptionText;
+
+                s.TrimEndWhitespace().Append('\n');
+
                 if(!string.IsNullOrWhiteSpace(desc))
                 {
-                    s.TrimEndWhitespace().Append("\n\"").AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append("\"\n");
+                    s.Append("\"").AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append("\"\n");
                 }
 
                 TooltipConsumable(s, physDef);

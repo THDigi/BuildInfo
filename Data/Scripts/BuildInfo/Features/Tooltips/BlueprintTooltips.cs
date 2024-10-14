@@ -466,6 +466,8 @@ namespace Digi.BuildInfo.Features.Tooltips
                         string tooltip = physDef.ExtraInventoryTooltipLine?.ToString().Trim(); // game adds some leading newlines
                         string bpTooltip = bpBaseDef.DisplayNameText;
 
+                        s.TrimEndWhitespace().Append('\n');
+
                         // don't add this if another mod already did
                         if(!string.IsNullOrWhiteSpace(tooltip) && !bpTooltip.Contains(tooltip))
                         {
