@@ -963,19 +963,35 @@ namespace Digi.BuildInfo.Utilities
 
                 foreach(MyPhysicalItemDefinition physDef in bi.Caches.ItemDefs)
                 {
-                    if(!physDef.Public || physDef.Mass <= 0 || physDef.Volume <= 0)
-                        continue; // skip hidden and physically impossible items
+                    if(!physDef.Public)
+                        continue;
 
-                    if((types != null && isWhitelist == types.Contains(physDef.Id.TypeId)) || (items != null && isWhitelist == items.Contains(physDef.Id)))
+                    float itemMass = physDef.Mass;
+                    float itemVolume = physDef.Volume;
+
+                    if(itemMass <= 0 || itemVolume <= 0)
+                        continue; // skip physically impossible items
+
+                    if(physDef.HasIntegralAmounts && itemVolume > volume)
+                        continue; // skip items that can't fit this inventory
+
+                    if((types != null && isWhitelist == types.Contains(physDef.Id.TypeId))
+                    || (items != null && isWhitelist == items.Contains(physDef.Id)))
                     {
-                        float fillMass = physDef.Mass;
                         if(physDef.HasIntegralAmounts)
-                            fillMass *= (int)Math.Floor(volume / physDef.Volume);
+                            itemMass *= (int)Math.Floor(volume / itemVolume);
                         else
-                            fillMass *= (volume / physDef.Volume);
+                            itemMass *= (volume / itemVolume);
 
-                        minMass = Math.Min(fillMass, minMass);
-                        maxMass = Math.Max(fillMass, maxMass);
+                        if(itemMass > 0)
+                        {
+                            minMass = Math.Min(itemMass, minMass);
+                            maxMass = Math.Max(itemMass, maxMass);
+                        }
+                        else
+                        {
+                            Log.Error($"fillMass close to zero for {physDef.Id}: fillMass={itemMass:0.##############}; mass={physDef.Mass}; itemVolume={itemVolume}; cargoVolume={volume}; integral={physDef.HasIntegralAmounts}");
+                        }
                     }
                 }
 
