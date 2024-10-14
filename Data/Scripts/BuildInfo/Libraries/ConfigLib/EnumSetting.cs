@@ -30,6 +30,12 @@ namespace Digi.ConfigLib
 
         public readonly Dictionary<TEnum, EnumData> EnumInfo = new Dictionary<TEnum, EnumData>();
 
+        /// <summary>
+        /// Custom code for reading the raw value from config, useful for enum changes to remain backwards compatible.
+        /// In the callback, return null to disregard, or return enum to set it to that.
+        /// </summary>
+        public Func<string, TEnum?> BackwardsCompatCallback;
+
         public EnumSetting(ConfigHandler configInstance, string name, TEnum defaultValue, params string[] commentLines)
             : base(configInstance, name, (int)(object)defaultValue, commentLines)
         {
@@ -69,17 +75,25 @@ namespace Digi.ConfigLib
 
             int? setValue = null;
 
-            int num;
-            if(int.TryParse(valueString, out num))
+            TEnum? result = BackwardsCompatCallback?.Invoke(valueString);
+            if(result != null)
             {
-                setValue = num;
+                setValue = (int)(object)result.Value;
             }
             else
             {
-                TEnum enumValue;
-                if(Enum.TryParse<TEnum>(valueString, out enumValue))
+                int num;
+                if(int.TryParse(valueString, out num))
                 {
-                    setValue = (int)(object)enumValue;
+                    setValue = num;
+                }
+                else
+                {
+                    TEnum enumValue;
+                    if(Enum.TryParse<TEnum>(valueString, out enumValue))
+                    {
+                        setValue = (int)(object)enumValue;
+                    }
                 }
             }
 

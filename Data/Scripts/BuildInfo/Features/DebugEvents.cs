@@ -388,6 +388,8 @@ namespace Digi.BuildInfo.Features
         //        float[] values = new float[]
         //        {
         //            1.235733e24f,
+        //            8326919.0f,
+        //            12051.2516f,
         //            5292.135804f,
         //            999.53999f,
         //            4.3125783258f,
@@ -404,8 +406,9 @@ namespace Digi.BuildInfo.Features
         //            [nameof(Utilities.StringBuilderExtensions.ShortNumber)] = (s, value) => s.ShortNumber(value),
         //            //[nameof(Utilities.StringBuilderExtensions.NumberCapped)] = (s, value) => s.NumberCapped((int)value, ToolbarInfo.ToolbarStatusProcessor.MaxChars),
         //            //[nameof(Utilities.StringBuilderExtensions.NumberCappedSpaced)] = (s, value) => s.NumberCappedSpaced((int)value, ToolbarInfo.ToolbarStatusProcessor.MaxChars),
-        //            [nameof(Utilities.StringBuilderExtensions.MassFormat)] = (s, value) => s.MassFormat(value),
         //            [nameof(Utilities.StringBuilderExtensions.ExactMassFormat)] = (s, value) => s.ExactMassFormat(value),
+        //            [nameof(Utilities.StringBuilderExtensions.MassFormat)] = (s, value) => s.MassFormat(value),
+        //            [nameof(Utilities.StringBuilderExtensions.MassFormatSI)] = (s, value) => s.MassFormatSI(value),
         //            [nameof(Utilities.StringBuilderExtensions.SpeedFormat)] = (s, value) => s.SpeedFormat(value),
         //            [nameof(Utilities.StringBuilderExtensions.AccelerationFormat)] = (s, value) => s.AccelerationFormat(value),
         //            [nameof(Utilities.StringBuilderExtensions.ForceFormat)] = (s, value) => s.ForceFormat(value),

@@ -718,6 +718,9 @@ namespace Digi.BuildInfo.Utilities
             return s.Number(kg).Append(unit);
         }
 
+        /// <summary>
+        /// Metric multipliers, 2 more exponents before showing next unit
+        /// </summary>
         public static StringBuilder MassFormat(this StringBuilder s, float kg)
         {
             if(!IsValid(s, kg, " kg"))
@@ -734,32 +737,65 @@ namespace Digi.BuildInfo.Utilities
                 g = -g;
             }
 
-            if(g >= 1e18f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
+            if(g >= 1e20f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
                 return s.ScientificNumber(kg).Append(" kg");
 
-            if(g >= 1e15f)
+            if(g >= 1e17f)
+                return s.Number(g / 1e15f).Append(" Gt");
+
+            if(g >= 1e14f)
+                return s.Number(g / 1e12f).Append(" Mt");
+
+            if(g >= 1e11f)
+                return s.Number(g / 1e9f).Append(" kt");
+
+            if(g >= 1e8f)
+                return s.Number(g / 1e6f).Append(" t");
+
+            if(g >= 1e3f)
+                return s.Number(g / 1e3f).Append(" kg");
+
+            return s.Number(g).Append(" grams");
+        }
+
+        /// <summary>
+        /// SI Multipliers, 2 more exponents before showing next unit
+        /// </summary>
+        public static StringBuilder MassFormatSI(this StringBuilder s, float kg)
+        {
+            if(!IsValid(s, kg, " kg"))
+                return s;
+
+            if(kg == 0)
+                return s.Append("0 kg");
+
+            float g = kg * 1e3f;
+
+            if(g < 0)
+            {
+                s.Append("-");
+                g = -g;
+            }
+
+            if(g >= 1e20f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
+                return s.ScientificNumber(kg).Append(" kg");
+
+            if(g >= 1e17f)
                 return s.Number(g / 1e15f).Append(" Pg");
 
-            if(g >= 1e12f)
+            if(g >= 1e14f)
                 return s.Number(g / 1e12f).Append(" Tg");
 
-            if(g >= 1e9f)
+            if(g >= 1e11f)
                 return s.Number(g / 1e9f).Append(" Gg");
 
-            if(g >= 1e6f)
+            if(g >= 1e8f)
                 return s.Number(g / 1e6f).Append(" Mg");
 
             if(g >= 1e3f)
                 return s.Number(g / 1e3f).Append(" kg");
 
-            if(g >= 1)
-                return s.Number(g).Append(" grams");
-
-            if(g >= 1e-3f)
-                return s.Number(g * 1e3f).Append(" mg");
-
-            //if(g >= 1e-6f)
-            return s.Number(g * 1e6f).Append(" µg");
+            return s.Number(g).Append(" grams");
         }
 
         public static StringBuilder IntegrityFormat(this StringBuilder s, float integrity)

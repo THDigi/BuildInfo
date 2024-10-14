@@ -30,10 +30,19 @@ namespace Digi.BuildInfo.Features.HUD
             if(format == Config.MassFormat.Vanilla)
                 return CurrentValue.ToString("N2"); // as per MyStatControlledEntityMass
 
-            if(ShowCustomSuffix && format == Config.MassFormat.RealCustomSuffix)
-                return TempSB.Clear().MassFormat(CurrentValue).ToString();
-            else
-                return TempSB.Clear().ExactMassFormat(CurrentValue, includeUnit: false).ToString();
+            if(ShowCustomSuffix)
+            {
+                if(format == Config.MassFormat.CustomMetric)
+                {
+                    return TempSB.Clear().MassFormat(CurrentValue).ToString();
+                }
+                else if(format == Config.MassFormat.CustomSI)
+                {
+                    return TempSB.Clear().MassFormatSI(CurrentValue).ToString();
+                }
+            }
+
+            return TempSB.Clear().ExactMassFormat(CurrentValue, includeUnit: false).ToString();
         }
 
         protected override void UpdateBeforeSim(ref float current, ref float min, ref float max)

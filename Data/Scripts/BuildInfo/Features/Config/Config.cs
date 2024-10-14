@@ -9,6 +9,7 @@ using Digi.Input;
 using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage.Input;
+using VRage.Library.Utils;
 using VRage.ModAPI;
 using VRageMath;
 using static Digi.Input.InputLib;
@@ -291,7 +292,7 @@ namespace Digi.BuildInfo.Features.Config
 
             if(cfgv <= 11)
             {
-                if(MassOverride.ValueEnum == MassFormat.RealCustomSuffix)
+                if(MassOverride.ValueEnum == MassFormat.CustomSI)
                 {
                     MassOverride.ResetToDefault();
 
@@ -435,11 +436,13 @@ namespace Digi.BuildInfo.Features.Config
             HealthOverride = new BoolSetting(Handler, "HUD: Health stat override", true,
                 "Shows actual health instead of percentage. It also tries to maintain the number within 4 characters width by using k suffix if it makes it shorter.");
 
-            MassOverride = new EnumSetting<MassFormat>(Handler, "HUD: Mass stat override", MassFormat.RealKg,
+            MassOverride = new EnumSetting<MassFormat>(Handler, "HUD: Mass stat override", MassFormat.CustomKg,
                 "Changes the ship mass format on the HUD.");
-            MassOverride.SetEnumComment(MassFormat.Vanilla, "Game's default inaccurate mass and no station mass (same as info tab), shown in kg.");
-            MassOverride.SetEnumComment(MassFormat.RealCustomSuffix, "Physical mass + station mass, formatted with SI unit multipliers (kg, Mg, Gg, Tg, Pg then scientific notation kg)");
-            MassOverride.SetEnumComment(MassFormat.RealKg, "Physical mass + station mass, shown only as kg.");
+            MassOverride.BackwardsCompatCallback = MassOverrideBackwardsCompat;
+            MassOverride.SetEnumComment(MassFormat.Vanilla, "Game's original mass formatting which does not include station mass, it does show physical mass since SE v205");
+            MassOverride.SetEnumComment(MassFormat.CustomKg, "Physical mass + station mass, shown only as kg, with scientific notation past e12");
+            MassOverride.SetEnumComment(MassFormat.CustomMetric, "Physical mass + station mass, formatted with metric multipliers: kg, t, kt, Mt, Gt then scientific notation past e20");
+            MassOverride.SetEnumComment(MassFormat.CustomSI, "Physical mass + station mass, formatted with SI unit multipliers: kg, Mg, Gg, Tg, Pg then scientific notation past e20");
 
             CockpitBuildHideRightHud = new BoolSetting(Handler, "HUD: Cockpit build mode hide right panel", true,
                 "Hide the bottom-right ship HUD panel when in cockpit build mode because the block info overlaps it.");
@@ -748,6 +751,26 @@ namespace Digi.BuildInfo.Features.Config
                 "Do not edit!");
             ModVersion.AddDefaultValueComment = false;
             ModVersion.AddValidRangeComment = false;
+        }
+
+        MassFormat? MassOverrideBackwardsCompat(string valueString)
+        {
+            valueString = valueString.Trim();
+            MassFormat? result = null;
+
+            if(valueString.Equals("RealKg", StringComparison.OrdinalIgnoreCase))
+            {
+                result = MassFormat.CustomKg;
+            }
+            else if(valueString.Equals("RealCustomSuffix", StringComparison.OrdinalIgnoreCase))
+            {
+                result = MassFormat.CustomSI;
+            }
+
+            if(result != null)
+                Log.Info($"[Config] Converted '{MassOverride.Name}' value '{valueString}' to the new '{MyEnum<MassFormat>.GetName(result.Value)}'");
+
+            return result;
         }
 
         public void Save()

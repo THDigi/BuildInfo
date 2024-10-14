@@ -110,7 +110,8 @@ namespace Digi.BuildInfo.Features.Config
     public enum MassFormat
     {
         Vanilla = 0,
-        RealCustomSuffix = 1,
-        RealKg = 2,
+        CustomKg = 1,
+        CustomMetric = 2,
+        CustomSI = 3,
     }
 }

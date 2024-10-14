@@ -118,7 +118,9 @@ namespace Digi.BuildInfo.Features
 
                 ModifyToolbarStyle(hudDef);
 
-                if(Main.Config.MassOverride.ValueEnum == Config.MassFormat.RealCustomSuffix)
+                // remove the hardcoded "kg" suffix from the HUD definition to allow HUD stat to add its own unit suffix
+                var massFormat = Main.Config.MassOverride.ValueEnum;
+                if(massFormat == Config.MassFormat.CustomMetric || massFormat == Config.MassFormat.CustomSI)
                 {
                     ModifyMassFormat(hudDef);
                 }
