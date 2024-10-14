@@ -28,7 +28,7 @@ namespace Digi.BuildInfo.Features.HUD
         {
             var format = Main.Config.MassOverride.ValueEnum;
             if(format == Config.MassFormat.Vanilla)
-                return CurrentValue.ToString("0.00"); // as per MyStatControlledEntityMass
+                return CurrentValue.ToString("N2"); // as per MyStatControlledEntityMass
 
             if(ShowCustomSuffix && format == Config.MassFormat.RealCustomSuffix)
                 return TempSB.Clear().MassFormat(CurrentValue).ToString();
@@ -60,16 +60,18 @@ namespace Digi.BuildInfo.Features.HUD
                 InvalidateStringCache();
             PrevFormatType = formatType;
 
-            if(formatType == Config.MassFormat.Vanilla)
-            {
-                current = ctrlGrid.IsStatic ? 0f : ctrlGrid.GetCurrentMass();
-                return;
-            }
-
             // HACK: physics mass can be 0 if ship is landing gear'd to another ship and you're a MP client, and who knows what other cases.
             // this gets the mass of non-static grids and works for MP clients, but it's affected by inventory multiplier so it's not real mass.
             float baseMass, physMass;
             float mass = ctrlGrid.GetCurrentMass(out baseMass, out physMass);
+
+            // TODO: the value assigned for physics mass changed, check to see if MP issues got fixed.
+
+            if(formatType == Config.MassFormat.Vanilla)
+            {
+                current = physMass;
+                return;
+            }
 
             // remove the ship inventory multiplier from the number.
             float blockInvMultiplier = MyAPIGateway.Session.BlocksInventorySizeMultiplier;
