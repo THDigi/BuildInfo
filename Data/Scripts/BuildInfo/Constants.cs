@@ -17,7 +17,7 @@ namespace Digi.BuildInfo
 {
     public class Constants : ModComponent
     {
-        public const int ModVersion = 7; // notifies player of notable changes and links them to workshop's changelog.
+        public const int ModVersion = 8; // notifies player of notable changes and links them to workshop's changelog.
 
         public const int TicksPerSecond = (int)MyEngineConstants.UPDATE_STEPS_PER_SECOND;
 
