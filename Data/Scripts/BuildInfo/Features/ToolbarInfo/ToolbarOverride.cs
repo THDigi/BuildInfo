@@ -17,6 +17,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
     public class ToolbarOverride : ModComponent
     {
         public readonly Dictionary<IMyTerminalAction, ActionWrapper> ActionWrappers = new Dictionary<IMyTerminalAction, ActionWrapper>(16);
+        FastResourceLock ActionWrappersLock = new FastResourceLock();
 
         public event Action<ActionWrapper> ActionCollected;
 
@@ -131,46 +132,58 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             return false; // null list, never add to it.
         }
 
+        // NOTE: can be called from a thread
         void CustomActionGetter(IMyTerminalBlock block, List<IMyTerminalAction> actions)
         {
-            int wrappersBefore = ActionWrappers.Count;
-
-            // required to catch mod actions that are only added to this event
-            for(int i = 0; i < actions.Count; i++)
+            try
             {
-                IMyTerminalAction action = actions[i];
-                if(!ActionWrappers.ContainsKey(action))
+                int wrappersBefore = ActionWrappers.Count;
+
+                // required to catch mod actions that are only added to this event
+                for(int i = 0; i < actions.Count; i++)
                 {
-                    if(block != null)
+                    IMyTerminalAction action = actions[i];
+
+                    using(ActionWrappersLock.AcquireExclusiveUsing())
                     {
-                        MyTuple<string, string> key = MyTuple.Create(block.GetType().Name, action.Id);
-                        int triggered;
-                        if(TypeActionIdPairs.TryGetValue(key, out triggered))
+                        if(ActionWrappers.ContainsKey(action))
+                            continue;
+
+                        if(block != null)
                         {
-                            triggered++;
-                            if(triggered == TypeActionIdMaxTriggers)
-                                Log.Error($"Action {action.Id} was added {TypeActionIdMaxTriggers} times before for type {key.Item1}, is a mod creating new instances in CustomActionGetter?");
-                        }
-                        else
-                        {
-                            triggered = 1;
+                            MyTuple<string, string> key = MyTuple.Create(block.GetType().Name, action.Id);
+                            int triggered;
+                            if(TypeActionIdPairs.TryGetValue(key, out triggered))
+                            {
+                                triggered++;
+                                if(triggered == TypeActionIdMaxTriggers)
+                                    Log.Error($"Action {action.Id} was added {TypeActionIdMaxTriggers} times before for type {key.Item1}, is a mod creating new instances in CustomActionGetter?");
+                            }
+                            else
+                            {
+                                triggered = 1;
+                            }
+
+                            TypeActionIdPairs[key] = triggered;
                         }
 
-                        TypeActionIdPairs[key] = triggered;
+                        ActionWrapper wrapper = new ActionWrapper(action, block?.BlockDefinition.ToString() ?? "block null!");
+                        ActionWrappers.Add(action, wrapper);
+                        ActionCollected?.Invoke(wrapper);
                     }
-
-                    ActionWrapper wrapper = new ActionWrapper(action, block?.BlockDefinition.ToString() ?? "block null!");
-                    ActionWrappers.Add(action, wrapper);
-                    ActionCollected?.Invoke(wrapper);
                 }
-            }
 
-            if(BuildInfoMod.IsDevMod && wrappersBefore != ActionWrappers.Count)
+                if(BuildInfoMod.IsDevMod && wrappersBefore != ActionWrappers.Count)
+                {
+                    Log.Info($"CustomActionGetter(): Found {ActionWrappers.Count - wrappersBefore} new actions; total={ActionWrappers.Count}");
+                }
+
+                CheckInfiniteActions();
+            }
+            catch(Exception e)
             {
-                Log.Info($"CustomActionGetter(): Found {ActionWrappers.Count - wrappersBefore} new actions; total={ActionWrappers.Count}");
+                Log.Error(e);
             }
-
-            CheckInfiniteActions();
         }
 
         void CheckInfiniteActions()
