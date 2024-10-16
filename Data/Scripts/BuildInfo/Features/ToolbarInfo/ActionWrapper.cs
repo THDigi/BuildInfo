@@ -434,8 +434,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 case "AddRotorTopPart":
                 case "AddSmallRotorTopPart":
+                case "AddMediumRotorTopPart":
                 case "AddHingeTopPart":
                 case "AddSmallHingeTopPart":
+                case "AddMediumHingeTopPart":
                 case "Add Top Part":
                     return Utils.GetModFullPath(@"Textures\ActionIcons\WheelSpawn.dds");
 
@@ -774,6 +776,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\SetChannelSendSignal.dds", StringComparison.OrdinalIgnoreCase))
                 return Utils.GetModFullPath(@"Textures\ActionIcons\SetChannelAndSend.dds");
+
+            if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\SetValue.dds", StringComparison.OrdinalIgnoreCase))
+                return Utils.GetModFullPath(@"Textures\ActionIcons\SetValue.dds");
+
+            if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\SetValueAndExecute.dds", StringComparison.OrdinalIgnoreCase))
+                return Utils.GetModFullPath(@"Textures\ActionIcons\SetValueAndExecute.dds");
             #endregion
 
             if(BuildInfoMod.IsDevMod)
