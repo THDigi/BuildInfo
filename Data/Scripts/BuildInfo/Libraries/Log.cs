@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
 using ParallelTasks;
 using Sandbox.ModAPI;
+using VRage;
 using VRage.Game;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
@@ -17,7 +19,7 @@ namespace Digi
     /// <summary>
     /// <para>Standalone logger, does not require any setup.</para>
     /// <para>Mod name is automatically set from workshop name or folder name. Can also be manually defined using <see cref="ModName"/>.</para>
-    /// <para>Version 1.6 by Digi</para>
+    /// <para>Version 1.7 by Digi</para>
     /// </summary>
     [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate, priority: int.MaxValue)]
     public class Log : MySessionComponentBase
@@ -381,13 +383,15 @@ namespace Digi
 
             public void IncreaseIndent()
             {
-                indent++;
+                Interlocked.Increment(ref indent);
             }
 
             public void DecreaseIndent()
             {
                 if(indent > 0)
-                    indent--;
+                {
+                    Interlocked.Decrement(ref indent);
+                }
             }
 
             public void ResetIndent()
@@ -395,22 +399,31 @@ namespace Digi
                 indent = 0;
             }
 
+            // slow way to do this but I need it to be reliable
+            FastResourceLock Lock = new FastResourceLock();
+
             public void Error(string message, string printText = PRINT_GENERIC_ERROR, int printTime = DEFAULT_TIME_ERROR)
             {
-                MyLog.Default.WriteLineAndConsole($"{modName} error/exception: {message}"); // write to game's log
+                using(Lock.AcquireExclusiveUsing())
+                {
+                    MyLog.Default.WriteLineAndConsole($"{modName} error/exception: {message}"); // write to game's log
 
-                LogMessage(message, "ERROR: "); // write to custom log
+                    LogMessage(message, "ERROR: "); // write to custom log
 
-                if(printText != null) // printing to HUD is optional
-                    ShowHudMessage(ref notifyError, message, printText, printTime, MyFontEnum.Red);
+                    if(printText != null) // printing to HUD is optional
+                        ShowHudMessage(ref notifyError, message, printText, printTime, MyFontEnum.Red);
+                }
             }
 
             public void Info(string message, string printText = null, int printTime = DEFAULT_TIME_INFO)
             {
-                LogMessage(message); // write to custom log
+                using(Lock.AcquireExclusiveUsing())
+                {
+                    LogMessage(message); // write to custom log
 
-                if(printText != null) // printing to HUD is optional
-                    ShowHudMessage(ref notifyInfo, message, printText, printTime, MyFontEnum.Debug);
+                    if(printText != null) // printing to HUD is optional
+                        ShowHudMessage(ref notifyInfo, message, printText, printTime, MyFontEnum.Debug);
+                }
             }
 
             void ShowHudMessage(ref IMyHudNotification notify, string message, string printText, int printTime, string font)
