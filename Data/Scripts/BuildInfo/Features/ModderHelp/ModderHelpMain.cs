@@ -428,6 +428,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
                         continue;
                     }
 
+                    // MyDefinitionManager.ProcessContentFilePath()
                     const string fileDoesNotHaveProperExtension = "File does not have a proper extension: ";
                     if(error.Message.StartsWith(resourceNotFoundPrefix))
                     {
@@ -437,6 +438,35 @@ namespace Digi.BuildInfo.Features.ModderHelp
                         {
                             error.Severity = TErrorSeverity.Notice; // reduce severity
                             error.Message += $"\n{Signature}Ignore this particular one, modder wants to use sound from the game folder and omitting extension is the only way to do that.";
+                        }
+
+                        continue;
+                    }
+
+                    // MyDefinitionManager.ProcessContentFilePath()
+                    const string fileExtensionNotSupported = "File extension of: ";
+                    if(error.Message.StartsWith(fileExtensionNotSupported))
+                    {
+                        const string tail = " is not supported.";
+                        string filePath = error.Message.Substring(fileExtensionNotSupported.Length, error.Message.Length - fileExtensionNotSupported.Length - tail.Length);
+                        string extension = Path.GetExtension(filePath);
+
+                        if(!string.IsNullOrEmpty(extension))
+                        {
+                            bool anyUpperCase = false;
+                            foreach(var c in extension)
+                            {
+                                if(char.IsUpper(c))
+                                {
+                                    anyUpperCase = true;
+                                    break;
+                                }
+                            }
+
+                            if(anyUpperCase)
+                            {
+                                error.Message += $"\n{Signature}Game expects all lower-case extensions, try {extension.ToLower()}.";
+                            }
                         }
 
                         continue;
