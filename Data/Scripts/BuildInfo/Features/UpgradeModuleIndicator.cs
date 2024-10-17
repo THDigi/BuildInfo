@@ -141,9 +141,6 @@ namespace Digi.BuildInfo.Features
             Block.CubeGrid.OnBlockAdded += GridBlockAdded;
             Block.CubeGrid.OnBlockRemoved += GridBlockRemoved;
 
-            // HACK: force upgrade module to refresh now
-            ((MyEntity)Block).UpdateBeforeSimulation100();
-
             NeedsRefresh = true;
             GameLogic.NeedsUpdate |= UpdateFlag;
         }
