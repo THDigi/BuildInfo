@@ -87,7 +87,7 @@ namespace Digi.BuildInfo.Features.GUI
         static readonly Color ValueColorDisabled = Color.Gray;
         static readonly Color ValueColorWarning = new Color(255, 60, 25);
         static readonly Color NewSettingColor = new Color(100, 255, 155);
-        static readonly Color SearchHighlightColor = new Color(60, 76, 82);
+        static readonly Color SearchBgColor = new Color(60, 76, 82);
         const bool DebugDrawBoxes = false;
         const float CloseButtonScale = 1.2f;
 
@@ -219,7 +219,7 @@ namespace Digi.BuildInfo.Features.GUI
             CloseButton.Refresh(Vector2D.Zero);
 
             SearchBar = new TextPackage(128, false, MyStringId.GetOrCompute("BuildInfo_UI_Square"));
-            SearchBar.Background.BillBoardColor = SearchHighlightColor;
+            SearchBar.Background.BillBoardColor = SearchBgColor;
             SearchBar.HideWithHUD = false;
             SearchBar.Position = new Vector2D(-0.9, 0.4);
             SearchBar.Font = FontsHandler.TextAPI_OutlinedFont;
@@ -962,7 +962,7 @@ namespace Digi.BuildInfo.Features.GUI
                 sb.Color(ValueColorDisabled).Append("(Requires something else)\n");
                 sb.Color(NewSettingColor).Append("*<reset> new settings in SE v205\n");
                 //sb.Append("\n<reset>");
-                sb.Color(SearchHighlightColor).Append("Search<reset> by opening chat.\n");
+                sb.Color(Color.Yellow).Append("Search<reset> by opening chat.\n");
             }
 
             bool globalEncountersOn = settings.GlobalEncounterCap > 0;
