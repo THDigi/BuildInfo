@@ -241,6 +241,13 @@ namespace Digi.BuildInfo.Systems
                 Text = CreateHUDText(TextStringBuilder, Vector2D.Zero);
             }
 
+            public void Dispose()
+            {
+                Text?.DeleteMessage();
+                Shadow?.DeleteMessage();
+                Background?.DeleteMessage();
+            }
+
             public bool Visible
             {
                 get { return Text.Visible; }
