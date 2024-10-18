@@ -24,8 +24,9 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         public override void PrintHelp(StringBuilder sb)
         {
-            sb.Append(PrimaryCommand).Append(" blocks <mass|hp|volume> [sg|lg] [desc]").NewLine();
-            sb.Append(PrimaryCommand).Append(" comps <mass|hp|volume> [desc]").NewLine();
+            sb.Append(PrimaryCommand).Append(" blocks <mass|hp|volume|density|hpdensity> [sg|lg] [desc]").NewLine();
+            sb.Append(PrimaryCommand).Append(" comps <mass|hp|volume|density> [desc]").NewLine();
+            sb.Append(PrimaryCommand).Append(" items <mass|volume|density> [desc]").NewLine();
             sb.Append(PrimaryCommand).Append(" lcds [group]").NewLine();
             sb.Append("  Shows a sorted list of the specified things; can be exported to file.").NewLine();
         }
@@ -47,6 +48,8 @@ namespace Digi.BuildInfo.Features.ChatCommands
         public override void Execute(Arguments args)
         {
             bool survival = MyAPIGateway.Session.SurvivalMode;
+
+            const string Separator = "  |  ";
 
             string type = args.Get(0);
             string sort = args.Get(1);
@@ -91,10 +94,10 @@ namespace Digi.BuildInfo.Features.ChatCommands
                         {
                             sb.Append(defInfo.Definition.CubeSize == MyCubeSize.Large ? "[Large] " : "[Small] ")
                                 .Append(defInfo.Definition.DisplayNameText)
-                                .Append(" | surface #").Append(defInfo.ScreenIndex)
-                                .Append(" | surfacesize: ").RoundedNumber(defInfo.Info.SurfaceSize.X, 4).Append("x").RoundedNumber(defInfo.Info.SurfaceSize.Y, 4)
-                                .Append(" | texturesize: ").RoundedNumber(defInfo.Info.TextureSize.X, 4).Append("x").RoundedNumber(defInfo.Info.TextureSize.Y, 4)
-                                .Append(" | aspectratio: ").RoundedNumber(defInfo.Info.AspectRatio.X, 4).Append(":").RoundedNumber(defInfo.Info.AspectRatio.Y, 4)
+                                .Append(Separator).Append("surface #").Append(defInfo.ScreenIndex)
+                                .Append(Separator).Append("surfacesize: ").RoundedNumber(defInfo.Info.SurfaceSize.X, 4).Append("x").RoundedNumber(defInfo.Info.SurfaceSize.Y, 4)
+                                .Append(Separator).Append("texturesize: ").RoundedNumber(defInfo.Info.TextureSize.X, 4).Append("x").RoundedNumber(defInfo.Info.TextureSize.Y, 4)
+                                .Append(Separator).Append("aspectratio: ").RoundedNumber(defInfo.Info.AspectRatio.X, 4).Append(":").RoundedNumber(defInfo.Info.AspectRatio.Y, 4)
                                 .Append('\n');
                         }
 
@@ -130,15 +133,15 @@ namespace Digi.BuildInfo.Features.ChatCommands
                             uniqueSizes[key] = uniqueSizes.GetValueOrDefault(key, 0) + 1;
 
                             sb.Append("    #").Append(i)
-                                .Append(" | surface: ").RoundedNumber(info.SurfaceSize.X, 4).Append(" x ").RoundedNumber(info.SurfaceSize.Y, 4)
-                                .Append(" | texture: ").RoundedNumber(info.TextureSize.X, 4).Append(" x ").RoundedNumber(info.TextureSize.Y, 4)
-                                .Append(" | aspect: ").RoundedNumber(info.AspectRatio.X, 4).Append(":").RoundedNumber(info.AspectRatio.Y, 4)
-                                .Append(" | name: ").Append(MyTexts.GetString(screen.DisplayName));
+                                .Append(Separator).Append("surface: ").RoundedNumber(info.SurfaceSize.X, 4).Append(" x ").RoundedNumber(info.SurfaceSize.Y, 4)
+                                .Append(Separator).Append("texture: ").RoundedNumber(info.TextureSize.X, 4).Append(" x ").RoundedNumber(info.TextureSize.Y, 4)
+                                .Append(Separator).Append("aspect: ").RoundedNumber(info.AspectRatio.X, 4).Append(":").RoundedNumber(info.AspectRatio.Y, 4)
+                                .Append(Separator).Append("name: ").Append(MyTexts.GetString(screen.DisplayName));
 
                             if(!string.IsNullOrEmpty(screen.Script))
-                                sb.Append(" | TSS: ").Append(screen.Script);
+                                sb.Append(Separator).Append("TSS: ").Append(screen.Script);
 
-                            //.Append(" | material: ").Append(screen.Name) // this is material name, not useful to anyone reading this
+                            //.Append(Separator).Append("material: ").Append(screen.Name) // this is material name, not useful to anyone reading this
 
                             sb.Append('\n');
                         }
@@ -164,7 +167,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
             if(args.Count < 2 || type == null || sort == null)
             {
-                PrintChat("Sort what?", FontsHandler.RedSh);
+                PrintChat("Sort by what?", FontsHandler.RedSh);
                 PrintHelpToChat();
                 return;
             }
@@ -183,12 +186,36 @@ namespace Digi.BuildInfo.Features.ChatCommands
             if(type.Equals("blocks", ChatCommandHandler.StringCompare))
             {
                 IEnumerable<MyCubeBlockDefinition> defs;
+                List<MyCubeBlockDefinition> list = Main.Caches.BlockDefs;
 
                 switch(sort)
                 {
-                    case "mass": defs = Main.Caches.BlockDefs.OrderBy((d) => (d.HasPhysics ? d.Mass : 0)); break;
-                    case "hp": defs = Main.Caches.BlockDefs.OrderBy((d) => d.MaxIntegrity); break;
-                    case "volume": defs = Main.Caches.BlockDefs.OrderBy((d) => (d.Size * MyDefinitionManager.Static.GetCubeSize(d.CubeSize)).Volume); break;
+                    case "mass": defs = list.OrderBy((d) => (d.HasCollider() ? d.Mass : 0)); break;
+                    case "hp": defs = list.OrderBy((d) => d.MaxIntegrity); break;
+                    case "volume": defs = list.OrderBy((d) => (d.Size * MyDefinitionManager.Static.GetCubeSize(d.CubeSize)).Volume); break;
+                    case "density":
+                    {
+                        defs = list.OrderBy((d) =>
+                        {
+                            if(!d.HasCollider())
+                                return float.PositiveInfinity;
+
+                            float volume = (d.Size * MyDefinitionManager.Static.GetCubeSize(d.CubeSize)).Volume;
+                            return d.Mass / volume;
+                        });
+                        break;
+                    }
+                    case "hpdensity":
+                    {
+                        defs = list.OrderBy((d) =>
+                        {
+                            if(!d.HasCollider())
+                                return float.PositiveInfinity;
+
+                            return d.MaxIntegrity / d.Mass;
+                        });
+                        break;
+                    }
 
                     default:
                         PrintChat($"Unknown sort arg (2nd): {sort}", FontsHandler.RedSh);
@@ -216,33 +243,68 @@ namespace Digi.BuildInfo.Features.ChatCommands
                     if(sizeFilter == null)
                         sb.Append(blockDef.CubeSize == MyCubeSize.Large ? "[Large] " : "[Small] ");
 
-                    sb.Append(blockDef.DisplayNameText)
-                        .Append(" | ").ExactMassFormat(blockDef.HasPhysics ? blockDef.Mass : 0)
-                        .Append(" | ").Number(blockDef.MaxIntegrity).Append(" hp")
-                        .Append(" | ").VolumeFormat((blockDef.Size * cellSize).Volume)
-                        .Append('\n');
+                    sb.Append(blockDef.DisplayNameText);
+
+                    bool hasCollider = blockDef.HasCollider();
+
+                    if(hasCollider)
+                        sb.Append(Separator).ExactMassFormat(blockDef.Mass);
+                    else
+                        sb.Append(Separator).Append("No mass");
+
+                    sb.Append(Separator).VolumeFormat((blockDef.Size * cellSize).Volume);
+
+                    sb.Append(Separator).Number(hasCollider ? blockDef.Mass / (blockDef.Size * cellSize).Volume : float.PositiveInfinity).Append(" density");
+
+                    sb.Append(Separator).Number(blockDef.MaxIntegrity).Append(" hp");
+
+                    sb.Append(Separator).Number(hasCollider ? blockDef.MaxIntegrity / blockDef.Mass : float.PositiveInfinity).Append(" hpdensity");
+
+                    sb.Append('\n');
                 }
 
                 Display(title, sb.ToString());
                 return;
             }
 
-            if(type.Equals("comps", ChatCommandHandler.StringCompare))
+            bool compsOnly = type.Equals("comps", ChatCommandHandler.StringCompare);
+            if(compsOnly || type.Equals("items", ChatCommandHandler.StringCompare))
             {
                 if(sizeFilter.HasValue)
                     PrintChat($"Grid size filtering not applicable for {type} type.", FontsHandler.YellowSh);
 
-                IEnumerable<MyComponentDefinition> defs;
+                IEnumerable<MyPhysicalItemDefinition> defs;
 
-                switch(sort)
+                if(compsOnly)
                 {
-                    case "mass": defs = Main.Caches.ItemDefs.OfType<MyComponentDefinition>().OrderBy((d) => d.Mass); break;
-                    case "hp": defs = Main.Caches.ItemDefs.OfType<MyComponentDefinition>().OrderBy((d) => d.MaxIntegrity); break;
-                    case "volume": defs = Main.Caches.ItemDefs.OfType<MyComponentDefinition>().OrderBy((d) => d.Volume); break;
+                    IEnumerable<MyComponentDefinition> list = Main.Caches.ItemDefs.OfType<MyComponentDefinition>();
 
-                    default:
-                        PrintChat($"Unknown sort arg (2nd): {sort}", FontsHandler.RedSh);
-                        return;
+                    switch(sort)
+                    {
+                        case "mass": defs = list.OrderBy((d) => d.Mass); break;
+                        case "volume": defs = list.OrderBy((d) => d.Volume); break;
+                        case "density": defs = list.OrderBy((d) => (d.Mass / d.Volume)); break;
+                        case "hp": defs = list.OrderBy((d) => d.MaxIntegrity); break;
+
+                        default:
+                            PrintChat($"Unknown sort arg (2nd): {sort}", FontsHandler.RedSh);
+                            return;
+                    }
+                }
+                else
+                {
+                    List<MyPhysicalItemDefinition> list = Main.Caches.ItemDefs;
+
+                    switch(sort)
+                    {
+                        case "mass": defs = list.OrderBy((d) => d.Mass); break;
+                        case "volume": defs = list.OrderBy((d) => d.Volume); break;
+                        case "density": defs = list.OrderBy((d) => (d.Mass / d.Volume)); break;
+
+                        default:
+                            PrintChat($"Unknown sort arg (2nd): {sort}", FontsHandler.RedSh);
+                            return;
+                    }
                 }
 
                 if(isDescending)
@@ -251,19 +313,25 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 StringBuilder sb = new StringBuilder(1024);
 
                 int num = 1;
-                foreach(MyComponentDefinition compDef in defs)
+                foreach(var itemDef in defs)
                 {
-                    if(!compDef.Public || (survival && !compDef.AvailableInSurvival))
+                    if(!itemDef.Public || (survival && !itemDef.AvailableInSurvival))
                         continue;
 
-                    sb.Append(num++).Append(". ")
-                        .Append(compDef.DisplayNameText)
-                        .Append(" | ").ExactMassFormat(compDef.Mass)
-                        .Append(" | ").Number(compDef.MaxIntegrity).Append(" hp")
-                        .Append(" | ").VolumeFormat(compDef.Volume)
-                        .Append('\n');
+                    sb.Append(num++).Append(". ").Append(itemDef.DisplayNameText);
+
+                    sb.Append(Separator).ExactMassFormat(itemDef.Mass);
+                    sb.Append(Separator).VolumeFormat(itemDef.Volume);
+                    sb.Append(Separator).Number(itemDef.Mass / itemDef.Volume).Append(" density");
+
+                    var compDef = itemDef as MyComponentDefinition;
+                    if(compDef != null)
+                        sb.Append(Separator).Number(compDef.MaxIntegrity).Append(" hp");
+
+                    sb.Append('\n');
                 }
 
+                // TODO: make use of the fake-GUI screens to display these things in a nicer table
                 Display(title, sb.ToString());
                 return;
             }
