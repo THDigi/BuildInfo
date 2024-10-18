@@ -1178,7 +1178,7 @@ namespace Digi.BuildInfo.Features
             #region Mass, grid mass
             if(Main.Config.AimInfo.IsSet(AimInfoFlags.Mass))
             {
-                float mass = (def.HasPhysics ? def.Mass : 0); // HACK: game doesn't use mass from blocks with HasPhysics=false
+                float mass = (def.HasCollider() ? def.Mass : 0); // HACK: game doesn't use mass from blocks with HasPhysics=false
                 Color massColor = Color.GreenYellow;
 
                 if(isProjected)
@@ -2376,8 +2376,8 @@ namespace Digi.BuildInfo.Features
             {
                 StringBuilder line = AddLine().Append(partPrefix);
 
-                // HACK: game doesn't use mass from blocks with HasPhysics=false
-                line.Color(new Color(200, 255, 55)).ExactMassFormat(def.HasPhysics ? def.Mass : 0).ResetFormatting().Separator();
+                // HACK: game doesn't use mass from blocks without collider
+                line.Color(new Color(200, 255, 55)).ExactMassFormat(def.HasCollider() ? def.Mass : 0).ResetFormatting().Separator();
 
                 line.Size3DFormat(def.Size).Separator();
 
@@ -2568,7 +2568,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                bool hasCollider = def.HasPhysics && def.PhysicsOption != MyPhysicsOption.None;
+                bool hasCollider = def.HasCollider();
                 if(!hasCollider || !def.IsStandAlone)
                 {
                     AddLine().Append(partPrefix);

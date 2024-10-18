@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Sandbox.Definitions;
 using VRage.Collections;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -32,6 +33,14 @@ namespace Digi.BuildInfo.Utilities
                 return $"{modItem.Name} (local)";
             else
                 return $"{modItem.FriendlyName} ({modItem.PublishedServiceName}:{modItem.PublishedFileId})";
+        }
+
+        /// <summary>
+        /// Primarily used to tell if block has mass, because if this returns false it will contribute no mass to the grid (definition's Mass is non-0 but ignored)
+        /// </summary>
+        public static bool HasCollider(this MyCubeBlockDefinition def)
+        {
+            return def.HasPhysics && def.PhysicsOption != MyPhysicsOption.None;
         }
 
         public static bool ContainsIgnoreCase(this string str, string find)

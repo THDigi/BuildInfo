@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.Game;
@@ -7,6 +8,7 @@ using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage;
 using VRage.Collections;
+using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
@@ -145,8 +147,8 @@ namespace Digi.BuildInfo.Features
             {
                 MyCubeBlockDefinition def = (MyCubeBlockDefinition)slimBlock.BlockDefinition;
 
-                // HACK: game doesn't use mass from blocks with HasPhysics=false
-                if(def.HasPhysics)
+                // HACK: game doesn't use mass from blocks without a collider
+                if(def.HasPhysics && def.PhysicsOption != MyPhysicsOption.None) // HACK: inlined HasCollider()
                     BlockBaseMass += def.Mass;
 
                 // HACK: not using IMySlimBlock/IMyCubeBlock .Mass because it's not actually used by the game in mass calc
@@ -250,6 +252,7 @@ namespace Digi.BuildInfo.Features
             try
             {
                 MyCubeBlockDefinition def = (MyCubeBlockDefinition)slimBlock.BlockDefinition;
+                bool hasCollider = def.HasPhysics && def.PhysicsOption != MyPhysicsOption.None; // HACK: inlined def.HasCollider();
 
                 IMyCubeBlock fatBlock = slimBlock.FatBlock;
                 if(fatBlock != null)
@@ -271,12 +274,12 @@ namespace Digi.BuildInfo.Features
                         }
                     }
 
-                    if(def.HasPhysics)
+                    if(hasCollider)
                         BlockBaseMass += fatBlock.Mass;
                 }
                 else
                 {
-                    if(def.HasPhysics)
+                    if(hasCollider)
                         BlockBaseMass += slimBlock.Mass;
                 }
             }
@@ -291,6 +294,7 @@ namespace Digi.BuildInfo.Features
             try
             {
                 MyCubeBlockDefinition def = (MyCubeBlockDefinition)slimBlock.BlockDefinition;
+                bool hasCollider = def.HasPhysics && def.PhysicsOption != MyPhysicsOption.None; // HACK: inlined def.HasCollider();
 
                 IMyCubeBlock fatBlock = slimBlock.FatBlock;
                 if(fatBlock != null)
@@ -312,12 +316,12 @@ namespace Digi.BuildInfo.Features
                         }
                     }
 
-                    if(def.HasPhysics)
+                    if(hasCollider)
                         BlockBaseMass -= fatBlock.Mass;
                 }
                 else
                 {
-                    if(def.HasPhysics)
+                    if(hasCollider)
                         BlockBaseMass -= slimBlock.Mass;
                 }
             }
