@@ -124,6 +124,18 @@
     <TransparentMaterial>
       <Id>
         <TypeId>TransparentMaterialDefinition</TypeId>
+        <SubtypeId>BuildInfo_LaserGradientSRGB</SubtypeId>
+      </Id>
+      <Texture>Textures\LaserGradientSRGB.dds</Texture>
+      <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
+      <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
+      <AlphaMistingEnable>false</AlphaMistingEnable>
+      <AlphaSaturation>1</AlphaSaturation>
+      <Reflectivity>0</Reflectivity>
+    </TransparentMaterial>
+    <TransparentMaterial>
+      <Id>
+        <TypeId>TransparentMaterialDefinition</TypeId>
         <SubtypeId>BuildInfo_UI_ToolInventoryGrinderIcon</SubtypeId>
       </Id>
       <Texture>Textures\ToolInventoryGrinderIcon.dds</Texture>
