@@ -180,7 +180,7 @@ namespace Digi.BuildInfo.Features
 
             static int TickOffsetTracker;
             static Color BoxColor = Color.Yellow;
-            static readonly MyStringId LineMaterial = MyStringId.GetOrCompute("BuildInfo_Laser");
+            static readonly MyStringId LineMaterial = Constants.Mat_Laser;
 
             public ProjectorInfo(IMyProjector block)
             {

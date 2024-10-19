@@ -1,10 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text;
-using Sandbox.Definitions;
-using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage;
-using VRage.Game;
 using VRage.Utils;
 
 namespace Digi.BuildInfo.Features

@@ -14,7 +14,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
     {
         public const int RescanPeriodically = Constants.TicksPerSecond * 30; // 0 to disable
 
-        static readonly Color BackgroundColor = new Color(41, 54, 62) * 0.96f;
+        static readonly Color BackgroundColor = Constants.Color_UIBackground * 0.96f;
 
         internal ConveyorNetworkCompute Compute;
         internal ConveyorNetworkRender Render;

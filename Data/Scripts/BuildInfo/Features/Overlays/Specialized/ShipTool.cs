@@ -2,7 +2,6 @@
 using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
-using VRage.Game;
 using VRage.Game.ModAPI;
 using VRageMath;
 

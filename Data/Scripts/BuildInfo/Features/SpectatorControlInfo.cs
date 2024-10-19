@@ -12,7 +12,7 @@ namespace Digi.BuildInfo.Features
 {
     public class SpectatorControlInfo : ModComponent
     {
-        static readonly Color BackgroundColor = new Color(41, 54, 62) * 0.96f;
+        static readonly Color BackgroundColor = Constants.Color_UIBackground * 0.96f;
 
         public bool Visible { get; private set; } = false;
         CornerTextBox TextBox;

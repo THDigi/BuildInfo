@@ -7,10 +7,8 @@ using Digi.BuildInfo.Features.Overlays.Specialized;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
-using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
-using SpaceEngineers.Game.ModAPI;
 using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -54,10 +52,12 @@ namespace Digi.BuildInfo.Features.Overlays
         public const double DepthRatio = 0.01; // for see-through walls
         public const float DepthRatioF = 0.01f;
 
-        public static readonly MyStringId MaterialSquare = MyStringId.GetOrCompute("BuildInfo_Square");
-        public static readonly MyStringId MaterialLaser = MyStringId.GetOrCompute("BuildInfo_Laser");
-        public static readonly MyStringId MaterialDot = MyStringId.GetOrCompute("WhiteDot");
-        public static readonly MyStringId MaterialGradient = MyStringId.GetOrCompute("BuildInfo_TransparentGradient");
+        // affects all overlays including specialized ones
+        public static readonly MyStringId MaterialSquare = Constants.Mat_Square;
+        public static readonly MyStringId MaterialLaser = Constants.Mat_Laser;
+        public static readonly MyStringId MaterialDot = Constants.Mat_Dot;
+        public static readonly MyStringId MaterialGradient = Constants.Mat_Gradient;
+        public static readonly MyStringId MaterialGradientSRGB = Constants.Mat_GradientSRGB;
 
         public const BlendTypeEnum MountpointBlendType = BlendTypeEnum.SDR;
         public const BlendTypeEnum MountpointAimedBlendType = BlendTypeEnum.SDR;

@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Text;
-using Digi.BuildInfo.Features.Overlays.ConveyorNetwork;
 using Digi.BuildInfo.Utilities;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;

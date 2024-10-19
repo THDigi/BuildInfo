@@ -50,7 +50,7 @@ namespace Digi.BuildInfo.Features
         public bool DrawDragHitbox = false;
         public Color DrawColor = new Color(255, 0, 255) * 0.25f;
         public Color DrawColorSelected = new Color(155, 0, 255) * 0.3f;
-        public MyStringId DrawMaterial = MyStringId.GetOrCompute("Square");
+        public MyStringId DrawMaterial = Constants.MatUI_Square;
 
         int Rounding;
         Vector2D? ClickOffset;

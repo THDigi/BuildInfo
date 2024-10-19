@@ -11,7 +11,6 @@ using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Input;
 using VRage.ModAPI;
-using VRage.Utils;
 using VRageMath;
 using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 
@@ -245,8 +244,8 @@ namespace Digi.BuildInfo.Features
 
             if(UI_IconBg == null)
             {
-                UI_IconBg = TextAPI.CreateHUDTexture(MyStringId.GetOrCompute("BuildInfo_UI_HudHotkeyBackground"), Color.White, Vector2D.Zero, hideWithHud: true);
-                UI_Icon = TextAPI.CreateHUDTexture(MyStringId.GetOrCompute("BuildInfo_UI_HudWeaponModeAll"), Color.White, Vector2D.Zero, hideWithHud: true);
+                UI_IconBg = TextAPI.CreateHUDTexture(Constants.MatUI_HotkeyBackground, Color.White, Vector2D.Zero, hideWithHud: true);
+                UI_Icon = TextAPI.CreateHUDTexture(Constants.MatUI_IconWeaponModeAll, Color.White, Vector2D.Zero, hideWithHud: true);
                 UI_Bind = TextAPI.CreateHUDText(new StringBuilder(32), Vector2D.Zero, hideWithHud: true);
             }
 
@@ -264,7 +263,7 @@ namespace Digi.BuildInfo.Features
             UI_IconBg.Height = pxSize.Y * 60;
             UI_IconBg.BillBoardColor = hudColor;
 
-            UI_Icon.Material = MyStringId.GetOrCompute(PrevModeSingle ? "BuildInfo_UI_HudWeaponModeSingle" : "BuildInfo_UI_HudWeaponModeAll");
+            UI_Icon.Material = PrevModeSingle ? Constants.MatUI_IconWeaponModeSingle : Constants.MatUI_IconWeaponModeAll;
             UI_Icon.Offset = UI_IconBg.Origin; // "parent" it to the bg
             UI_Icon.Width = UI_IconBg.Width;
             UI_Icon.Height = UI_IconBg.Height;

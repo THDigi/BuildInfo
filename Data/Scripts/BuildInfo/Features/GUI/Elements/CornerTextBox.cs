@@ -38,7 +38,7 @@ namespace Digi.BuildInfo.Features.GUI.Elements
 
             Main.GUIMonitor.OptionsMenuClosed += RecalculateColor;
 
-            Background = new CornerBackground("BuildInfo_UI_Square", "BuildInfo_UI_Corner", BackgroundColor, corners);
+            Background = new CornerBackground(BackgroundColor, corners);
             CornerSizes = new CornerBackground.CornerSize(12 * scale);
             RecalculateColor();
 

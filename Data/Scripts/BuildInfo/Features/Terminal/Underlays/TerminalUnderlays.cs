@@ -5,14 +5,11 @@ using Digi.BuildInfo.Features.Overlays.Specialized;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Draygo.API;
-using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
-using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using SpaceEngineers.Game.ModAPI;
 using VRage.Game;
 using VRageMath;
-using PB_FunctionalBlock = Sandbox.ModAPI.Ingame.IMyFunctionalBlock;
 
 namespace Digi.BuildInfo.Features.Terminal.Underlays
 {

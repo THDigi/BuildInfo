@@ -39,13 +39,13 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
         public const float BoxSizeLG = 0.6f;
         public const float BoxSpacing = 0.05f;
 
-        readonly MyStringId MaterialLine = MyStringId.GetOrCompute("BuildInfo_Square");
-        readonly MyStringId MaterialLineShadow = MyStringId.GetOrCompute("BuildInfo_ShadowedLine");
-        readonly MyStringId MaterialDot = MyStringId.GetOrCompute("BuildInfo_Dot");
-        readonly MyStringId MaterialDotShadow = MyStringId.GetOrCompute("BuildInfo_ShadowedDot");
-        readonly MyStringId MaterialArrow = MyStringId.GetOrCompute("BuildInfo_Arrow");
-        readonly MyStringId MaterialArrowShadow = MyStringId.GetOrCompute("BuildInfo_ShadowedArrow");
-        readonly MyStringId MaterialSquare = MyStringId.GetOrCompute("BuildInfo_Square");
+        readonly MyStringId MaterialLine = Constants.Mat_Square;
+        readonly MyStringId MaterialLineShadow = Constants.Mat_LineShadow;
+        readonly MyStringId MaterialDot = Constants.Mat_Dot2;
+        readonly MyStringId MaterialDotShadow = Constants.Mat_DotShadow;
+        readonly MyStringId MaterialArrow = Constants.Mat_Arrow;
+        readonly MyStringId MaterialArrowShadow = Constants.Mat_ArrowShadow;
+        readonly MyStringId MaterialSquare = Constants.Mat_Square;
 
         const BlendTypeEnum Blend = BlendTypeEnum.PostPP;
 

@@ -15,7 +15,6 @@ using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
-using VRage.Utils;
 using VRageMath;
 using VRageRender;
 
@@ -112,7 +111,6 @@ namespace Digi.BuildInfo.Features
         const string EmissiveName = "Emissive";
         static readonly Color EmissiveColorBlinkA = Color.Yellow;
         static readonly Color EmissiveColorBlinkB = Color.Red;
-        static readonly MyStringId LineMaterial = MyStringId.GetOrCompute("BuildInfo_Laser");
 
         public MergeBlock_PlayerSide(MergeBlockGL gamelogic)
         {
@@ -323,7 +321,7 @@ namespace Digi.BuildInfo.Features
             Vector3D mergeCenter = Block.WorldAABB.Center;
             mergeCenter += (other.WorldAABB.Center - mergeCenter) * 0.5f; // between the merge blocks
 
-            MyTransparentGeometry.AddLineBillboard(LineMaterial, Color.Yellow.ToVector4() * 10f, anyCenter, (mergeCenter - anyCenter), 1f, 0.05f, MyBillboard.BlendTypeEnum.AdditiveTop);
+            MyTransparentGeometry.AddLineBillboard(Constants.Mat_Laser, Color.Yellow.ToVector4() * 10f, anyCenter, (mergeCenter - anyCenter), 1f, 0.05f, MyBillboard.BlendTypeEnum.AdditiveTop);
 
             if(MarkThis != null)
             {
@@ -353,7 +351,7 @@ namespace Digi.BuildInfo.Features
             MatrixD blockMatrix = localMatrix * grid.WorldMatrix;
 
             MySimpleObjectDraw.DrawTransparentBox(ref blockMatrix, ref boundaries, ref color,
-                MySimpleObjectRasterizer.Wireframe, 1, lineWidth, null, LineMaterial, intensity: 10, blendType: MyBillboard.BlendTypeEnum.AdditiveTop);
+                MySimpleObjectRasterizer.Wireframe, 1, lineWidth, null, Constants.Mat_Laser, intensity: 10, blendType: MyBillboard.BlendTypeEnum.AdditiveTop);
         }
 
         // HACK: copied from MyShipMergeBlock + modified

@@ -16,7 +16,6 @@ using SpaceEngineers.Game.ModAPI;
 using VRage;
 using VRage.Collections;
 using VRage.Input;
-using VRage.Utils;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo
@@ -34,7 +33,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         const float BackgroundOpacityMul = 0.98f;
         const float BackgroundOpacityHoverMin = 0.8f / BackgroundOpacityMul;
-        readonly Color BackgroundColor = new Color(41, 54, 62);
+        readonly Color BackgroundColor = Constants.Color_UIBackground;
         readonly Color BackgroundColorSelected = new Color(40, 80, 65);
 
         const string TextFont = FontsHandler.BI_SEOutlined;
@@ -115,7 +114,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         void TextAPIDetected()
         {
-            Label = new TextAPI.TextPackage(256, useShadow: UseShadowMessage, backgroundTexture: MyStringId.GetOrCompute("BuildInfo_UI_Square"));
+            Label = new TextAPI.TextPackage(256, useShadow: UseShadowMessage, backgroundTexture: Constants.MatUI_Square);
             Label.Font = TextFont;
             Label.Scale = GUIScale;
             Label.Background.Width = 0f;

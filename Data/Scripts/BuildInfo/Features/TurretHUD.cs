@@ -46,8 +46,8 @@ namespace Digi.BuildInfo.Features
         TextAPI.TextPackage AmmoText;
         TextAPI.TextPackage HudText;
 
-        readonly MyStringId MaterialSquare = MyStringId.GetOrCompute("Square");
-        readonly MyStringId MaterialDot = MyStringId.GetOrCompute("WhiteDot");
+        readonly MyStringId MaterialSquare = Constants.MatUI_Square;
+        readonly MyStringId MaterialDot = Constants.Mat_Dot2;
 
         public TurretHUD(BuildInfoMod main) : base(main)
         {

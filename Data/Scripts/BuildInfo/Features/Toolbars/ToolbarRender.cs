@@ -6,7 +6,6 @@ using Digi.BuildInfo.Utilities;
 using Draygo.API;
 using Sandbox.ModAPI;
 using VRage.Input;
-using VRage.Utils;
 using VRageMath;
 using VRageRender;
 
@@ -24,7 +23,7 @@ namespace Digi.BuildInfo.Features.Toolbars
 
         const float BackgroundOpacityMul = 0.98f;
         const float BackgroundOpacityHoverMin = 0.8f;
-        public static readonly Color BackgroundColor = new Color(41, 54, 62);
+        public static readonly Color BackgroundColor = Constants.Color_UIBackground;
         public static readonly Color BackgroundColorSelected = new Color(40, 80, 65);
 
         public const int MaxNameLength = 32; // last X characters
@@ -83,14 +82,14 @@ namespace Digi.BuildInfo.Features.Toolbars
         /// </summary>
         public void CreateUI()
         {
-            Box = new CornerBackground("BuildInfo_UI_Square", "BuildInfo_UI_Corner", BackgroundColor, CornerFlag.BottomLeft | CornerFlag.TopRight, debugMode: DebugDraw);
+            Box = new CornerBackground(BackgroundColor, CornerFlag.BottomLeft | CornerFlag.TopRight, debugMode: DebugDraw);
             Text = new TextAPI.TextPackage(TextSB);
 
             if(DebugDraw)
             {
                 DebugPivot = new HudAPIv2.BillBoardHUDMessage();
                 DebugPivot.BillBoardColor = new Color(255, 255, 0);
-                DebugPivot.Material = MyStringId.GetOrCompute("Square");
+                DebugPivot.Material = Constants.MatUI_Square;
                 DebugPivot.Options = HudAPIv2.Options.Pixel;
                 DebugPivot.Blend = MyBillboard.BlendTypeEnum.PostPP;
                 DebugPivot.Width = 4;

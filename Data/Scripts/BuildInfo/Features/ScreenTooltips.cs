@@ -5,7 +5,6 @@ using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 using Draygo.API;
 using Sandbox.ModAPI;
-using VRage.Utils;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features
@@ -110,7 +109,7 @@ namespace Digi.BuildInfo.Features
                     var th = new TooltipHandler();
                     th.ScreenLimitMax = new Vector2(0.65f, 0.7f); // HACK: eyeballed bottom HUD + right side HUD limits to avoid tooltips going under them
                     TooltipHandler = th;
-                    SelectedBox = TextAPI.CreateHUDTexture(MyStringId.GetOrCompute("BuildInfo_UI_Square"), Color.Lime * 0.2f, Vector2D.Zero);
+                    SelectedBox = TextAPI.CreateHUDTexture(Constants.MatUI_Square, Color.Lime * 0.2f, Vector2D.Zero);
                 }
 
                 Vector2 mousePos = (Vector2)MenuHandler.GetMousePositionGUI();
@@ -179,8 +178,7 @@ namespace Digi.BuildInfo.Features
 
         void DebugDrawTooltip(BoundingBox2 area, Color color)
         {
-            MyStringId material = MyStringId.GetOrCompute("Square");
-            new HudAPIv2.BillBoardHUDMessage(material, area.Center, color, TimeToLive: 2,
+            new HudAPIv2.BillBoardHUDMessage(Constants.MatUI_Square, area.Center, color, TimeToLive: 2,
                 Width: area.Size.X,
                 Height: area.Size.Y,
                 HideHud: false);

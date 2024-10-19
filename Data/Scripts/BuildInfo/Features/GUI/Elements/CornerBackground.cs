@@ -153,13 +153,22 @@ namespace Digi.BuildInfo.Features.GUI.Elements
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="flatMaterial">plain material for center parts</param>
-        /// <param name="cornerMaterial">Must be top-left variant, gets rotated automatically for other corners</param>
-        /// <param name="color"></param>
+        /// <param name="color">null defaults to <see cref="Constants.Color_UIBackground"/></param>
         /// <param name="corners"></param>
+        /// <param name="flatMaterial">plain material for center parts; null uses <see cref="Constants.MatUI_Square"/></param>
+        /// <param name="cornerMaterial">Must be top-left variant, gets rotated automatically for other corners; null uses <see cref="Constants.MatUI_Corner"/></param>
         /// <param name="debugMode"></param>
-        public CornerBackground(string flatMaterial, string cornerMaterial, Color color, CornerFlag corners = CornerFlag.All, bool debugMode = false)
+        public CornerBackground(Color? color = null, CornerFlag corners = CornerFlag.All, MyStringId? flatMaterial = null, MyStringId? cornerMaterial = null, bool debugMode = false)
         {
+            if(!color.HasValue)
+                color = Constants.Color_UIBackground;
+
+            if(!flatMaterial.HasValue)
+                flatMaterial = Constants.MatUI_Square;
+
+            if(!cornerMaterial.HasValue)
+                cornerMaterial = Constants.MatUI_Corner;
+
             DebugMode = debugMode;
             Corners = corners;
 
@@ -213,13 +222,13 @@ namespace Digi.BuildInfo.Features.GUI.Elements
 
             foreach(Element element in Elements)
             {
-                element.Billboard.Material = MyStringId.GetOrCompute(element.Type == BillboardType.Corner ? cornerMaterial : flatMaterial);
+                element.Billboard.Material = element.Type == BillboardType.Corner ? cornerMaterial.Value : flatMaterial.Value;
                 element.Billboard.Options = HudAPIv2.Options.Pixel;
                 element.Billboard.Blend = MyBillboard.BlendTypeEnum.PostPP;
                 element.Billboard.Visible = false;
             }
 
-            SetColor(color);
+            SetColor(color.Value);
         }
 
         public void Dispose()

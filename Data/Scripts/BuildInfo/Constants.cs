@@ -12,6 +12,7 @@ using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
+using VRageMath;
 
 namespace Digi.BuildInfo
 {
@@ -20,6 +21,48 @@ namespace Digi.BuildInfo
         public const int ModVersion = 8; // notifies player of notable changes and links them to workshop's changelog.
 
         public const int TicksPerSecond = (int)MyEngineConstants.UPDATE_STEPS_PER_SECOND;
+
+        public static readonly MyStringId Mat_Square = MyStringId.GetOrCompute("BuildInfo_Square");
+
+        public static readonly MyStringId Mat_LineShadow = MyStringId.GetOrCompute("BuildInfo_ShadowedLine");
+
+        public static readonly MyStringId Mat_Dot = MyStringId.GetOrCompute("WhiteDot"); // TODO: what's the difference between vanilla and mine?
+        public static readonly MyStringId Mat_Dot2 = MyStringId.GetOrCompute("BuildInfo_Dot");
+        public static readonly MyStringId Mat_DotShadow = MyStringId.GetOrCompute("BuildInfo_ShadowedDot");
+
+        public static readonly MyStringId Mat_Laser = MyStringId.GetOrCompute("BuildInfo_Laser");
+        public static readonly MyStringId Mat_LaserGradient = MyStringId.GetOrCompute("BuildInfo_LaserGradientSRGB");
+
+        public static readonly MyStringId Mat_LaserDot = MyStringId.GetOrCompute("BuildInfo_LaserDot");
+
+        public static readonly MyStringId Mat_Arrow = MyStringId.GetOrCompute("BuildInfo_Arrow");
+        public static readonly MyStringId Mat_ArrowShadow = MyStringId.GetOrCompute("BuildInfo_ShadowedArrow");
+
+        public static readonly MyStringId Mat_Gradient = MyStringId.GetOrCompute("BuildInfo_TransparentGradient");
+        public static readonly MyStringId Mat_GradientSRGB = MyStringId.GetOrCompute("BuildInfo_TransparentGradientSRGB");
+
+        public static readonly MyStringId MatUI_Square = MyStringId.GetOrCompute("BuildInfo_UI_Square");
+
+        public static readonly MyStringId MatUI_Corner = MyStringId.GetOrCompute("BuildInfo_UI_Corner");
+
+        public static readonly MyStringId MatUI_ButtonBg = MyStringId.GetOrCompute("BuildInfo_UI_ButtonBg");
+        public static readonly MyStringId MatUI_ButtonBgHover = MyStringId.GetOrCompute("BuildInfo_UI_ButtonBgHover");
+        public static readonly MyStringId MatUI_ButtonBgActivate = MyStringId.GetOrCompute("BuildInfo_UI_ButtonBgActivate");
+
+        public static readonly MyStringId MatUI_TextAPICursor = MyStringId.GetOrCompute("MouseCursor"); // HACK: MouseCursor material is from textAPI
+
+        public static readonly MyStringId MatUI_Icon_ConveyorVis = MyStringId.GetOrCompute("BuildInfo_Icon_ConveyorVis");
+        public static readonly MyStringId MatUI_Icon_Measure = MyStringId.GetOrCompute("BuildInfo_Icon_Measure");
+
+        public static readonly MyStringId MatUI_HotkeyBackground = MyStringId.GetOrCompute("BuildInfo_UI_HudHotkeyBackground");
+        public static readonly MyStringId MatUI_IconWeaponModeAll = MyStringId.GetOrCompute("BuildInfo_UI_HudWeaponModeAll");
+        public static readonly MyStringId MatUI_IconWeaponModeSingle = MyStringId.GetOrCompute("BuildInfo_UI_HudWeaponModeSingle");
+
+        public static readonly MyStringId MatUI_InventoryBar = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryBar");
+        public static readonly MyStringId MatUI_InventoryBarDrill = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryDrillIcon");
+        public static readonly MyStringId MatUI_InventoryBarGrinder = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryGrinderIcon");
+
+        public static readonly Color Color_UIBackground = new Color(41, 54, 62);
 
         public const string WarnPlayerIsNull = "Local Player is null, silly bugs... try again in a few seconds.";
 

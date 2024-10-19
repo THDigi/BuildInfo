@@ -11,12 +11,13 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
     {
         public const float LaserOverlayAlpha = 0.8f;
         public const float SolidOverlayAlpha = 0.5f;
-        public static readonly MyStringId MaterialDot = MyStringId.GetOrCompute("WhiteDot");
-        public static readonly MyStringId MaterialLaser = MyStringId.GetOrCompute("BuildInfo_Laser");
-        public static readonly MyStringId MaterialSquare = MyStringId.GetOrCompute("BuildInfo_Square");
-        public static readonly MyStringId MaterialGradient = MyStringId.GetOrCompute("BuildInfo_TransparentGradient");
-        public static readonly MyStringId MaterialGradientSRGB = MyStringId.GetOrCompute("BuildInfo_TransparentGradientSRGB");
         public const BlendTypeEnum BlendType = BlendTypeEnum.SDR;
+
+        protected static readonly MyStringId MaterialDot = OverlayDrawInstance.MaterialDot;
+        protected static readonly MyStringId MaterialLaser = OverlayDrawInstance.MaterialLaser;
+        protected static readonly MyStringId MaterialSquare = OverlayDrawInstance.MaterialSquare;
+        protected static readonly MyStringId MaterialGradient = OverlayDrawInstance.MaterialGradient;
+        protected static readonly MyStringId MaterialGradientSRGB = OverlayDrawInstance.MaterialGradientSRGB;
 
         /// <summary>
         /// lowest usable for spheres and such

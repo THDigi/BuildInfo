@@ -14,6 +14,8 @@ namespace Digi.BuildInfo.Utilities
     /// </summary>
     internal class DebugDraw
     {
+        static readonly MyStringId MaterialSquare = Constants.Mat_Square;
+
         public static void Draw3DText(StringBuilder text, Vector3D pos, double scale = 0.05, bool alwaysOnTop = false, bool constantSize = false, int liveTime = 0)
         {
             if(!BuildInfoMod.Instance.TextAPI.WasDetected)
@@ -74,9 +76,7 @@ namespace Digi.BuildInfo.Utilities
 
             BoundingBoxD localBB = new BoundingBoxD(-obb.HalfExtent, obb.HalfExtent);
 
-            MyStringId mat = MyStringId.GetOrCompute("Square");
-
-            MySimpleObjectDraw.DrawTransparentBox(ref wm, ref localBB, ref color, draw, 1, faceMaterial: mat, lineMaterial: mat, blendType: blend);
+            MySimpleObjectDraw.DrawTransparentBox(ref wm, ref localBB, ref color, draw, 1, faceMaterial: MaterialSquare, lineMaterial: MaterialSquare, blendType: blend);
 
             if(extraSeeThrough)
                 DrawOBB(obb, color, draw, BlendTypeEnum.AdditiveTop, extraSeeThrough: false);
@@ -84,15 +84,12 @@ namespace Digi.BuildInfo.Utilities
 
         public static void DrawSphere(BoundingSphereD sphere, Color color, MySimpleObjectRasterizer draw = MySimpleObjectRasterizer.SolidAndWireframe, BlendTypeEnum blend = BlendTypeEnum.PostPP)
         {
-            MyStringId mat = MyStringId.GetOrCompute("Square");
             MatrixD wm = MatrixD.CreateTranslation(sphere.Center);
-            MySimpleObjectDraw.DrawTransparentSphere(ref wm, (float)sphere.Radius, ref color, draw, 24, mat, mat, 0.01f, blendType: blend);
+            MySimpleObjectDraw.DrawTransparentSphere(ref wm, (float)sphere.Radius, ref color, draw, 24, MaterialSquare, MaterialSquare, 0.01f, blendType: blend);
         }
 
         public static void DrawFrustum(BoundingFrustumD frustum, float scale = 1f, MySimpleObjectRasterizer draw = MySimpleObjectRasterizer.SolidAndWireframe, BlendTypeEnum blend = BlendTypeEnum.PostPP)
         {
-            MyStringId mat = MyStringId.GetOrCompute("Square");
-
             Vector3D[] corners = frustum.GetCorners();
 
             if(draw == MySimpleObjectRasterizer.SolidAndWireframe || draw == MySimpleObjectRasterizer.Wireframe)
@@ -143,7 +140,7 @@ namespace Digi.BuildInfo.Utilities
                     quad.Point2 = corners[5];
                     quad.Point3 = corners[1];
                     Vector3D center = (quad.Point0 + quad.Point1 + quad.Point2 + quad.Point3) / 4;
-                    MyTransparentGeometry.AddQuad(mat, ref quad, color, ref center, blendType: blend);
+                    MyTransparentGeometry.AddQuad(MaterialSquare, ref quad, color, ref center, blendType: blend);
                 }
 
                 // right
@@ -153,7 +150,7 @@ namespace Digi.BuildInfo.Utilities
                     quad.Point2 = corners[6];
                     quad.Point3 = corners[2];
                     Vector3D center = (quad.Point0 + quad.Point1 + quad.Point2 + quad.Point3) / 4;
-                    MyTransparentGeometry.AddQuad(mat, ref quad, color, ref center, blendType: blend);
+                    MyTransparentGeometry.AddQuad(MaterialSquare, ref quad, color, ref center, blendType: blend);
                 }
 
                 // left
@@ -163,7 +160,7 @@ namespace Digi.BuildInfo.Utilities
                     quad.Point2 = corners[4];
                     quad.Point3 = corners[0];
                     Vector3D center = (quad.Point0 + quad.Point1 + quad.Point2 + quad.Point3) / 4;
-                    MyTransparentGeometry.AddQuad(mat, ref quad, color, ref center, blendType: blend);
+                    MyTransparentGeometry.AddQuad(MaterialSquare, ref quad, color, ref center, blendType: blend);
                 }
 
                 // bottom
@@ -173,21 +170,18 @@ namespace Digi.BuildInfo.Utilities
                     quad.Point2 = corners[7];
                     quad.Point3 = corners[3];
                     Vector3D center = (quad.Point0 + quad.Point1 + quad.Point2 + quad.Point3) / 4;
-                    MyTransparentGeometry.AddQuad(mat, ref quad, color, ref center, blendType: blend);
+                    MyTransparentGeometry.AddQuad(MaterialSquare, ref quad, color, ref center, blendType: blend);
                 }
             }
         }
 
         public static void DrawLine(Vector3D from, Vector3D to, Color color, float thick = 0.005f, BlendTypeEnum blend = BlendTypeEnum.PostPP, float intensity = 1f)
         {
-            MyStringId mat = MyStringId.GetOrCompute("Square");
-            MyTransparentGeometry.AddLineBillboard(mat, color, from, (to - from), 1f, thick, blend, intensity: intensity);
+            MyTransparentGeometry.AddLineBillboard(MaterialSquare, color, from, (to - from), 1f, thick, blend, intensity: intensity);
         }
 
         public static void DrawPlane(PlaneD plane, Color color, float size = 1000, BlendTypeEnum blend = BlendTypeEnum.PostPP)
         {
-            MyStringId mat = MyStringId.GetOrCompute("Square");
-
             Vector3D camPos = MyAPIGateway.Session.Camera.Position;
 
             //Vector3D center = plane.Normal * plane.D;
@@ -195,7 +189,7 @@ namespace Digi.BuildInfo.Utilities
 
             MatrixD matrix = MatrixD.CreateFromDir(plane.Normal);
 
-            MyTransparentGeometry.AddBillboardOriented(mat, color, center, matrix.Left, matrix.Up, size, blend);
+            MyTransparentGeometry.AddBillboardOriented(MaterialSquare, color, center, matrix.Left, matrix.Up, size, blend);
         }
     }
 }

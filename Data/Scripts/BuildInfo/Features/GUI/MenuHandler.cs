@@ -9,7 +9,6 @@ using Sandbox.ModAPI;
 using VRage;
 using VRage.Game.ModAPI;
 using VRage.Input;
-using VRage.Utils;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features
@@ -260,8 +259,7 @@ namespace Digi.BuildInfo.Features
 
             if(Cursor == null)
             {
-                // HACK: MouseCursor material is from textAPI
-                Cursor = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("MouseCursor"), Vector2D.Zero, Color.White);
+                Cursor = new HudAPIv2.BillBoardHUDMessage(Constants.MatUI_TextAPICursor, Vector2D.Zero, Color.White);
                 Cursor.Options = HudAPIv2.Options.Pixel | HudAPIv2.Options.HideHud;
                 Cursor.SkipLinearRGB = false;
 

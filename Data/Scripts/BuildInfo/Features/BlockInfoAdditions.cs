@@ -19,7 +19,6 @@ using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.Input;
-using VRage.Utils;
 using VRageMath;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
@@ -34,7 +33,6 @@ namespace Digi.BuildInfo.Features
         readonly Vector4 ScrollbarColor = new Vector4(118f / 255f, 166f / 255f, 64f / 85f, 1f);
         readonly Vector4 ScrollbarBgColor = new Vector4(142f / (339f * MathHelper.Pi), 46f / 255f, 52f / 255f, 1f);
 
-        readonly MyStringId MaterialSquare = MyStringId.GetOrCompute("BuildInfo_UI_Square");
         const BlendTypeEnum BlendType = BlendTypeEnum.PostPP;
 
         const float HudComponentHeight = 0.037f; // on HUD space
@@ -541,7 +539,7 @@ namespace Digi.BuildInfo.Features
 
                             Color color = (num < 0 ? Color.Red : (num > maxVisibleIdx ? Color.Blue : Color.HotPink));
 
-                            MyTransparentGeometry.AddBillboardOriented(MaterialSquare, color * (0.25f + ((i / (float)totalComps) / 2)), posWorld, camMatrix.Left, camMatrix.Up, sizeWorld.X, sizeWorld.Y, Vector2.Zero, BlendType);
+                            MyTransparentGeometry.AddBillboardOriented(Constants.MatUI_Square, color * (0.25f + ((i / (float)totalComps) / 2)), posWorld, camMatrix.Left, camMatrix.Up, sizeWorld.X, sizeWorld.Y, Vector2.Zero, BlendType);
                         }
                     }
                 }
@@ -568,7 +566,7 @@ namespace Digi.BuildInfo.Features
 
                         posWorld += camMatrix.Left * lineSizeWorld.X + camMatrix.Up * lineSizeWorld.Y;
 
-                        MyTransparentGeometry.AddBillboardOriented(MaterialSquare, LineFunctionalColor, posWorld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, lineSizeWorld.X, lineSizeWorld.Y, Vector2.Zero, BlendType);
+                        MyTransparentGeometry.AddBillboardOriented(Constants.MatUI_Square, LineFunctionalColor, posWorld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, lineSizeWorld.X, lineSizeWorld.Y, Vector2.Zero, BlendType);
                     }
 
                     if(debugMode)
@@ -590,7 +588,7 @@ namespace Digi.BuildInfo.Features
 
                         posWOrld += camMatrix.Left * lineSizeWorld.X + camMatrix.Up * (lineSizeWorld.Y * 3); // extra offset to allow for red line to be visible
 
-                        MyTransparentGeometry.AddBillboardOriented(MaterialSquare, LineOwnershipColor, posWOrld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, lineSizeWorld.X, lineSizeWorld.Y, Vector2.Zero, BlendType);
+                        MyTransparentGeometry.AddBillboardOriented(Constants.MatUI_Square, LineOwnershipColor, posWOrld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, lineSizeWorld.X, lineSizeWorld.Y, Vector2.Zero, BlendType);
                     }
 
                     if(debugMode)
@@ -638,8 +636,8 @@ namespace Digi.BuildInfo.Features
                     bgPosWorld += camMatrix.Down * WorldBuildInfoMargin;
                     barPosWorld += camMatrix.Down * WorldBuildInfoMargin;
 
-                    MyTransparentGeometry.AddBillboardOriented(MaterialSquare, ScrollbarBgColor, bgPosWorld, camMatrix.Left, camMatrix.Up, bgSizeWorld.X, bgSizeWorld.Y, Vector2.Zero, BlendType);
-                    MyTransparentGeometry.AddBillboardOriented(MaterialSquare, ScrollbarColor, barPosWorld, camMatrix.Left, camMatrix.Up, barSizeWorld.X, barSizeWorld.Y, Vector2.Zero, BlendType);
+                    MyTransparentGeometry.AddBillboardOriented(Constants.MatUI_Square, ScrollbarBgColor, bgPosWorld, camMatrix.Left, camMatrix.Up, bgSizeWorld.X, bgSizeWorld.Y, Vector2.Zero, BlendType);
+                    MyTransparentGeometry.AddBillboardOriented(Constants.MatUI_Square, ScrollbarColor, barPosWorld, camMatrix.Left, camMatrix.Up, barSizeWorld.X, barSizeWorld.Y, Vector2.Zero, BlendType);
                 }
                 #endregion
 
@@ -719,7 +717,7 @@ namespace Digi.BuildInfo.Features
 
                         posWorld += camMatrix.Left * sizeWorld.X + camMatrix.Up * sizeWorld.Y;
 
-                        MyTransparentGeometry.AddBillboardOriented(MaterialSquare, color * 0.75f, posWorld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, sizeWorld.X, sizeWorld.Y, Vector2.Zero, BlendType);
+                        MyTransparentGeometry.AddBillboardOriented(Constants.MatUI_Square, color * 0.75f, posWorld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, sizeWorld.X, sizeWorld.Y, Vector2.Zero, BlendType);
                     }
                 }
                 #endregion
@@ -730,7 +728,7 @@ namespace Digi.BuildInfo.Features
         {
             MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
             float dotSize = 0.0001f;
-            MyTransparentGeometry.AddBillboardOriented(MaterialSquare, color * 0.75f, posWorld, camMatrix.Left, camMatrix.Up, dotSize, dotSize, Vector2.Zero, BlendType);
+            MyTransparentGeometry.AddBillboardOriented(Constants.MatUI_Square, color * 0.75f, posWorld, camMatrix.Left, camMatrix.Up, dotSize, dotSize, Vector2.Zero, BlendType);
         }
     }
 }

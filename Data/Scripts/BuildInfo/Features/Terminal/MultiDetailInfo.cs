@@ -15,7 +15,6 @@ using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.ComponentSystem;
-using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
@@ -147,7 +146,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 Label = new TextAPI.TextPackage(InfoText);
                 Label.Font = TextFont;
 
-                MoveIcon = TextAPI.CreateHUDTexture(MyStringId.GetOrCompute("BuildInfo_UI_Square"), Color.White, Vector2D.Zero, hideWithHud: false);
+                MoveIcon = TextAPI.CreateHUDTexture(Constants.MatUI_Square, Color.White, Vector2D.Zero, hideWithHud: false);
 
                 Hint = new TextAPI.TextPackage(new StringBuilder("UI bg opacity too high to see multi-select info provided by buildinfo."));
                 Hint.Text.Origin = new Vector2D(0, -0.98);

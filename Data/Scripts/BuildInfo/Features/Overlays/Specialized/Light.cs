@@ -1,16 +1,10 @@
-﻿using System.Collections.Generic;
-using Digi.BuildInfo.Features.LiveData;
-using Digi.BuildInfo.Utilities;
-using Digi.Input;
+﻿using Digi.BuildInfo.Features.LiveData;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
-using VRage.Game;
-using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRageMath;
-using static VRageRender.MyBillboard;
 
 namespace Digi.BuildInfo.Features.Overlays.Specialized
 {

@@ -33,9 +33,6 @@ namespace Digi.BuildInfo.Features
         static readonly MyObjectBuilderType TypeDrill = typeof(MyObjectBuilder_Drill);
 
         const int FillComputeEveryTicks = 30; // computes fill every these ticks
-        readonly MyStringId GrinderIconMaterial = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryGrinderIcon");
-        readonly MyStringId DrillIconMaterial = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryDrillIcon");
-        readonly MyStringId BarMaterial = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryBar");
         readonly Vector2D DefaultSize = new Vector2D(32, 2.8) * 0.001;
         readonly Vector4 BgColor = (new Color(80, 100, 120) * (120f / 255f)).ToVector4();
         readonly Vector4 IconColor = Color.White.ToVector4(); // new Color(186, 238, 249).ToVector4();
@@ -124,7 +121,7 @@ namespace Digi.BuildInfo.Features
 
                 if(ShouldDraw) // specific tool selected
                 {
-                    BarIcon = (toolType == TypeGrinder ? GrinderIconMaterial : DrillIconMaterial);
+                    BarIcon = (toolType == TypeGrinder ? Constants.MatUI_InventoryBarGrinder : Constants.MatUI_InventoryBarDrill);
                     FilledRatio = 0;
 
                     foreach(MyCubeGrid grid in TempGrids)
@@ -209,13 +206,13 @@ namespace Digi.BuildInfo.Features
                     {
                         ShouldDraw = true;
                         FilledRatio = highestFilledGrinder;
-                        BarIcon = GrinderIconMaterial;
+                        BarIcon = Constants.MatUI_InventoryBarGrinder;
                     }
                     else if(drillsOn)
                     {
                         ShouldDraw = true;
                         FilledRatio = highestFilledDrill;
-                        BarIcon = DrillIconMaterial;
+                        BarIcon = Constants.MatUI_InventoryBarDrill;
                     }
                 }
 
@@ -248,7 +245,7 @@ namespace Digi.BuildInfo.Features
             float w = (float)(size.X * scaleFOV);
             float h = (float)(size.Y * scaleFOV);
 
-            MyTransparentGeometry.AddBillboardOriented(BarMaterial, BgColor, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType);
+            MyTransparentGeometry.AddBillboardOriented(Constants.MatUI_InventoryBar, BgColor, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType);
             MyTransparentGeometry.AddBillboardOriented(BarIcon, IconColor, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType);
 
             if(FilledRatio > 0)
@@ -275,7 +272,7 @@ namespace Digi.BuildInfo.Features
 
                 worldPos += camMatrix.Left * ((1 - barFill) * size.X * 2 * scaleFOV);
 
-                MyTransparentGeometry.AddBillboardOriented(BarMaterial, color, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, w, h, uv, blendType: BlendType);
+                MyTransparentGeometry.AddBillboardOriented(Constants.MatUI_InventoryBar, color, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, w, h, uv, blendType: BlendType);
             }
         }
     }

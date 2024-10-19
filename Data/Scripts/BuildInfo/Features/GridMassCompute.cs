@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage;
-using VRage.Collections;
 using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;

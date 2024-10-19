@@ -38,7 +38,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         Vector2D PosOnHUD = new Vector2D(-0.3, -0.75);
         Vector2D PosInGUI = new Vector2D(0.5, -0.5);
 
-        readonly Color BackgroundColor = new Color(41, 54, 62);
+        readonly Color BackgroundColor = Constants.Color_UIBackground;
         readonly Color BackgroundColorSelected = new Color(40, 80, 65);
         const float OpacityInMenu = 0.75f;
         const float MinOpacityWhenHovered = 0.8f;
@@ -283,8 +283,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             Backgrounds = new List<HudAPIv2.BillBoardHUDMessage>(6);
 
-            MyStringId squareMaterial = MyStringId.GetOrCompute("BuildInfo_UI_Square");
-            MyStringId cornerMaterial = MyStringId.GetOrCompute("BuildInfo_UI_Corner");
+            MyStringId squareMaterial = Constants.MatUI_Square;
+            MyStringId cornerMaterial = Constants.MatUI_Corner;
 
             // creation order important for draw order
             Background = TextAPI.CreateHUDTexture(squareMaterial, Color.White, PosOnHUD);

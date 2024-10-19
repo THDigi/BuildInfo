@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using Digi.BuildInfo.Features;
 using Digi.BuildInfo.Features.LiveData;
-using Digi.BuildInfo.Features.Overlays.Specialized;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
@@ -882,8 +881,8 @@ namespace Digi.BuildInfo.Utilities
                 return;
             }
 
-            wireMaterial = wireMaterial ?? SpecializedOverlayBase.MaterialLaser;
-            solidMaterial = solidMaterial ?? SpecializedOverlayBase.MaterialSquare;
+            wireMaterial = wireMaterial ?? Constants.Mat_Laser;
+            solidMaterial = solidMaterial ?? Constants.Mat_Square;
 
             int wireDivideRatio = 360 / lineEveryDeg;
 

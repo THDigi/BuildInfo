@@ -34,8 +34,8 @@ namespace Digi.BuildInfo.Features
 
     public class OverrideToolSelectionDraw : ModComponent
     {
-        readonly MyStringId SelectionLineMaterial = MyStringId.GetOrCompute("BuildInfo_Laser");
-        readonly MyStringId SelectionCornerMaterial = MyStringId.GetOrCompute("BuildInfo_LaserDot");
+        readonly MyStringId SelectionLineMaterial = Constants.Mat_Laser;
+        readonly MyStringId SelectionCornerMaterial = Constants.Mat_LaserDot;
         const BlendType SelectionBlendType = BlendType.PostPP;
 
         bool eventHooked;
@@ -267,8 +267,7 @@ namespace Digi.BuildInfo.Features
                                         MatrixD wm = subpart.WorldMatrix;
                                         BoundingBoxD localBox = (BoundingBoxD)subpart.PositionComp.LocalAABB;
                                         Color color = (visible ? Color.Lime : Color.Red) * 0.75f;
-                                        MyStringId material = MyStringId.GetOrCompute("Square");
-                                        MySimpleObjectDraw.DrawTransparentBox(ref wm, ref localBox, ref color, MySimpleObjectRasterizer.SolidAndWireframe, 1, 0.01f, material, SelectionLineMaterial, blendType: BlendType.AdditiveTop);
+                                        MySimpleObjectDraw.DrawTransparentBox(ref wm, ref localBox, ref color, MySimpleObjectRasterizer.SolidAndWireframe, 1, 0.01f, Constants.Mat_Square, SelectionLineMaterial, blendType: BlendType.AdditiveTop);
                                     }
 
                                     if(!visible)

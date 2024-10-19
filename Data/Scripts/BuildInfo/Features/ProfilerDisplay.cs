@@ -7,7 +7,6 @@ using Digi.ComponentLib;
 using Draygo.API;
 using Sandbox.ModAPI;
 using VRage;
-using VRage.Utils;
 using VRageMath;
 using static Digi.BuildInfo.Systems.TextAPI;
 
@@ -114,7 +113,7 @@ namespace Digi.BuildInfo.Features
         {
             if(ProfileText == null)
             {
-                ProfileText = new TextPackage(new StringBuilder(512), useShadow: false, backgroundTexture: MyStringId.GetOrCompute("Square"));
+                ProfileText = new TextPackage(new StringBuilder(512), useShadow: false, backgroundTexture: Constants.MatUI_Square);
                 ProfileText.HideWithHUD = false;
                 ProfileText.Position = new Vector2D(-0.99, 0.98);
                 ProfileText.Scale = 0.65;
@@ -293,7 +292,7 @@ namespace Digi.BuildInfo.Features
             {
                 for(int i = 0; i <= BarRangeMs; i++)
                 {
-                    var notch = CreateHUDTexture(MyStringId.GetOrCompute("BuildInfo_UI_Square"), Color.White, Vector2D.Zero, false);
+                    var notch = CreateHUDTexture(Constants.MatUI_Square, Color.White, Vector2D.Zero, false);
 
                     notch.Width = NotchWidth;
                     notch.Height = NotchHeight;
@@ -316,7 +315,7 @@ namespace Digi.BuildInfo.Features
                 HudAPIv2.BillBoardHUDMessage bar = GraphBars[i];
                 if(bar == null)
                 {
-                    bar = CreateHUDTexture(MyStringId.GetOrCompute("BuildInfo_UI_Square"), Color.White, Vector2D.Zero, false);
+                    bar = CreateHUDTexture(Constants.MatUI_Square, Color.White, Vector2D.Zero, false);
                     GraphBars[i] = bar;
                 }
 

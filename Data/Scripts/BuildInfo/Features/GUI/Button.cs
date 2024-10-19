@@ -2,7 +2,6 @@
 using System.Text;
 using Digi.BuildInfo.Systems;
 using Draygo.API;
-using VRage.Utils;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features.GUI
@@ -11,9 +10,6 @@ namespace Digi.BuildInfo.Features.GUI
 
     public class Button
     {
-        public static readonly MyStringId MaterialBg = MyStringId.GetOrCompute("BuildInfo_UI_ButtonBg");
-        public static readonly MyStringId MaterialBgHover = MyStringId.GetOrCompute("BuildInfo_UI_ButtonBgHover");
-        public static readonly MyStringId MaterialBgActivate = MyStringId.GetOrCompute("BuildInfo_UI_ButtonBgActivate");
         public const float EdgePadding = 0.025f;
 
         public bool Selected { get; private set; }
@@ -50,7 +46,7 @@ namespace Digi.BuildInfo.Features.GUI
             DirectDraw = directDraw;
             Pivot = pivot;
 
-            Label = new TextAPI.TextPackage(new StringBuilder(label), backgroundTexture: MaterialBg);
+            Label = new TextAPI.TextPackage(new StringBuilder(label), backgroundTexture: Constants.MatUI_ButtonBg);
 
             Tooltip = tooltip;
             TooltipHandler = tooltipHandler;
@@ -61,7 +57,7 @@ namespace Digi.BuildInfo.Features.GUI
             if(debugPivot)
             {
                 Vector2 pxSize = (Vector2)HudAPIv2.APIinfo.ScreenPositionOnePX;
-                DebugPivot = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("WhiteDot"), Vector2D.Zero, Color.Red);
+                DebugPivot = new HudAPIv2.BillBoardHUDMessage(Constants.Mat_Dot, Vector2D.Zero, Color.Red);
                 DebugPivot.Width = pxSize.X * 2;
                 DebugPivot.Height = pxSize.Y * 2;
                 DebugPivot.Visible = false;
@@ -120,7 +116,7 @@ namespace Digi.BuildInfo.Features.GUI
             if(ButtonBB.Contains(mouseOnScreen) == ContainmentType.Contains)
             {
                 Selected = true;
-                Label.Background.Material = MaterialBgHover;
+                Label.Background.Material = Constants.MatUI_ButtonBgHover;
                 Label.Background.BillBoardColor = DefaultColor;
 
                 TooltipHandler?.Hover(Tooltip);
@@ -129,7 +125,7 @@ namespace Digi.BuildInfo.Features.GUI
             else if(Selected)
             {
                 Selected = false;
-                Label.Background.Material = MaterialBg;
+                Label.Background.Material = Constants.MatUI_ButtonBg;
                 Label.Background.BillBoardColor = DefaultColor;
 
                 TooltipHandler?.HoverEnd();

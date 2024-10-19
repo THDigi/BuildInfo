@@ -9,10 +9,8 @@ using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Draygo.API;
 using Sandbox.Definitions;
-using Sandbox.Engine.Physics;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
-using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using VRage;
 using VRage.Collections;
@@ -176,7 +174,7 @@ namespace Digi.BuildInfo.Features.GUI
 
         void CreateUIObjects()
         {
-            MyStringId material = MyStringId.GetOrCompute("BuildInfo_UI_Square");
+            MyStringId material = Constants.MatUI_Square;
 
             //Color bgColor = new Color(41, 54, 62);
             Color bgColor = new Color(37, 46, 53);
@@ -218,7 +216,7 @@ namespace Digi.BuildInfo.Features.GUI
             CloseButton.Scale = CloseButtonScale;
             CloseButton.Refresh(Vector2D.Zero);
 
-            SearchBar = new TextPackage(128, false, MyStringId.GetOrCompute("BuildInfo_UI_Square"));
+            SearchBar = new TextPackage(128, false, Constants.MatUI_Square);
             SearchBar.Background.BillBoardColor = SearchBgColor;
             SearchBar.HideWithHUD = false;
             SearchBar.Position = new Vector2D(-0.9, 0.4);
@@ -639,7 +637,7 @@ namespace Digi.BuildInfo.Features.GUI
             HighlighterIndex++;
             if(Highlighters.Count <= HighlighterIndex)
             {
-                hl = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("Square"), Vector2D.Zero, Color.Yellow * 0.25f);
+                hl = new HudAPIv2.BillBoardHUDMessage(Constants.MatUI_Square, Vector2D.Zero, Color.Yellow * 0.25f);
                 Highlighters.Add(hl);
             }
             else
@@ -2440,7 +2438,7 @@ namespace Digi.BuildInfo.Features.GUI
 
             public Column(bool debug = false)
             {
-                Render = new TextAPI.TextPackage(512, false, debug ? MyStringId.GetOrCompute("BuildInfo_UI_Square") : (MyStringId?)null);
+                Render = new TextAPI.TextPackage(512, false, debug ? Constants.MatUI_Square : (MyStringId?)null);
                 Render.HideWithHUD = false;
                 Render.Scale = TextScale;
 
@@ -2524,7 +2522,7 @@ namespace Digi.BuildInfo.Features.GUI
 
             public void CreateUIObjects()
             {
-                MyStringId material = MyStringId.GetOrCompute("BuildInfo_UI_Square");
+                MyStringId material = Constants.MatUI_Square;
                 ScrollbarBgRender = new HudAPIv2.BillBoardHUDMessage(material, Vector2D.Zero, BgColor);
                 ScrollbarRender = new HudAPIv2.BillBoardHUDMessage(material, Vector2D.Zero, BarColor);
                 SetVisible(false, false);

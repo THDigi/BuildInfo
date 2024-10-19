@@ -1141,7 +1141,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
             {
                 if(ErrorsMenuBackdrop == null)
                 {
-                    MyStringId material = MyStringId.GetOrCompute("BuildInfo_UI_Square");
+                    MyStringId material = Constants.MatUI_Square;
                     //Color color = new Color(41, 54, 62);
                     Color color = new Color(37, 46, 53);
 

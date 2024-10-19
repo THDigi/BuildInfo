@@ -32,10 +32,10 @@ namespace Digi.BuildInfo.Features.GUI
         /// </summary>
         public TooltipHandler()
         {
-            //MyStringId bg = MyStringId.GetOrCompute("BuildInfo_UI_ButtonBgHover");
+            //MyStringId bg = Constants.MatUI_ButtonBgHover;
             //Color bgColor = Color.White;
 
-            MyStringId bg = MyStringId.GetOrCompute("BuildInfo_UI_Square");
+            MyStringId bg = Constants.MatUI_Square;
             Color bgColor = new Color(70, 83, 90);
 
             Label = new TextAPI.TextPackage(256, backgroundTexture: bg);

@@ -80,7 +80,7 @@ namespace Digi.BuildInfo.Features.Overlays
         public const BlendTypeEnum TextBlendType = BlendTypeEnum.PostPP;
         public const BlendTypeEnum ShadowBlendType = BlendTypeEnum.PostPP;
 
-        public static readonly MyStringId LineMaterial = MyStringId.GetOrCompute("BuildInfo_Laser");
+        public static readonly MyStringId LineMaterial = Constants.Mat_Laser;
         public const float LineThickScale = 4f;
         public const float LabelScale = 1.2f; // TODO config?
 

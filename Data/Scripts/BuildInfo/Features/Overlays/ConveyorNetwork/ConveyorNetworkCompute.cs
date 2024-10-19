@@ -9,7 +9,6 @@ using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
-using VRage.Utils;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork

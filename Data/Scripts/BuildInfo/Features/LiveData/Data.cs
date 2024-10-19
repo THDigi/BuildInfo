@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Digi.BuildInfo.Utilities;
-using Sandbox.Common.ObjectBuilders;
-using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;

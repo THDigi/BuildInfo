@@ -51,8 +51,7 @@ namespace Digi.BuildInfo.Features
         #region Constants
         const BlendTypeEnum FG_BLEND_TYPE = BlendTypeEnum.PostPP;
 
-        readonly MyStringId BG_MATERIAL = MyStringId.GetOrCompute("BuildInfo_UI_Square");
-        readonly Color BG_COLOR = new Color(41, 54, 62);
+        readonly Color BG_COLOR = Constants.Color_UIBackground;
         const float BG_EDGE = 0.02f; // added padding edge around the text boundary for the background image
 
         const float CharInvVolM3Offset = 50 / 1000f; // subtracting 50L from char inv max volume to account for common tools
@@ -542,7 +541,7 @@ namespace Digi.BuildInfo.Features
         {
             if(textObject == null)
             {
-                textObject = new TextAPI.TextPackage(TEXTAPI_TEXT_LENGTH, backgroundTexture: BG_MATERIAL);
+                textObject = new TextAPI.TextPackage(TEXTAPI_TEXT_LENGTH, backgroundTexture: Constants.MatUI_Square);
                 textObject.HideWithHUD = !Main.Config.TextAlwaysVisible.Value;
                 textObject.Scale = Main.Config.TextAPIScale.Value;
             }

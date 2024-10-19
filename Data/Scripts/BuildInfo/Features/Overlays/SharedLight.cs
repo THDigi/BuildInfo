@@ -157,10 +157,10 @@ namespace Digi.BuildInfo.Features.Overlays
                     float coneRadius = range * lightData.SpotlightConeTan;
 
                     Utils.DrawTransparentCone(ref wm, coneRadius, range, ref ColorSphere, MySimpleObjectRasterizer.Wireframe, WireDivRatio,
-                        SpecializedOverlayBase.MaterialLaser, WireFrameThick, blendType: SpecializedOverlayBase.BlendType);
+                        OverlayDrawInstance.MaterialLaser, WireFrameThick, blendType: SpecializedOverlayBase.BlendType);
 
                     Utils.DrawTransparentCone(ref wm, coneRadius, range, ref ColorSphereSeeThrough, MySimpleObjectRasterizer.Wireframe, WireDivRatio,
-                        SpecializedOverlayBase.MaterialLaser, WireFrameThick, blendType: BlendTypeEnum.AdditiveTop);
+                        OverlayDrawInstance.MaterialLaser, WireFrameThick, blendType: BlendTypeEnum.AdditiveTop);
 
                     // HACK: hardcoded from MyReflectorLight/MySearchlight.UpdateRadius() which affects the point light
                     if(def is MyReflectorBlockDefinition || def is MySearchlightDefinition)
@@ -175,13 +175,13 @@ namespace Digi.BuildInfo.Features.Overlays
                 pointRadius *= EyeballedMul;
 
                 Utils.DrawSphere(ref wm, pointRadius, SpecializedOverlayBase.RoundedQualityMed,
-                   wireColor: ColorSphere, wireMaterial: SpecializedOverlayBase.MaterialLaser, wireThickness: WireFrameThick, wireBlend: SpecializedOverlayBase.BlendType);
+                   wireColor: ColorSphere, wireMaterial: OverlayDrawInstance.MaterialLaser, wireThickness: WireFrameThick, wireBlend: SpecializedOverlayBase.BlendType);
 
                 Utils.DrawSphere(ref wm, pointRadius, SpecializedOverlayBase.RoundedQualityMed,
-                   wireColor: ColorSphereSeeThrough, wireMaterial: SpecializedOverlayBase.MaterialLaser, wireThickness: WireFrameThick, wireBlend: BlendTypeEnum.AdditiveTop);
+                   wireColor: ColorSphereSeeThrough, wireMaterial: OverlayDrawInstance.MaterialLaser, wireThickness: WireFrameThick, wireBlend: BlendTypeEnum.AdditiveTop);
 
-                MyTransparentGeometry.AddPointBillboard(SpecializedOverlayBase.MaterialDot, ColorDot, wm.Translation, DotRadius, 0, blendType: SpecializedOverlayBase.BlendType);
-                MyTransparentGeometry.AddPointBillboard(SpecializedOverlayBase.MaterialDot, ColorDotSeeThrough, wm.Translation, DotRadius, 0, blendType: BlendTypeEnum.AdditiveTop);
+                MyTransparentGeometry.AddPointBillboard(OverlayDrawInstance.MaterialDot, ColorDot, wm.Translation, DotRadius, 0, blendType: SpecializedOverlayBase.BlendType);
+                MyTransparentGeometry.AddPointBillboard(OverlayDrawInstance.MaterialDot, ColorDotSeeThrough, wm.Translation, DotRadius, 0, blendType: BlendTypeEnum.AdditiveTop);
             }
         }
     }

@@ -11,7 +11,6 @@ using SpaceEngineers.Game.ModAPI;
 using VRage;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
-using VRage.ModAPI;
 using IMyControllableEntityModAPI = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 using PB_TextSurfaceProvider = Sandbox.ModAPI.Ingame.IMyTextSurfaceProvider; // HACK: because modAPI one isn't implemented
 

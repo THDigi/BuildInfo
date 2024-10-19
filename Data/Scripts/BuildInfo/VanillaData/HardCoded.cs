@@ -9,7 +9,6 @@ using Sandbox.Game.EntityComponents;
 using Sandbox.Game.Localization;
 using Sandbox.ModAPI;
 using SpaceEngineers.Game.Definitions.SafeZone;
-using SpaceEngineers.Game.ModAPI;
 using VRage;
 using VRage.Game;
 using VRage.Game.Definitions;

@@ -127,7 +127,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             if(RefreshClickHighlightTicks > 0 && --RefreshClickHighlightTicks > 0)
             {
-                button.Label.Background.Material = Button.MaterialBgActivate;
+                button.Label.Background.Material = Constants.MatUI_ButtonBgActivate;
                 button.Label.Background.BillBoardColor = Color.Lime;
             }
         }
@@ -193,7 +193,7 @@ namespace Digi.BuildInfo.Features.Terminal
             {
                 Tooltip?.Hover(CopyCopied ? "Copied to clipboard" : "Nothing to copy");
 
-                button.Label.Background.Material = Button.MaterialBgActivate;
+                button.Label.Background.Material = Constants.MatUI_ButtonBgActivate;
                 button.Label.Background.BillBoardColor = (CopyCopied ? Color.Lime : Color.Red);
             }
         }
@@ -221,7 +221,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             if(OverlaysClickHighlightTicks > 0 && --OverlaysClickHighlightTicks > 0)
             {
-                button.Label.Background.Material = Button.MaterialBgActivate;
+                button.Label.Background.Material = Constants.MatUI_ButtonBgActivate;
                 button.Label.Background.BillBoardColor = Color.Lime;
             }
         }
@@ -230,7 +230,7 @@ namespace Digi.BuildInfo.Features.Terminal
         {
             if(Main.TerminalUnderlays.ShowSpecializedOverlays)
             {
-                button.Label.Background.Material = Button.MaterialBgActivate;
+                button.Label.Background.Material = Constants.MatUI_ButtonBgActivate;
             }
 
             OverlaysClickHighlightTicks = 0;

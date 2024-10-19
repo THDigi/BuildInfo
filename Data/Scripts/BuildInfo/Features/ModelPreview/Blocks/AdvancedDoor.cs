@@ -2,7 +2,6 @@
 using System.IO;
 using Digi.BuildInfo.Features.LiveData;
 using Sandbox.Definitions;
-using VRageMath;
 
 namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 {
