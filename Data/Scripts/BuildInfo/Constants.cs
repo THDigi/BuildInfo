@@ -43,6 +43,8 @@ namespace Digi.BuildInfo
 
         public static readonly MyStringId MatUI_Square = MyStringId.GetOrCompute("BuildInfo_UI_Square");
 
+        public static readonly MyStringId MatUI_SquareHollow = MyStringId.GetOrCompute("BuildInfo_UI_SquareHollow");
+
         public static readonly MyStringId MatUI_Corner = MyStringId.GetOrCompute("BuildInfo_UI_Corner");
 
         public static readonly MyStringId MatUI_ButtonBg = MyStringId.GetOrCompute("BuildInfo_UI_ButtonBg");
