@@ -85,7 +85,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
             if(minAngle < -360 && maxAngle > 360) // both limits are unlimited
             {
-                drawInstance.DrawAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
+                OverlayDrawInstance.DrawAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
                     ref circleMatrix, radius, -180, 180, LimitsLineEveryDegrees,
                     NoLimitsFaceColor, NoLimitsLineColor, MaterialSquare, MaterialLaser, LimitsLineThick, BlendType);
             }
@@ -133,7 +133,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 // doesn't seem to allow it to have flipped limits, but leaving this here anyway
                 if(maxAngle < minAngle)
                 {
-                    drawInstance.DrawAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
+                    OverlayDrawInstance.DrawAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
                         ref circleMatrix, radius, maxAngle, minAngle, LimitsLineEveryDegrees,
                         Color.Red * SolidOverlayAlpha, Color.Red * LaserOverlayAlpha, MaterialSquare, MaterialLaser, LimitsLineThick, BlendType);
                 }
@@ -142,13 +142,13 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                     // if the limits allow more than a full 360deg rotation
                     if((maxAngle - minAngle) > 360)
                     {
-                        drawInstance.DrawAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
+                        OverlayDrawInstance.DrawAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
                             ref circleMatrix, radius, minAngle, maxAngle, LimitsLineEveryDegrees,
                             LimitRolloverFace, LimitRolloverLine, MaterialSquare, MaterialLaser, LimitsLineThick, BlendType);
                     }
                     else
                     {
-                        drawInstance.DrawAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
+                        OverlayDrawInstance.DrawAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
                             ref circleMatrix, radius, minAngle, maxAngle, LimitsLineEveryDegrees,
                             LimitPieFace, LimitPieLine, MaterialSquare, MaterialLaser, LimitsLineThick, BlendType);
                     }

@@ -744,7 +744,7 @@ namespace Digi.BuildInfo.Features.Overlays
             }
         }
 
-        public void DrawAxisLimit(out Vector3D firstOuterRimVec, out Vector3D lastOuterRimVec,
+        public static void DrawAxisLimit(out Vector3D firstOuterRimVec, out Vector3D lastOuterRimVec,
             ref MatrixD worldMatrix, float radius, int startAngle, int endAngle, int lineEveryDegrees,
             Vector4 faceColor, Vector4 lineColor, MyStringId? faceMaterial = null, MyStringId? lineMaterial = null, float lineThickness = 0.01f,
             BlendTypeEnum blendType = BlendTypeEnum.Standard)
