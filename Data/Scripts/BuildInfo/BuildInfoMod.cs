@@ -1,5 +1,6 @@
 ﻿using System;
 using Digi.BuildInfo.Features;
+using Digi.BuildInfo.Features.BlockLogic;
 using Digi.BuildInfo.Features.ChatCommands;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.ConfigMenu;
@@ -64,6 +65,7 @@ namespace Digi.BuildInfo
         public readonly HUDEditor HUDEditor;
         public readonly ScreenTooltips ScreenTooltips;
         public readonly JumpDriveMonitor JumpDriveMonitor;
+        public readonly BlockAttachedLogic BlockAttachedLogic;
         public readonly ProjectedBlockInfo ProjectedBlockInfo;
         public readonly ProjectorShowRemaining ProjectorShowRemaining;
         public readonly ShipOverlays ShipOverlays;
@@ -164,6 +166,7 @@ namespace Digi.BuildInfo
             JumpDriveMonitor = new JumpDriveMonitor(this);
             HUDEditor = new HUDEditor(this);
             ScreenTooltips = new ScreenTooltips(this);
+            BlockAttachedLogic = new BlockAttachedLogic(this);
             ProjectedBlockInfo = new ProjectedBlockInfo(this);
             ProjectorShowRemaining = new ProjectorShowRemaining(this);
             OverrideToolSelectionDraw = new OverrideToolSelectionDraw(this);
