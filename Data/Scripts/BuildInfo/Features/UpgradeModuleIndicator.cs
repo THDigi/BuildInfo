@@ -1,135 +1,46 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Utilities;
-using Digi.ComponentLib;
-using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
-using VRage.Game.Components;
 using VRage.Game.ModAPI;
-using VRage.ModAPI;
-using VRage.ObjectBuilders;
 using VRageMath;
 
-namespace Digi.BuildInfo.Features
+namespace Digi.BuildInfo.Features.BlockLogic
 {
-    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_UpgradeModule), useEntityUpdate: false)]
-    public class UpgradeModuleGL : MyGameLogicComponent
+    // registered in BlockAttachedLogic
+    class UpgradeModuleIndicator : BlockAttachedLogic.LogicBase
     {
-        public UpgradeModule_PlayerSide Player;
-
-        public override void Init(MyObjectBuilder_EntityBase objectBuilder)
-        {
-            if(BuildInfo_GameSession.GetOrComputeIsKilled(this.GetType().Name))
-                return;
-
-            NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
-        }
-
-        public override void UpdateOnceBeforeFrame()
-        {
-            try
-            {
-                if(MyAPIGateway.Utilities.IsDedicated)
-                    return;
-
-                var block = Entity as IMyCubeBlock;
-                if(block?.CubeGrid?.Physics == null)
-                    return;
-
-                Player = new UpgradeModule_PlayerSide(this);
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-
-        public override void MarkForClose()
-        {
-            try
-            {
-                Player?.Dispose();
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-
-        public override void UpdateAfterSimulation()
-        {
-            try
-            {
-                Player?.Update(MyEntityUpdateEnum.EACH_FRAME);
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-
-        public override void UpdateAfterSimulation10()
-        {
-            try
-            {
-                Player?.Update(MyEntityUpdateEnum.EACH_10TH_FRAME);
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-
-        public override void UpdateAfterSimulation100()
-        {
-            try
-            {
-                Player?.Update(MyEntityUpdateEnum.EACH_100TH_FRAME);
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-    }
-
-    public class UpgradeModule_PlayerSide
-    {
-        readonly UpgradeModuleGL GameLogic;
-        readonly IMyUpgradeModule Block;
+        IMyUpgradeModule Module;
 
         bool NeedsRefresh = true;
         int TotalPorts;
         bool AnyIncompatible;
         int Step;
 
-        const MyEntityUpdateEnum UpdateFlag = MyEntityUpdateEnum.EACH_10TH_FRAME;
+        const BlockAttachedLogic.BlockUpdate UpdateToUse = BlockAttachedLogic.BlockUpdate.Update10; // if editing this, change method override too
 
         static readonly Color EmissiveColorBlinkA = Color.Yellow;
         static readonly Color EmissiveColorBlinkB = Color.Red;
         static readonly List<string> EmissiveNames = new List<string>(2);
 
-        public UpgradeModule_PlayerSide(UpgradeModuleGL gamelogic)
+        public override void Added()
         {
-            GameLogic = gamelogic;
-            Block = (IMyUpgradeModule)GameLogic.Entity;
-
-            Block.CubeGridChanged += GridChanged;
-            GridChanged(oldGrid: null);
+            Module = (IMyUpgradeModule)Block;
+            Module.CubeGridChanged += ModuleMoved;
+            ModuleMoved(oldGrid: null);
         }
 
-        public void Dispose()
+        public override void Removed()
         {
-            if(Block != null)
+            if(Module != null)
             {
-                Block.CubeGrid.OnBlockAdded -= GridBlockAdded;
-                Block.CubeGrid.OnBlockRemoved -= GridBlockRemoved;
+                Module.CubeGrid.OnBlockAdded -= GridBlockAdded;
+                Module.CubeGrid.OnBlockRemoved -= GridBlockRemoved;
             }
         }
 
-        void GridChanged(IMyCubeGrid oldGrid)
+        void ModuleMoved(IMyCubeGrid oldGrid)
         {
             if(oldGrid != null)
             {
@@ -137,30 +48,27 @@ namespace Digi.BuildInfo.Features
                 oldGrid.OnBlockRemoved -= GridBlockRemoved;
             }
 
-            Block.CubeGrid.OnBlockAdded += GridBlockAdded;
-            Block.CubeGrid.OnBlockRemoved += GridBlockRemoved;
+            Module.CubeGrid.OnBlockAdded += GridBlockAdded;
+            Module.CubeGrid.OnBlockRemoved += GridBlockRemoved;
 
             NeedsRefresh = true;
-            GameLogic.NeedsUpdate |= UpdateFlag;
+
+            SetUpdate(UpdateToUse, true);
         }
 
         void GridBlockRemoved(IMySlimBlock slim)
         {
             NeedsRefresh = true;
-            GameLogic.NeedsUpdate |= UpdateFlag;
+            SetUpdate(UpdateToUse, true);
         }
 
         void GridBlockAdded(IMySlimBlock slim)
         {
             NeedsRefresh = true;
-            GameLogic.NeedsUpdate |= UpdateFlag;
+            SetUpdate(UpdateToUse, true);
         }
 
-        /// <summary>
-        /// Update1/10/100 all call this, use <see cref="UpdateFlag"/> to choose which.
-        /// The <paramref name="source"/> informs this which one triggerd it in case you have multiple active.
-        /// </summary>
-        public void Update(MyEntityUpdateEnum source)
+        public override void Update10()
         {
             if(NeedsRefresh)
             {
@@ -170,7 +78,7 @@ namespace Digi.BuildInfo.Features
 
                 if(!NeedsRefresh && !AnyIncompatible)
                 {
-                    GameLogic.NeedsUpdate &= ~UpdateFlag;
+                    SetUpdate(UpdateToUse, false);
                     return;
                 }
             }
@@ -184,7 +92,7 @@ namespace Digi.BuildInfo.Features
                 {
                     if(TotalPorts == 0)
                     {
-                        var def = (MyCubeBlockDefinition)Block.SlimBlock.BlockDefinition;
+                        var def = (MyCubeBlockDefinition)Module.SlimBlock.BlockDefinition;
                         BData_Base data = BuildInfoMod.Instance.LiveDataHandler.Get<BData_Base>(def);
                         if(data == null)
                         {
@@ -207,7 +115,7 @@ namespace Digi.BuildInfo.Features
 
                     for(int i = 0; i < TotalPorts; i++)
                     {
-                        Block.SetEmissiveParts(EmissiveNames[i], Step == 0 ? EmissiveColorBlinkA : EmissiveColorBlinkB, 1f);
+                        Module.SetEmissiveParts(EmissiveNames[i], Step == 0 ? EmissiveColorBlinkA : EmissiveColorBlinkB, 1f);
                     }
                 }
             }
@@ -217,7 +125,7 @@ namespace Digi.BuildInfo.Features
         {
             AnyIncompatible = false;
 
-            using(Utils.UpgradeModule.Result result = Utils.UpgradeModule.GetAttached(Block))
+            using(Utils.UpgradeModule.Result result = Utils.UpgradeModule.GetAttached(Module))
             {
                 if(!result.HasData)
                 {

@@ -659,7 +659,7 @@ namespace Digi.BuildInfo.Utilities
                 public bool HasData;
                 public int PortsAttached;
                 public int PortsTotal;
-                public IEnumerable<AttachedTo> Attached;
+                public Dictionary<long, AttachedTo>.ValueCollection Attached;
 
                 public void Dispose()
                 {
