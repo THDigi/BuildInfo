@@ -70,6 +70,7 @@ namespace Digi.BuildInfo.Features.LiveData
 
     public struct UpgradePortInfo
     {
+        public readonly string DummyName;
         public readonly Matrix LocalMatrix;
 
         /// <summary>
@@ -78,10 +79,11 @@ namespace Digi.BuildInfo.Features.LiveData
         public readonly Vector3I CellPosition;
         public readonly Base6Directions.Direction Direction;
 
-        public UpgradePortInfo(Matrix localMatrix, Vector3I cellPos, Base6Directions.Direction dir)
+        public UpgradePortInfo(string name, Matrix localMatrix, Vector3I cellPos, Base6Directions.Direction dir)
         {
             Utils.MatrixMinSize(ref localMatrix, BData_Base.MatrixAllMinScale, BData_Base.MatrixIndividualMinScale);
 
+            DummyName = name;
             LocalMatrix = localMatrix;
             CellPosition = cellPos;
             Direction = dir;
@@ -469,7 +471,7 @@ namespace Digi.BuildInfo.Features.LiveData
                     dirVec.Normalize();
                     Base6Directions.Direction portDir = Base6Directions.GetDirection(dirVec);
 
-                    var port = new UpgradePortInfo(matrix, portCellPos, portDir);
+                    var port = new UpgradePortInfo(name, matrix, portCellPos, portDir);
 
                     // detect connecting to self
                     if(showModderAlerts)
@@ -590,6 +592,12 @@ namespace Digi.BuildInfo.Features.LiveData
             if(ConveyorPorts != null && showModderAlerts && isModModel && CheckConveyorsForOverlap())
             {
                 Main.ModderHelpMain.ModHint(def, $"Its model has multiple conveyor dummies in the same cell and direction. This might cause conveyors to not connect in certain cases.");
+            }
+
+            if(UpgradePorts != null)
+            {
+                // HACK: MyUpgradeModule.Init() uses a SortedDictionary
+                UpgradePorts.Sort((a, b) => a.DummyName.CompareTo(b.DummyName));
             }
         }
 
