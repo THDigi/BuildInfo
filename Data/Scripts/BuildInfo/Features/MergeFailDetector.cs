@@ -3,97 +3,23 @@ using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
-using Digi.ComponentLib;
-using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using SpaceEngineers.Game.ModAPI;
 using VRage.Game;
-using VRage.Game.Components;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
-using VRage.ModAPI;
-using VRage.ObjectBuilders;
 using VRageMath;
 using VRageRender;
 
-namespace Digi.BuildInfo.Features
+namespace Digi.BuildInfo.Features.BlockLogic
 {
-    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_MergeBlock), useEntityUpdate: false)]
-    public class MergeBlockGL : MyGameLogicComponent
+    // registered in BlockAttachedLogic
+    class MergeFailDetector : BlockAttachedLogic.LogicBase
     {
-        public MergeBlock_PlayerSide Player;
-
-        public override void Init(MyObjectBuilder_EntityBase objectBuilder)
-        {
-            if(BuildInfo_GameSession.GetOrComputeIsKilled(this.GetType().Name))
-                return;
-
-            NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
-        }
-
-        public override void UpdateOnceBeforeFrame()
-        {
-            try
-            {
-                if(MyAPIGateway.Utilities.IsDedicated)
-                    return;
-
-                var block = Entity as IMyCubeBlock;
-                if(block?.CubeGrid?.Physics == null)
-                    return;
-
-                Player = new MergeBlock_PlayerSide(this);
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-
-        public override void MarkForClose()
-        {
-            try
-            {
-                Player?.Dispose();
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-
-        public override void UpdateAfterSimulation10()
-        {
-            try
-            {
-                Player?.Update10();
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-
-        public override void UpdateAfterSimulation()
-        {
-            try
-            {
-                Player?.Update1();
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-    }
-
-    public class MergeBlock_PlayerSide
-    {
-        readonly MergeBlockGL GameLogic;
-        readonly IMyShipMergeBlock Block;
-        readonly MyMergeBlockDefinition Def;
+        IMyShipMergeBlock MergeBlock;
+        MyMergeBlockDefinition Def;
 
         Base6Directions.Direction Forward;
         Base6Directions.Direction Right;
@@ -112,41 +38,40 @@ namespace Digi.BuildInfo.Features
         static readonly Color EmissiveColorBlinkA = Color.Yellow;
         static readonly Color EmissiveColorBlinkB = Color.Red;
 
-        public MergeBlock_PlayerSide(MergeBlockGL gamelogic)
+        public override void Added()
         {
-            GameLogic = gamelogic;
-            Block = (IMyShipMergeBlock)GameLogic.Entity;
-            Def = (MyMergeBlockDefinition)Block.SlimBlock.BlockDefinition;
-            Block.AppendingCustomInfo += CustomInfo;
-            Block.BeforeMerge += BeforeMerge;
+            MergeBlock = (IMyShipMergeBlock)Block;
+            Def = (MyMergeBlockDefinition)MergeBlock.SlimBlock.BlockDefinition;
+            MergeBlock.AppendingCustomInfo += CustomInfo;
+            MergeBlock.BeforeMerge += BeforeMerge;
 
-            GameLogic.NeedsUpdate = MyEntityUpdateEnum.EACH_10TH_FRAME;
+            SetUpdate(BlockAttachedLogic.BlockUpdate.Update10, true);
         }
 
-        public void Dispose()
+        public override void Removed()
         {
-            if(Block != null)
+            if(MergeBlock != null)
             {
-                Block.AppendingCustomInfo -= CustomInfo;
-                Block.BeforeMerge -= BeforeMerge;
+                MergeBlock.AppendingCustomInfo -= CustomInfo;
+                MergeBlock.BeforeMerge -= BeforeMerge;
             }
         }
 
-        public void Update10()
+        public override void Update10()
         {
-            if(!LoadedDummies && Block.SlimBlock.ComponentStack.IsBuilt) // need main model to load dummies
+            if(!LoadedDummies && MergeBlock.SlimBlock.ComponentStack.IsBuilt) // need main model to load dummies
             {
                 LoadedDummies = true;
                 LoadDummies();
             }
 
-            if(Vector3D.DistanceSquared(Block.GetPosition(), MyAPIGateway.Session.Camera.Position) > MaxDistanceComputeSq)
+            if(Vector3D.DistanceSquared(MergeBlock.GetPosition(), MyAPIGateway.Session.Camera.Position) > MaxDistanceComputeSq)
                 return;
 
-            if(Block.IsWorking
-            && Block.Other != null // magnetized or connected
-            && Block.Other.CubeGrid != Block.CubeGrid // not already merged
-            && Block.Other.IsWorking)
+            if(MergeBlock.IsWorking
+            && MergeBlock.Other != null // magnetized or connected
+            && MergeBlock.Other.CubeGrid != MergeBlock.CubeGrid // not already merged
+            && MergeBlock.Other.IsWorking)
             {
                 // similar to MyShipMergeBlock's update10
                 MergeData data = new MergeData();
@@ -158,25 +83,26 @@ namespace Digi.BuildInfo.Features
                     {
                         UpdateCounter = 0;
 
-                        IMyShipMergeBlock other = Block.Other;
-                        Vector3I gridOffset = CalculateOtherGridOffset(Block);
+                        IMyShipMergeBlock other = MergeBlock.Other;
+                        Vector3I gridOffset = CalculateOtherGridOffset(MergeBlock);
                         Vector3I gridOffset2 = CalculateOtherGridOffset(other);
 
                         bool canMerge = false;
 
                         // only update one of them
-                        if(Block.EntityId > other.EntityId)
+                        if(MergeBlock.EntityId > other.EntityId)
                         {
                             // block.CubeGrid.CanMergeCubes(other.CubeGrid, gridOffset)
-                            canMerge = CanMergeCubes((MyCubeGrid)Block.CubeGrid, (MyCubeGrid)other.CubeGrid, gridOffset, out MarkThis, out MarkOther);
+                            canMerge = CanMergeCubes((MyCubeGrid)MergeBlock.CubeGrid, (MyCubeGrid)other.CubeGrid, gridOffset, out MarkThis, out MarkOther);
                         }
                         else
                         {
-                            MergeBlock_PlayerSide otherLogic = other?.GameLogic?.GetAs<MergeBlockGL>()?.Player;
+                            MergeFailDetector otherLogic = Host.Tracked.GetValueOrDefault(other) as MergeFailDetector;
                             if(otherLogic != null)
                             {
-                                MarkThis = otherLogic.MarkThis;
-                                MarkOther = otherLogic.MarkOther;
+                                // mark flipped
+                                MarkThis = otherLogic.MarkOther;
+                                MarkOther = otherLogic.MarkThis;
                                 canMerge = !otherLogic.IsFailing;
                             }
                         }
@@ -203,8 +129,8 @@ namespace Digi.BuildInfo.Features
 
             if(MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.ControlPanel)
             {
-                Block.RefreshCustomInfo();
-                Block.SetDetailedInfoDirty();
+                MergeBlock.RefreshCustomInfo();
+                MergeBlock.SetDetailedInfoDirty();
             }
 
             if(IsFailing)
@@ -214,7 +140,7 @@ namespace Digi.BuildInfo.Features
 
                 if(BlinkState == 0 || BlinkState == 3)
                 {
-                    Block.SetEmissiveParts(EmissiveName, (BlinkState == 0 ? EmissiveColorBlinkA : EmissiveColorBlinkB), 1);
+                    MergeBlock.SetEmissiveParts(EmissiveName, (BlinkState == 0 ? EmissiveColorBlinkA : EmissiveColorBlinkB), 1);
                 }
             }
         }
@@ -230,17 +156,13 @@ namespace Digi.BuildInfo.Features
                 return;
 
             IsFailing = fail;
-
-            if(fail)
-                GameLogic.NeedsUpdate |= MyEntityUpdateEnum.EACH_FRAME;
-            else
-                GameLogic.NeedsUpdate &= ~MyEntityUpdateEnum.EACH_FRAME;
+            SetUpdate(BlockAttachedLogic.BlockUpdate.Update1, fail);
 
             if(!fail)
             {
                 MarkThis = null;
                 MarkOther = null;
-                ((MyCubeBlock)Block).CheckEmissiveState(true);
+                ((MyCubeBlock)MergeBlock).CheckEmissiveState(true);
             }
         }
 
@@ -248,17 +170,17 @@ namespace Digi.BuildInfo.Features
         {
             try
             {
-                IMyShipMergeBlock other = Block.Other;
+                IMyShipMergeBlock other = MergeBlock.Other;
 
                 if(other == null)
                 {
-                    if(Block.IsWorking)
+                    if(MergeBlock.IsWorking)
                         str.Append("Status: Idle.\n");
 
                     return;
                 }
 
-                if(other.CubeGrid == Block.CubeGrid)
+                if(other.CubeGrid == MergeBlock.CubeGrid)
                 {
                     str.Append("Status: Merged.\n");
                     return;
@@ -299,9 +221,9 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        public void Update1()
+        public override void Update1()
         {
-            IMyCubeBlock other = Block.Other;
+            IMyCubeBlock other = MergeBlock.Other;
             IMySlimBlock anyBlock = (MarkThis ?? MarkOther);
             if(other == null || anyBlock == null)
                 return;
@@ -318,7 +240,7 @@ namespace Digi.BuildInfo.Features
                     return;
             }
 
-            Vector3D mergeCenter = Block.WorldAABB.Center;
+            Vector3D mergeCenter = MergeBlock.WorldAABB.Center;
             mergeCenter += (other.WorldAABB.Center - mergeCenter) * 0.5f; // between the merge blocks
 
             MyTransparentGeometry.AddLineBillboard(Constants.Mat_Laser, Color.Yellow.ToVector4() * 10f, anyCenter, (mergeCenter - anyCenter), 1f, 0.05f, MyBillboard.BlendTypeEnum.AdditiveTop);
@@ -361,7 +283,7 @@ namespace Digi.BuildInfo.Features
             Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
             dummies.Clear();
 
-            Block.Model.GetDummies(dummies);
+            MergeBlock.Model.GetDummies(dummies);
 
             foreach(KeyValuePair<string, IMyModelDummy> kv in dummies)
             {
@@ -382,16 +304,16 @@ namespace Digi.BuildInfo.Features
 
         void CalculateMergeData(ref MergeData data)
         {
-            IMyShipMergeBlock other = Block.Other;
+            IMyShipMergeBlock other = MergeBlock.Other;
 
             float num = (Def != null) ? Def.Strength : 0.1f;
 
-            data.Distance = (float)(Block.WorldMatrix.Translation - other.WorldMatrix.Translation).Length() - Block.CubeGrid.GridSize;
-            data.StrengthFactor = (float)Math.Exp((double)(-(double)data.Distance / Block.CubeGrid.GridSize));
+            data.Distance = (float)(MergeBlock.WorldMatrix.Translation - other.WorldMatrix.Translation).Length() - MergeBlock.CubeGrid.GridSize;
+            data.StrengthFactor = (float)Math.Exp((double)(-(double)data.Distance / MergeBlock.CubeGrid.GridSize));
 
-            float num2 = MathHelper.Lerp(0f, num * ((Block.CubeGrid.GridSizeEnum == MyCubeSize.Large) ? 0.005f : 0.1f), data.StrengthFactor);
+            float num2 = MathHelper.Lerp(0f, num * ((MergeBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large) ? 0.005f : 0.1f), data.StrengthFactor);
 
-            Vector3 velocityAtPoint = Block.CubeGrid.Physics.GetVelocityAtPoint(Block.PositionComp.GetPosition());
+            Vector3 velocityAtPoint = MergeBlock.CubeGrid.Physics.GetVelocityAtPoint(MergeBlock.PositionComp.GetPosition());
             Vector3 velocityAtPoint2 = other.CubeGrid.Physics.GetVelocityAtPoint(other.PositionComp.GetPosition());
 
             data.RelativeVelocity = velocityAtPoint2 - velocityAtPoint;
@@ -401,16 +323,16 @@ namespace Digi.BuildInfo.Features
 
             data.ConstraintStrength = num2 / num4;
 
-            Vector3D vector = other.PositionComp.GetPosition() - Block.PositionComp.GetPosition();
-            Vector3D value = Block.WorldMatrix.GetDirectionVector(Forward);
+            Vector3D vector = other.PositionComp.GetPosition() - MergeBlock.PositionComp.GetPosition();
+            Vector3D value = MergeBlock.WorldMatrix.GetDirectionVector(Forward);
 
-            Base6Directions.Direction otherRight = other.WorldMatrix.GetClosestDirection(Block.WorldMatrix.GetDirectionVector(Right));
+            Base6Directions.Direction otherRight = other.WorldMatrix.GetClosestDirection(MergeBlock.WorldMatrix.GetDirectionVector(Right));
 
             data.Distance = (float)vector.Length();
-            data.PositionOk = (data.Distance < Block.CubeGrid.GridSize + 0.17f);
+            data.PositionOk = (data.Distance < MergeBlock.CubeGrid.GridSize + 0.17f);
             data.AxisDelta = (float)(value + other.WorldMatrix.GetDirectionVector(Forward)).Length();
             data.AxisOk = (data.AxisDelta < 0.1f);
-            data.RotationDelta = (float)(Block.WorldMatrix.GetDirectionVector(Right) - other.WorldMatrix.GetDirectionVector(otherRight)).Length();
+            data.RotationDelta = (float)(MergeBlock.WorldMatrix.GetDirectionVector(Right) - other.WorldMatrix.GetDirectionVector(otherRight)).Length();
             data.RotationOk = (data.RotationDelta < 0.08f);
         }
 
@@ -418,8 +340,9 @@ namespace Digi.BuildInfo.Features
         {
             IMyShipMergeBlock other = b.Other;
 
-            MergeBlock_PlayerSide blockLogic = b.GameLogic?.GetAs<MergeBlockGL>()?.Player;
-            MergeBlock_PlayerSide otherLogic = other.GameLogic?.GetAs<MergeBlockGL>().Player;
+            var lookup = BuildInfoMod.Instance.BlockAttachedLogic.Tracked;
+            MergeFailDetector blockLogic = lookup.GetValueOrDefault(b) as MergeFailDetector;
+            MergeFailDetector otherLogic = lookup.GetValueOrDefault(other) as MergeFailDetector;
 
             Vector3 value = ConstraintPositionInGridSpace(b, blockLogic.Forward) / b.CubeGrid.GridSize;
             Vector3 vector = -ConstraintPositionInGridSpace(other, blockLogic.Forward) / other.CubeGrid.GridSize;
