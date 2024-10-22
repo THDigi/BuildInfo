@@ -72,7 +72,9 @@ namespace Digi.BuildInfo.Features
             if(debugMsgs.Count > MaxMessages)
                 debugMsgs.Dequeue();
 
-            string callerName = caller?.GetType()?.Name ?? "[unspecified]";
+            string callerName = "[unspecified]";
+            if(caller != null)
+                callerName = VRage.TypeExtensions.PrettyName(caller.GetType());
 
             debugMsgs.Enqueue(new LogMsg(callerName, message));
 
