@@ -759,8 +759,15 @@ namespace Digi.ComponentLib
             }
         }
 
+        HashSet<Type> Types = new HashSet<Type>();
+
         void IModBase.ComponentAdd(IComponent component)
         {
+            if(!Types.Add(component.GetType()))
+            {
+                Log.Error($"Component {component.GetType().Name} got added multiple times");
+            }
+
             Components.Add(component);
 
             if(Profile)
