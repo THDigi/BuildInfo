@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Digi.BuildInfo.Utilities;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game.Entity;
@@ -16,14 +17,17 @@ namespace Digi.BuildInfo.Systems
     {
         public bool CanAddTypes { get; private set; } = true;
 
-        public delegate void CallbackDelegate(IMySlimBlock block);
+        public interface ICallback
+        {
+            void BlockSpawned(IMySlimBlock slim);
+        }
 
         /// <summary>
         /// WARNING: gets called for grid merge/unmerge which means the same entity can be added multiple times.
         /// </summary>
-        public event CallbackDelegate BlockAdded;
+        public event Action<IMySlimBlock> BlockAdded;
 
-        private readonly Dictionary<MyObjectBuilderType, List<CallbackDelegate>> MonitorBlockTypes = new Dictionary<MyObjectBuilderType, List<CallbackDelegate>>(MyObjectBuilderType.Comparer);
+        private readonly Dictionary<MyObjectBuilderType, List<ICallback>> MonitorBlockTypes = new Dictionary<MyObjectBuilderType, List<ICallback>>(MyObjectBuilderType.Comparer);
 
         public BlockMonitor(BuildInfoMod main) : base(main)
         {
@@ -54,7 +58,7 @@ namespace Digi.BuildInfo.Systems
         /// Adds callback for specified block type.
         /// Multiple callbacks per type are supported.
         /// </summary>
-        public void MonitorType(MyObjectBuilderType blockType, CallbackDelegate callback)
+        public void MonitorType(MyObjectBuilderType blockType, ICallback callback)
         {
             if(!CanAddTypes)
                 throw new Exception($"{GetType().Name} can not accept monitor requests at RegisterComponent() or later.");
@@ -62,10 +66,10 @@ namespace Digi.BuildInfo.Systems
             if(callback == null)
                 throw new ArgumentException($"{GetType().Name}.MonitorType() does not accept a null callback.");
 
-            List<CallbackDelegate> callbacks;
+            List<ICallback> callbacks;
             if(!MonitorBlockTypes.TryGetValue(blockType, out callbacks))
             {
-                callbacks = new List<CallbackDelegate>(1);
+                callbacks = new List<ICallback>(1);
                 MonitorBlockTypes.Add(blockType, callbacks);
             }
 
@@ -75,9 +79,9 @@ namespace Digi.BuildInfo.Systems
         /// <summary>
         /// Unregisters specified callback
         /// </summary>
-        public void RemoveMonitor(MyObjectBuilderType blockType, CallbackDelegate callback)
+        public void RemoveMonitor(MyObjectBuilderType blockType, ICallback callback)
         {
-            List<CallbackDelegate> callbacks;
+            List<ICallback> callbacks;
             if(!MonitorBlockTypes.TryGetValue(blockType, out callbacks))
                 return;
 
@@ -94,6 +98,11 @@ namespace Digi.BuildInfo.Systems
                 IMyCubeGrid grid = ent as IMyCubeGrid;
                 if(grid == null)
                     return;
+
+                if(BuildInfoMod.IsDevMod && !Utils.AssertMainThread(false))
+                {
+                    Log.Info($"[WARNING] {grid.DisplayName} ({grid.EntityId}) got added from a thread!", Log.PRINT_MESSAGE, 5000);
+                }
 
                 grid.OnBlockAdded += BlockAdd;
                 grid.OnClose += GridClosed;
@@ -132,7 +141,7 @@ namespace Digi.BuildInfo.Systems
 
                 MyObjectBuilderType typeId = slim.BlockDefinition.Id.TypeId;
 
-                List<CallbackDelegate> callbacks;
+                List<ICallback> callbacks;
                 if(!MonitorBlockTypes.TryGetValue(typeId, out callbacks))
                     return;
 
@@ -140,7 +149,7 @@ namespace Digi.BuildInfo.Systems
                 {
                     try
                     {
-                        callbacks[i].Invoke(slim);
+                        callbacks[i].BlockSpawned(slim);
                     }
                     catch(Exception e)
                     {

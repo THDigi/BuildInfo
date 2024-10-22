@@ -16,7 +16,7 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Features.ReloadTracker
 {
-    public class ReloadTracking : ModComponent
+    public class ReloadTracking : ModComponent, BlockMonitor.ICallback
     {
         /// <summary>
         /// Tracked weapon by block EntityId lookup
@@ -104,15 +104,13 @@ namespace Digi.BuildInfo.Features.ReloadTracker
         #region Block spawn tracking
         void RegisterBlockMonitoring()
         {
-            BlockMonitor.CallbackDelegate action = new BlockMonitor.CallbackDelegate(WeaponBlockAdded);
-
             foreach(MyObjectBuilderType type in Hardcoded.ReloadableBlockTypes)
             {
-                Main.BlockMonitor.MonitorType(type, action);
+                Main.BlockMonitor.MonitorType(type, this);
             }
         }
 
-        void WeaponBlockAdded(IMySlimBlock block)
+        void BlockMonitor.ICallback.BlockSpawned(IMySlimBlock block)
         {
             if(block.CubeGrid?.Physics == null)
                 return; // no tracking for ghost grids
