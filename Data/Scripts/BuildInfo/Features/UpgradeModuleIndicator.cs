@@ -15,7 +15,7 @@ namespace Digi.BuildInfo.Features.BlockLogic
 
         bool NeedsRefresh = true;
         int TotalPorts;
-        bool AnyIncompatible;
+        int IncompatiblePortsMask;
         int Step;
 
         const BlockAttachedLogic.BlockUpdate UpdateToUse = BlockAttachedLogic.BlockUpdate.Update10; // if editing this, change method override too
@@ -76,14 +76,14 @@ namespace Digi.BuildInfo.Features.BlockLogic
 
                 RefreshConnections();
 
-                if(!NeedsRefresh && !AnyIncompatible)
+                if(!NeedsRefresh && IncompatiblePortsMask == 0)
                 {
                     SetUpdate(UpdateToUse, false);
                     return;
                 }
             }
 
-            if(AnyIncompatible)
+            if(IncompatiblePortsMask > 0)
             {
                 if(++Step >= 6)
                     Step = 0;
@@ -115,7 +115,10 @@ namespace Digi.BuildInfo.Features.BlockLogic
 
                     for(int i = 0; i < TotalPorts; i++)
                     {
-                        Module.SetEmissiveParts(EmissiveNames[i], Step == 0 ? EmissiveColorBlinkA : EmissiveColorBlinkB, 1f);
+                        if((IncompatiblePortsMask & (1 << i)) != 0)
+                        {
+                            Module.SetEmissiveParts(EmissiveNames[i], Step == 0 ? EmissiveColorBlinkA : EmissiveColorBlinkB, 1f);
+                        }
                     }
                 }
             }
@@ -123,7 +126,7 @@ namespace Digi.BuildInfo.Features.BlockLogic
 
         void RefreshConnections()
         {
-            AnyIncompatible = false;
+            IncompatiblePortsMask = 0;
 
             using(Utils.UpgradeModule.Result result = Utils.UpgradeModule.GetAttached(Module))
             {
@@ -137,8 +140,7 @@ namespace Digi.BuildInfo.Features.BlockLogic
                     {
                         if(!attached.Compatible)
                         {
-                            AnyIncompatible = true;
-                            break;
+                            IncompatiblePortsMask |= attached.PortsIdMask;
                         }
                     }
                 }

@@ -578,6 +578,11 @@ namespace Digi.BuildInfo.Utilities
                 public MyCubeBlock Block;
                 public bool Compatible;
                 public int Ports;
+
+                /// <summary>
+                /// This will fail to function if there's more than 32 ports on this block
+                /// </summary>
+                public int PortsIdMask;
             }
 
 #if false // it can be wrong for modules that aren't mountable on the port sides
@@ -694,8 +699,9 @@ namespace Digi.BuildInfo.Utilities
                 result.HasData = true;
                 result.PortsTotal = data.UpgradePorts.Count;
 
-                foreach(UpgradePortInfo port in data.UpgradePorts)
+                for(int portIdx = 0; portIdx < data.UpgradePorts.Count; portIdx++)
                 {
+                    UpgradePortInfo port = data.UpgradePorts[portIdx];
                     PortPos portPos = port.TransformToGrid(upgradeModule.SlimBlock);
                     PortPos expectedPortPos = new PortPos()
                     {
@@ -736,6 +742,7 @@ namespace Digi.BuildInfo.Utilities
                             Block = otherBlock,
                             Compatible = false,
                             Ports = 1,
+                            PortsIdMask = (1 << portIdx),
                         };
 
                         // HACK from MyUpgradeModule.CanAffectBlock()
@@ -751,6 +758,7 @@ namespace Digi.BuildInfo.Utilities
                     else
                     {
                         attached.Ports++;
+                        attached.PortsIdMask |= (1 << portIdx);
                     }
 
                     // add or overwrite struct copy
