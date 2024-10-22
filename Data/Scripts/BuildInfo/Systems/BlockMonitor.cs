@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Digi.BuildInfo.Features;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
@@ -27,7 +28,9 @@ namespace Digi.BuildInfo.Systems
         /// </summary>
         public event Action<IMySlimBlock> BlockAdded;
 
-        private readonly Dictionary<MyObjectBuilderType, List<ICallback>> MonitorBlockTypes = new Dictionary<MyObjectBuilderType, List<ICallback>>(MyObjectBuilderType.Comparer);
+        readonly HashSet<IMyCubeGrid> HookedGrids = new HashSet<IMyCubeGrid>();
+
+        readonly Dictionary<MyObjectBuilderType, List<ICallback>> MonitorBlockTypes = new Dictionary<MyObjectBuilderType, List<ICallback>>(MyObjectBuilderType.Comparer);
 
         public BlockMonitor(BuildInfoMod main) : base(main)
         {
@@ -41,12 +44,12 @@ namespace Digi.BuildInfo.Systems
             //  requiring entities monitored and grids to be iterated for blocks on spawn anyway.
             //  (to detect blocks for spawned/streamed/pasted/etc grids)
 
-            MyAPIGateway.Entities.OnEntityAdd += EntitySpawned;
-
             foreach(MyEntity ent in MyEntities.GetEntities())
             {
                 EntitySpawned(ent);
             }
+
+            MyAPIGateway.Entities.OnEntityAdd += EntitySpawned;
         }
 
         public override void UnregisterComponent()
@@ -104,13 +107,16 @@ namespace Digi.BuildInfo.Systems
                     Log.Info($"[WARNING] {grid.DisplayName} ({grid.EntityId}) got added from a thread!", Log.PRINT_MESSAGE, 5000);
                 }
 
-                grid.OnBlockAdded += BlockAdd;
-                grid.OnClose += GridClosed;
-
-                MyCubeGrid internalGrid = (MyCubeGrid)grid;
-                foreach(IMySlimBlock slim in internalGrid.CubeBlocks)
+                if(HookedGrids.Add(grid))
                 {
-                    BlockAdd(slim);
+                    grid.OnBlockAdded += BlockAdd;
+                    grid.OnMarkForClose += GridMarkedForClose;
+
+                    MyCubeGrid internalGrid = (MyCubeGrid)grid;
+                    foreach(IMySlimBlock slim in internalGrid.CubeBlocks)
+                    {
+                        BlockAdd(slim);
+                    }
                 }
             }
             catch(Exception e)
@@ -119,26 +125,27 @@ namespace Digi.BuildInfo.Systems
             }
         }
 
-        void GridClosed(IMyEntity ent)
+        void GridMarkedForClose(IMyEntity ent)
         {
             IMyCubeGrid grid = (IMyCubeGrid)ent;
+            HookedGrids.Remove(grid);
             grid.OnBlockAdded -= BlockAdd;
-            grid.OnClose -= GridClosed;
+            grid.OnMarkForClose -= GridMarkedForClose;
         }
 
         void BlockAdd(IMySlimBlock slim)
         {
             try
             {
-                try
-                {
-                    BlockAdded?.Invoke(slim);
-                }
-                catch(Exception e)
-                {
-                    Log.Error(e);
-                }
+                BlockAdded?.Invoke(slim);
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
 
+            try
+            {
                 MyObjectBuilderType typeId = slim.BlockDefinition.Id.TypeId;
 
                 List<ICallback> callbacks;
