@@ -799,13 +799,15 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     //               + "\nRecommended to set it properly, similar to SubtypeId but without the grid size prefix/suffix if any.");
                     //}
 
-                    // last generated from SE v01_203_630
+                    // HACK: hardcoded definitions that have ResourceSinkGroup
+                    // last generated from SE v1.205.024
                     if(def is MySafeZoneBlockDefinition) CheckResourceGroup(def, ((MySafeZoneBlockDefinition)def).ResourceSinkGroup);
                     if(def is MyAdvancedDoorDefinition) CheckResourceGroup(def, ((MyAdvancedDoorDefinition)def).ResourceSinkGroup);
                     if(def is MyAirtightDoorGenericDefinition) CheckResourceGroup(def, ((MyAirtightDoorGenericDefinition)def).ResourceSinkGroup);
                     if(def is MyAirVentDefinition) CheckResourceGroup(def, ((MyAirVentDefinition)def).ResourceSinkGroup);
                     if(def is MyBatteryBlockDefinition) CheckResourceGroup(def, ((MyBatteryBlockDefinition)def).ResourceSinkGroup);
                     if(def is MyBeaconDefinition) CheckResourceGroup(def, ((MyBeaconDefinition)def).ResourceSinkGroup);
+                    if(def is MyBroadcastControllerDefinition) CheckResourceGroup(def, ((MyBroadcastControllerDefinition)def).ResourceSinkGroup);
                     if(def is MyButtonPanelDefinition) CheckResourceGroup(def, ((MyButtonPanelDefinition)def).ResourceSinkGroup);
                     if(def is MyCameraBlockDefinition) CheckResourceGroup(def, ((MyCameraBlockDefinition)def).ResourceSinkGroup);
                     if(def is MyConveyorSorterDefinition) CheckResourceGroup(def, ((MyConveyorSorterDefinition)def).ResourceSinkGroup);
@@ -840,6 +842,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     if(def is MyTextPanelDefinition) CheckResourceGroup(def, ((MyTextPanelDefinition)def).ResourceSinkGroup);
                     if(def is MyThrustDefinition) CheckResourceGroup(def, ((MyThrustDefinition)def).ResourceSinkGroup);
                     if(def is MyTimerBlockDefinition) CheckResourceGroup(def, ((MyTimerBlockDefinition)def).ResourceSinkGroup);
+                    if(def is MyTransponderBlockDefinition) CheckResourceGroup(def, ((MyTransponderBlockDefinition)def).ResourceSinkGroup);
                     if(def is MyTurretControlBlockDefinition) CheckResourceGroup(def, ((MyTurretControlBlockDefinition)def).ResourceSinkGroup);
                     if(def is MyVirtualMassDefinition) CheckResourceGroup(def, ((MyVirtualMassDefinition)def).ResourceSinkGroup);
                     if(def is MyWeaponBlockDefinition) CheckResourceGroup(def, ((MyWeaponBlockDefinition)def).ResourceSinkGroup);
@@ -938,11 +941,21 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     continue;
                 }
 
-                // HACK: MyAiBlockPowerComponentDefinition is not whitelisted
-                if(def is MyComponentDefinitionBase && def.GetType().Name == "MyAiBlockPowerComponentDefinition")
+                MyComponentDefinitionBase compDef = def as MyComponentDefinitionBase;
+                if(compDef != null)
                 {
-                    var ob = (MyObjectBuilder_AiBlockPowerComponentDefinition)def.GetObjectBuilder();
-                    CheckResourceGroup(def, MyStringHash.GetOrCompute(ob.ResourceSinkGroup));
+                    // last generated from SE v1.205.024
+
+                    //if(def is MyAiBlockPowerComponentDefinition) CheckResourceGroup(def, ((MyAiBlockPowerComponentDefinition)def).ResourceSinkGroup);
+
+                    // HACK: MyAiBlockPowerComponentDefinition is not whitelisted
+                    if(compDef.GetType().Name == "MyAiBlockPowerComponentDefinition")
+                    {
+                        var ob = (MyObjectBuilder_AiBlockPowerComponentDefinition)compDef.GetObjectBuilder();
+                        CheckResourceGroup(compDef, ob.ResourceSinkGroup);
+                    }
+
+                    continue;
                 }
             }
 
