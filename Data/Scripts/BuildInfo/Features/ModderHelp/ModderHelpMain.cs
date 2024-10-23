@@ -782,7 +782,8 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     MyComponentStack.GroupInfo firstComp = comps.GetGroupInfo(0);
                     if(firstComp.TotalCount > 1 && firstComp.MountedCount > 1)
                     {
-                        ModProblem(def, $"exploitable! Block gets placed in survival with {firstComp.MountedCount}x {firstComp.Component?.DisplayNameText} (first componment), allowing players to grind it to gain those extra components."
+                        ModProblem(def, $"item duplicate exploitable! Block gets placed in survival with {firstComp.MountedCount} of the {firstComp.Component?.DisplayNameText} (first component)."
+                                      + $"\nThis allows players to duplicate the item by placing the block (which consumes only one) and then grinding it to get back {firstComp.MountedCount} !"
                                       + "\nFix by reordering components or changing amounts of other components or making a single component as first stack.");
                     }
 
