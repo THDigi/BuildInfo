@@ -1397,14 +1397,18 @@ namespace Digi.BuildInfo.Features.GUI
             }
 
             PrintFormattedNumber(sb, nameof(settings.GlobalEncounterRemovalTimeClock), settings.GlobalEncounterRemovalTimeClock, DefaultSettings.GlobalEncounterRemovalTimeClock, false,
-                NewSettingTag + "GE Display Timer", " min", "Show global encounter's remaining time on its GPS marker if it's under this many minutes.",
+                NewSettingTag + "GE Display Timer", " min",
+                "Show global encounter's remaining time on its GPS marker if it's under this many minutes.",
                 GrayIfFalse(globalEncountersOn && settings.GlobalEncounterEnableRemovalTimer));
 
 
             bool planetaryEncountersOn = settings.EnablePlanetaryEncounters;
 
+            const string TrackedPENote = "\nNOTE: Only affects <i>tracked<reset> planetary encounters. An encounter is no longer tracked if it gets damaged or claimed.";
+
             PrintSetting(sb, nameof(settings.EnablePlanetaryEncounters), settings.EnablePlanetaryEncounters, DefaultSettings.EnablePlanetaryEncounters, false,
-                NewSettingTag + "Planetary Encounters", "Whether planetary installations/stations (no safezone) are allowed to spawn.");
+                NewSettingTag + "Planetary Encounters",
+                "Whether planetary installations/stations (no safezone) are allowed to spawn.");
 
             {
                 // HACK: from MyPlanetaryEncountersGenerator.Init()
@@ -1416,7 +1420,8 @@ namespace Digi.BuildInfo.Features.GUI
                 PrintRangeSetting(sb, nameof(settings.PlanetaryEncounterTimerMin), nameof(settings.PlanetaryEncounterTimerMax),
                                       min, max,
                                       defMin, defMax, false,
-                                      NewSettingTag + "Spawn Timer Range", " min", "Random number within this range is chosen for the next planetary encounter spawn.",
+                                      NewSettingTag + "PE Spawn Timer Range", " min",
+                                      "Random number within this range is chosen for the next planetary encounter spawn.",
                                       GrayIfFalse(planetaryEncountersOn));
 
                 //PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterTimerMin), settings.PlanetaryEncounterTimerMin, DefaultSettings.PlanetaryEncounterTimerMin, false,
@@ -1428,23 +1433,34 @@ namespace Digi.BuildInfo.Features.GUI
             }
 
             PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterDesiredSpawnRange), settings.PlanetaryEncounterDesiredSpawnRange, DefaultSettings.PlanetaryEncounterDesiredSpawnRange, false,
-                NewSettingTag + "PE Spawn Distance To Players", "m", "Player-based distance for Planetary Encounter spawns.",
+                NewSettingTag + "PE Spawn Distance To Players", "m",
+                "Planetary encounters spawn in randomly chosen position within this range of every online player's controlled entity." +
+                "\nThis number is also the height they must be from the surface to be eligible for spawning planetary encounters.",
                 GrayIfFalse(planetaryEncountersOn));
 
             PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterAreaLockdownRange), settings.PlanetaryEncounterAreaLockdownRange, DefaultSettings.PlanetaryEncounterAreaLockdownRange, false,
-                NewSettingTag + "PE Denial Area", "m", "Spawned planetary encounters claim this radius around them where no other planetary encounters can spawn, until the encounter despawns.",
+                NewSettingTag + "PE Denial Area", "m",
+                "Planetary encounters will mark this radius around them where no planetary encounters can spawn." +
+                TrackedPENote,
                 GrayIfFalse(planetaryEncountersOn));
 
             PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterExistingStructuresRange), settings.PlanetaryEncounterExistingStructuresRange, DefaultSettings.PlanetaryEncounterExistingStructuresRange, false,
-                NewSettingTag + "Other Grids Denial Area", "m", "Static grids that are not planetary encounters will claim this radius around them where no planetary encounters can spawn.",
-                GrayIfFalse(planetaryEncountersOn));
-
-            PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterDespawnTimeout), settings.PlanetaryEncounterDespawnTimeout, DefaultSettings.PlanetaryEncounterDespawnTimeout, false,
-                NewSettingTag + "PE Despawn Time", " min", "How many minutes a planetary encounter will stay until it despawns.",
+                NewSettingTag + "Static Grids Denial Area", "m",
+                "Static grids (that are not tracked planetary encounters) will mark this radius around them where no planetary encounters can spawn.",
                 GrayIfFalse(planetaryEncountersOn));
 
             PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterPresenceRange), settings.PlanetaryEncounterPresenceRange, DefaultSettings.PlanetaryEncounterPresenceRange, false,
-                NewSettingTag + "PE Despawn Presence", "m", "Player presence within this range prevents planetary encounter auto-removal.",
+                NewSettingTag + "PE Spawn Presence", "m",
+                "Tracked planetary encounters despawn as soon as no players are within this range." +
+                "\nHowever, they're still remembered and will respawn if a player comes back within range before \"PE Despawn Timer\" removes it permanently." +
+                TrackedPENote,
+                GrayIfFalse(planetaryEncountersOn));
+
+            PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterDespawnTimeout), settings.PlanetaryEncounterDespawnTimeout, DefaultSettings.PlanetaryEncounterDespawnTimeout, false,
+                NewSettingTag + "PE No-presence Removal Timer", " min",
+                "This timer only starts once no players are within the above \"PE Spawn Presence\" range, and will reset if any player comes into range before it runs out." +
+                "\nWhen this timer runs out, the planetary encounter is deleted and won't respawn in the same place." +
+                TrackedPENote,
                 GrayIfFalse(planetaryEncountersOn));
 
             PrintPlanetsHavingEncounters(sb, NewSettingTag + "PE on Planets", planetaryEncountersOn);
@@ -2267,7 +2283,7 @@ namespace Digi.BuildInfo.Features.GUI
                 int num = 0;
 
                 // HACK: checks from MyPlanetaryEncountersGenerator.SpawnAreaChecker
-                foreach(MyPlanet planet in spawnedPlanets)
+                foreach(MyPlanet planet in spawnedPlanets.OrderBy(p => p.Generator.Id.SubtypeName))
                 {
                     bool hasPlanteryEncounters = false;
 
