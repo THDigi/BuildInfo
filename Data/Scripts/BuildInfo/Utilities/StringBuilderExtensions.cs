@@ -523,15 +523,32 @@ namespace Digi.BuildInfo.Utilities
             return s.Append(money.ToString("N0")).Append(" ").Append(Constants.CurrencyShortName);
         }
 
-        static bool IsValid(StringBuilder s, float f, string suffix = "", string prefix = "")
+        static bool IsValid(StringBuilder s, float d, string suffix = "", string prefix = "")
         {
-            if(float.IsInfinity(f))
+            if(float.IsInfinity(d))
             {
                 s.Append(prefix).Append("Inf.").Append(suffix);
                 return false;
             }
 
-            if(float.IsNaN(f))
+            if(float.IsNaN(d))
+            {
+                s.Append(prefix).Append("NaN").Append(suffix);
+                return false;
+            }
+
+            return true;
+        }
+
+        static bool IsValid(StringBuilder s, double d, string suffix = "", string prefix = "")
+        {
+            if(double.IsInfinity(d))
+            {
+                s.Append(prefix).Append("Inf.").Append(suffix);
+                return false;
+            }
+
+            if(double.IsNaN(d))
             {
                 s.Append(prefix).Append("NaN").Append(suffix);
                 return false;
@@ -755,7 +772,7 @@ namespace Digi.BuildInfo.Utilities
             if(g >= 1e3f)
                 return s.Number(g / 1e3f).Append(" kg");
 
-            return s.Number(g).Append(" grams");
+            return s.RoundedNumber(g, 5).Append(" grams");
         }
 
         /// <summary>
@@ -795,7 +812,7 @@ namespace Digi.BuildInfo.Utilities
             if(g >= 1e3f)
                 return s.Number(g / 1e3f).Append(" kg");
 
-            return s.Number(g).Append(" grams");
+            return s.RoundedNumber(g, 5).Append(" grams");
         }
 
         public static StringBuilder IntegrityFormat(this StringBuilder s, float integrity)
@@ -1007,7 +1024,7 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
-        public static StringBuilder TimeFormat(this StringBuilder s, float totalSeconds)
+        public static StringBuilder TimeFormat(this StringBuilder s, double totalSeconds)
         {
             if(!IsValid(s, totalSeconds))
                 return s.Append(" seconds");
@@ -1338,7 +1355,7 @@ namespace Digi.BuildInfo.Utilities
             return s.Append(value.ToString("###,###,###,###,###,##0.##"));
         }
 
-        public static StringBuilder RoundedNumber(this StringBuilder s, float value, int digits)
+        public static StringBuilder RoundedNumber(this StringBuilder s, double value, int digits)
         {
             if(digits == 3)
             {
