@@ -2415,8 +2415,18 @@ namespace Digi.BuildInfo.Features.GUI
                 fieldName = $"{fieldNameMin} and {fieldNameMax}";
             }
 
-            string val = $"{min.ToString(NumberFormat)} ~ {max.ToString(NumberFormat)} {suffix}";
-            string defVal = $"{defaultMin.ToString(NumberFormat)} ~ {defaultMax.ToString(NumberFormat)} {suffix}";
+            string val;
+            string defVal;
+
+            if(min == max)
+                val = $"{max.ToString(NumberFormat)} {suffix}";
+            else
+                val = $"{min.ToString(NumberFormat)} ~ {max.ToString(NumberFormat)} {suffix}";
+
+            if(defaultMin == defaultMax)
+                defVal = $"{defaultMax.ToString(NumberFormat)} {suffix} (both min and max)";
+            else
+                defVal = $"{defaultMin.ToString(NumberFormat)} ~ {defaultMax.ToString(NumberFormat)} {suffix}";
 
             PrintSetting(sb, fieldName, val, defVal, shownInVanillaUI, displayName, description, formatting);
         }
