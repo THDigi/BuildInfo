@@ -1133,6 +1133,59 @@ namespace Digi.BuildInfo.Utilities
             }
         }
 
+        public static void DrawCircle(ref MatrixD worldMatrix, float radius, Color color, int wireDivideRatio, MyStringId? faceMaterial, MyStringId? lineMaterial, bool drawSpokes = false, bool flipSolidUV = false, float lineThickness = -1, int customViewProjection = -1, BlendTypeEnum blendType = BlendTypeEnum.Standard)
+        {
+            if(lineThickness < 0)
+                lineThickness = 0.01f;
+
+            bool drawSolid = faceMaterial.HasValue;
+            bool drawWireframe = lineMaterial.HasValue;
+
+            Vector4 triangleColor = (drawSolid ? color.ToVector4().ToLinearRGB() : color.ToVector4()); // HACK: keeping color consistent with other billboards, MyTransparentGeoemtry.CreateBillboard()
+
+            Vector3D center = worldMatrix.Translation;
+
+            Vector3 n = (Vector3)worldMatrix.Up;
+            Vector2 uv0 = flipSolidUV ? new Vector2(1, 0.5f) : new Vector2(0, 0.5f);
+            Vector2 uv1 = flipSolidUV ? new Vector2(0, 0) : new Vector2(1, 0);
+            Vector2 uv2 = flipSolidUV ? new Vector2(0, 1) : new Vector2(1, 1);
+
+            Vector3D current = Vector3D.Zero;
+            Vector3D previous = Vector3D.Zero;
+
+            double angleStep = MathHelperD.ToRadians(360d / wireDivideRatio);
+
+            for(int i = 0; i <= wireDivideRatio; i++)
+            {
+                double angleRad = (angleStep * i);
+
+                current.X = radius * Math.Cos(angleRad);
+                current.Y = 0;
+                current.Z = radius * Math.Sin(angleRad);
+                current = Vector3D.Transform(current, worldMatrix);
+
+                if(i > 0)
+                {
+                    if(drawSolid)
+                    {
+                        MyTransparentGeometry.AddTriangleBillboard(center, current, previous, n, n, n, uv0, uv1, uv2, faceMaterial.Value, uint.MaxValue, center, triangleColor, blendType);
+                    }
+
+                    if(drawWireframe)
+                    {
+                        MyTransparentGeometry.AddLineBillboard(lineMaterial.Value, color, previous, (Vector3)(current - previous), 1f, lineThickness, blendType);
+
+                        if(drawSpokes)
+                        {
+                            MyTransparentGeometry.AddLineBillboard(lineMaterial.Value, color, center, (Vector3)(center - previous), 1f, lineThickness, blendType);
+                        }
+                    }
+                }
+
+                previous = current;
+            }
+        }
+
         public static void DrawTransparentCylinder(ref MatrixD worldMatrix, float radius, float height, ref Color color, MySimpleObjectRasterizer rasterization, int wireDivideRatio, MyStringId faceMaterial, MyStringId lineMaterial, float lineThickness = -1, int customViewProjection = -1, bool drawCaps = true, BlendTypeEnum blendType = BlendTypeEnum.Standard)
         {
             if(lineThickness < 0)
@@ -1355,6 +1408,36 @@ namespace Digi.BuildInfo.Utilities
             while(distA < 0.04f || distB < 0.07f);
 
             return hsv;
+        }
+
+        /// <summary>
+        /// From https://stackoverflow.com/questions/22303495/translate-python-in-to-unity-c-sharp-maths-or-how-to-find-shortest-distance-be
+        /// </summary>
+        public static bool ClosestPointsOnLines(out Vector3D closestPointLine1, out Vector3D closestPointLine2,
+            Vector3D linePoint1, Vector3D lineVec1, Vector3D linePoint2, Vector3D lineVec2)
+        {
+            closestPointLine1 = Vector3D.Zero;
+            closestPointLine2 = Vector3D.Zero;
+
+            float a = Vector3.Dot(lineVec1, lineVec1);
+            float b = Vector3.Dot(lineVec1, lineVec2);
+            float e = Vector3.Dot(lineVec2, lineVec2);
+
+            float d = a * e - b * b;
+
+            if(d == 0.0f) // lines are parallel
+                return false;
+
+            Vector3 r = linePoint1 - linePoint2;
+            float c = Vector3.Dot(lineVec1, r);
+            float f = Vector3.Dot(lineVec2, r);
+
+            float s = (b * f - c * e) / d;
+            float t = (a * f - c * b) / d;
+
+            closestPointLine1 = linePoint1 + lineVec1 * s;
+            closestPointLine2 = linePoint2 + lineVec2 * t;
+            return true;
         }
     }
 }
