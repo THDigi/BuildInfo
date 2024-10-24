@@ -1732,6 +1732,27 @@ namespace Digi.BuildInfo.Features.GUI
                                                      "\n\nIn technical terms: prevents MyPlanet.PrefetchShapeOnRay() from prefetching voxels if the line is longer than this." +
                                                      "\nThis call is used by bullet projectiles, targeting systems and mods can use it too.");
             #endregion Performance
+
+
+            #region Stats
+            Header(sb, "Stats");
+
+            DateTime date = MyAPIGateway.Session.GameDateTime;
+            TimeSpan simTime = (date - Hardcoded.GameStartDate);
+            TimeSpan sessionTime = MyAPIGateway.Session.ElapsedPlayTime;
+
+            StringBuilder temp = new StringBuilder(256);
+
+            temp.Clear();
+            temp.Append("The world's date, increments only when simulated.");
+            temp.Append("\nTotal simulation time: ").TimeFormat(simTime.TotalSeconds);
+
+            PrintPlainText(sb, "Date", date.ToString("d.MMM.yyyy HH:mm"), true, temp.ToString());
+
+            PrintPlainText(sb, "Session", temp.Clear().TimeFormat(sessionTime.TotalSeconds).ToString(),
+                description: "Current session elapsed time, resets on restarts.");
+
+            #endregion
         }
 
         void CheckSettings()
@@ -2429,6 +2450,15 @@ namespace Digi.BuildInfo.Features.GUI
                 defVal = $"{defaultMin.ToString(NumberFormat)} ~ {defaultMax.ToString(NumberFormat)} {suffix}";
 
             PrintSetting(sb, fieldName, val, defVal, shownInVanillaUI, displayName, description, formatting);
+        }
+
+        void PrintPlainText(StringBuilder sb, string displayName, string value, bool isDefault = true, string description = null, Formatting formatting = Formatting.Normal)
+        {
+            if(TestRun)
+                return;
+
+            PrintSetting<string>(sb, string.Empty, value, null, false,
+                displayName, description, formatting);
         }
 
         //void PrintDSSetting<T>(StringBuilder sb, T value, T defaultValue, string displayName, string description = null, Formatting formatting = Formatting.Normal)

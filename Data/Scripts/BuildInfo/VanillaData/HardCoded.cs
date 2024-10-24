@@ -48,6 +48,9 @@ namespace Digi.BuildInfo.VanillaData
             public static List<char> List = new List<char>() { PC, PS, XBOX };
         }
 
+        // from MySession.GameDateTime
+        public static readonly DateTime GameStartDate = new DateTime(2081, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
         // from MyGravityProviderSystem.G
         public const float EarthGravity = 9.81f;
 
