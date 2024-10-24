@@ -508,6 +508,7 @@ namespace Digi.Input
             AddInput(MyControlsSpace.CROUCH);
             AddInput(MyControlsSpace.SWITCH_WALK, CONTROL_PREFIX + "walk", "Toggle Walk");
             AddInput(MyControlsSpace.USE, null, "Use/Interact");
+            AddInput(MyControlsSpace.RELOAD);
             AddInput(MyControlsSpace.TERMINAL, null, "Terminal/Inventory");
             AddInput(MyControlsSpace.INVENTORY);
             AddInput(MyControlsSpace.CONTROL_MENU, CONTROL_PREFIX + "controlmenu", "Control Menu");

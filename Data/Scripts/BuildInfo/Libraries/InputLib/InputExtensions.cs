@@ -12,8 +12,14 @@ namespace Digi.Input
         /// </summary>
         public static string GetAssignedInputName(this MyStringId controlId)
         {
-            IMyControl control = MyAPIGateway.Input.GetGameControl(controlId);
+            return MyAPIGateway.Input.GetGameControl(controlId).GetAssignedInputName();
+        }
 
+        /// <summary>
+        /// Gets the key/button name assigned to this control.
+        /// </summary>
+        public static string GetAssignedInputName(this IMyControl control)
+        {
             if(control.GetKeyboardControl() != MyKeys.None)
                 return control.GetKeyboardControl().ToString();
             else if(control.GetSecondKeyboardControl() != MyKeys.None)
