@@ -38,6 +38,39 @@ namespace Digi.BuildInfo.Utilities
         public static readonly object AdminIgnore = 0x37E;
     }
 
+    // TODO: convert all the complex draw to use this
+    public struct DrawLine
+    {
+        public MyStringId Material;
+        public Vector4 Color;
+        public float Thick;
+        public BlendTypeEnum Blend;
+    }
+
+    public struct DrawDirectionalLine
+    {
+        public MyStringId Material;
+        public bool FlipDirection;
+        public Vector4 Color;
+        public float Thick;
+        public BlendTypeEnum Blend;
+    }
+
+    public struct DrawDirectionalFace
+    {
+        public MyStringId Material;
+        public bool FlipUV;
+        public Vector4 Color;
+        public BlendTypeEnum Blend;
+    }
+
+    //public struct DrawFace
+    //{
+    //    public MyStringId Material;
+    //    public Vector4 Color;
+    //    public BlendTypeEnum Blend;
+    //}
+
     /// <summary>
     /// Various random utility methods
     /// </summary>
@@ -1362,6 +1395,211 @@ namespace Digi.BuildInfo.Utilities
                     vertices.Add(vec);
                 }
             }
+        }
+
+        static readonly Vector3D[] Corners = new Vector3D[8];
+
+        /// <summary>
+        /// Renders a frustum perspective from the given frustum.
+        /// <para>NOT thread-safe as it uses a shared <see cref="Corners"/> array.</para>
+        /// </summary> 
+        public static void DrawFrustum(ref BoundingFrustumD frustum,
+            DrawDirectionalFace? sides = null, DrawDirectionalLine? parallelLines = null, DrawLine? startSquare = null, DrawLine? endSquare = null)
+        {
+            // 0 to 3 are the camera side
+            // 4 to 7 are the far end
+            frustum.GetCorners(Corners);
+
+            DrawFrustum(Corners, sides, parallelLines, startSquare, endSquare);
+        }
+
+        /// <summary>
+        /// Renders a frustum perspective from the given corners.
+        /// </summary> 
+        public static void DrawFrustum(Vector3D[] corners,
+            DrawDirectionalFace? sides = null, DrawDirectionalLine? parallelLines = null, DrawLine? startSquare = null, DrawLine? endSquare = null)
+        {
+            // used by CreateBillboard() to assign DistanceSquared, which then proceeds to not be used
+            Vector3D camCenter = (corners[0] + corners[1] + corners[2] + corners[3]) * 0.25;
+
+            if(sides.HasValue)
+            {
+                MyQuadD quad = default(MyQuadD);
+                bool flip = sides.Value.FlipUV;
+
+                // top
+                {
+                    if(flip)
+                    {
+                        quad.Point0 = corners[4];
+                        quad.Point1 = corners[0];
+                        quad.Point2 = corners[1];
+                        quad.Point3 = corners[5];
+                    }
+                    else
+                    {
+                        quad.Point0 = corners[0];
+                        quad.Point1 = corners[4];
+                        quad.Point2 = corners[5];
+                        quad.Point3 = corners[1];
+                    }
+
+                    MyTransparentGeometry.AddQuad(sides.Value.Material, ref quad, sides.Value.Color, ref camCenter, blendType: sides.Value.Blend);
+                }
+
+                // bottom
+                {
+                    if(flip)
+                    {
+                        quad.Point0 = corners[6];
+                        quad.Point1 = corners[2];
+                        quad.Point2 = corners[3];
+                        quad.Point3 = corners[7];
+                    }
+                    else
+                    {
+                        quad.Point0 = corners[2];
+                        quad.Point1 = corners[6];
+                        quad.Point2 = corners[7];
+                        quad.Point3 = corners[3];
+                    }
+
+                    MyTransparentGeometry.AddQuad(sides.Value.Material, ref quad, sides.Value.Color, ref camCenter, blendType: sides.Value.Blend);
+                }
+
+                // left
+                {
+                    if(flip)
+                    {
+                        quad.Point0 = corners[7];
+                        quad.Point1 = corners[3];
+                        quad.Point2 = corners[0];
+                        quad.Point3 = corners[4];
+                    }
+                    else
+                    {
+                        quad.Point0 = corners[3];
+                        quad.Point1 = corners[7];
+                        quad.Point2 = corners[4];
+                        quad.Point3 = corners[0];
+                    }
+
+                    MyTransparentGeometry.AddQuad(sides.Value.Material, ref quad, sides.Value.Color, ref camCenter, blendType: sides.Value.Blend);
+                }
+
+                // right
+                {
+                    if(flip)
+                    {
+                        quad.Point0 = corners[5];
+                        quad.Point1 = corners[1];
+                        quad.Point2 = corners[2];
+                        quad.Point3 = corners[6];
+                    }
+                    else
+                    {
+                        quad.Point0 = corners[1];
+                        quad.Point1 = corners[5];
+                        quad.Point2 = corners[6];
+                        quad.Point3 = corners[2];
+                    }
+
+                    MyTransparentGeometry.AddQuad(sides.Value.Material, ref quad, sides.Value.Color, ref camCenter, blendType: sides.Value.Blend);
+                }
+            }
+
+            if(parallelLines.HasValue)
+            {
+                if(parallelLines.Value.FlipDirection)
+                {
+                    for(int i = 0; i < 4; i++)
+                    {
+                        Vector3D start = corners[i + 4];
+                        Vector3D end = corners[i];
+                        MyTransparentGeometry.AddLineBillboard(parallelLines.Value.Material, parallelLines.Value.Color, start, (end - start), 1f, parallelLines.Value.Thick, parallelLines.Value.Blend);
+                    }
+                }
+                else
+                {
+                    for(int i = 0; i < 4; i++)
+                    {
+                        Vector3D start = corners[i];
+                        Vector3D end = corners[i + 4];
+                        MyTransparentGeometry.AddLineBillboard(parallelLines.Value.Material, parallelLines.Value.Color, start, (end - start), 1f, parallelLines.Value.Thick, parallelLines.Value.Blend);
+                    }
+                }
+            }
+
+            if(startSquare.HasValue)
+            {
+                Vector3D start = corners[3];
+                for(int i = 0; i < 4; i++)
+                {
+                    Vector3D end = corners[i];
+
+                    //if(startSquare.Value.FlipDirection)
+                    //    MyTransparentGeometry.AddLineBillboard(startSquare.Value.Material, startSquare.Value.Color, end, (start - end), 1f, startSquare.Value.Thick, startSquare.Value.Blend);
+                    //else
+                    MyTransparentGeometry.AddLineBillboard(startSquare.Value.Material, startSquare.Value.Color, start, (end - start), 1f, startSquare.Value.Thick, startSquare.Value.Blend);
+
+                    start = end;
+                }
+            }
+
+            if(endSquare.HasValue)
+            {
+                Vector3D start = corners[7];
+                for(int i = 4; i < 8; i++)
+                {
+                    Vector3D end = corners[i];
+
+                    //if(endSquare.Value.FlipDirection)
+                    //    MyTransparentGeometry.AddLineBillboard(endSquare.Value.Material, endSquare.Value.Color, end, (start - end), 1f, endSquare.Value.Thick, endSquare.Value.Blend);
+                    //else
+                    MyTransparentGeometry.AddLineBillboard(endSquare.Value.Material, endSquare.Value.Color, start, (end - start), 1f, endSquare.Value.Thick, endSquare.Value.Blend);
+
+                    start = end;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Renders a pyramid from matrix translation towards matrix forward with given angle towards top/left/right/bottom and given length in distance.
+        /// <para>NOT thread-safe as it uses a shared <see cref="Corners"/> array.</para>
+        /// </summary> 
+        public static void DrawPyramid(ref MatrixD matrix, float angle, float length,
+        DrawDirectionalFace? sides = null, DrawDirectionalLine? parallelLines = null, DrawLine? endSquare = null)
+        {
+            if(sides == null && parallelLines == null && endSquare == null)
+                throw new Exception("All draw segments are null, at least one is required to draw something");
+
+            Vector3D start = matrix.Translation;
+            for(int i = 0; i < 4; i++)
+            {
+                Corners[i] = start;
+            }
+
+            // Quaternion.CreateFromAxisAngle()
+            angle *= 0.5f;
+            double sin = Math.Sin(angle);
+            double cos = Math.Cos(angle);
+
+            QuaternionD rotateUp = new QuaternionD(matrix.Right * sin, cos);
+            QuaternionD rotateDown = new QuaternionD(matrix.Left * sin, cos);
+
+            Vector3D dirTopScaled = Vector3D.Transform(matrix.Forward, rotateUp) * length;
+            Vector3D dirBottomScaled = Vector3D.Transform(matrix.Forward, rotateDown) * length;
+
+            double halfDist = Vector3D.Dot(dirTopScaled, matrix.Up);
+            Vector3D across = matrix.Right * halfDist;
+
+            Corners[4] = start + dirTopScaled + across;
+            Corners[5] = start + dirTopScaled - across;
+
+            Corners[6] = start + dirBottomScaled - across;
+            Corners[7] = start + dirBottomScaled + across;
+
+            DrawFrustum(Corners, sides, parallelLines, null, endSquare);
         }
 
         /// <summary>
