@@ -1082,9 +1082,9 @@ namespace Digi.BuildInfo.Utilities
         public static StringBuilder AngleFormatDeg(this StringBuilder s, float degrees, int digits = 0)
         {
             if(!IsValid(s, degrees))
-                return s.Append('°');
+                return s.Append(FontsHandler.CharDegree);
 
-            return s.RoundedNumber(degrees, digits).Append('°');
+            return s.RoundedNumber(degrees, digits).Append(FontsHandler.CharDegree);
         }
 
         public static StringBuilder Size3DFormat(this StringBuilder s, Vector3 vec)
