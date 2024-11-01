@@ -1403,7 +1403,7 @@ namespace Digi.BuildInfo.Utilities
         /// Renders a frustum perspective from the given frustum.
         /// <para>NOT thread-safe as it uses a shared <see cref="Corners"/> array.</para>
         /// </summary> 
-        public static void DrawFrustum(ref BoundingFrustumD frustum,
+        public static void DrawFrustum(BoundingFrustumD frustum,
             DrawDirectionalFace? sides = null, DrawDirectionalLine? parallelLines = null, DrawLine? startSquare = null, DrawLine? endSquare = null)
         {
             // 0 to 3 are the camera side

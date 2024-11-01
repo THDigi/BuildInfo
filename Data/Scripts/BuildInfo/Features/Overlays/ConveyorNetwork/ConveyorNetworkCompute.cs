@@ -33,6 +33,9 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
             public MyCubeBlock OtherBlock;
         }
 
+        public int Networks { get; private set; }
+        public int ConveyorBlocks { get; private set; }
+
         GridRender CurrentGridRender;
         Dictionary<MyCubeBlock, Conveyor> TempConveyorData = new Dictionary<MyCubeBlock, Conveyor>();
         HashSet<MyCubeBlock> TempCheckedBlocks = new HashSet<MyCubeBlock>();
@@ -55,6 +58,8 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
 
         public void Reset()
         {
+            Networks = 0;
+            ConveyorBlocks = 0;
             UnhookEvents();
             ResetCompute();
         }
@@ -303,6 +308,9 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                     //else
                     Handler.Notify($"Showing {NetworkIndex} {unit}", 3000);
                 }
+
+                Networks = NetworkIndex;
+                ConveyorBlocks = TempConveyorData.Count;
 
                 return true;
             }

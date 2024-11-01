@@ -213,6 +213,8 @@ namespace Digi.BuildInfo.Features.Terminal
             dict[key] = resInfo;
         }
 
+        readonly BoundingFrustumD CameraFrustum = new BoundingFrustumD();
+
         void UpdateText()
         {
             if(MyAPIGateway.Session?.Player == null)
@@ -225,7 +227,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             // NOTE: this isn't perfect because of FOV spring is ignored or something, but good enough for this purpose
             MatrixD viewProjectionMatrix = MyAPIGateway.Session.Camera.ViewMatrix * MyAPIGateway.Session.Camera.ProjectionMatrix;
-            BoundingFrustumD cameraFrustum = new BoundingFrustumD(viewProjectionMatrix);
+            CameraFrustum.Matrix = viewProjectionMatrix;
 
             ResInput.Clear();
             ResOutput.Clear();
@@ -286,7 +288,7 @@ namespace Digi.BuildInfo.Features.Terminal
                         Vector3D corner = TempCorners[i];
 
                         ContainmentType result;
-                        cameraFrustum.Contains(ref corner, out result);
+                        CameraFrustum.Contains(ref corner, out result);
                         if(result == ContainmentType.Contains)
                         {
                             anyCornerVisible = true;

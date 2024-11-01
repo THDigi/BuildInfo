@@ -1596,6 +1596,8 @@ namespace Digi.BuildInfo.Features
                         grindTime *= integrityRatio;
                     }
 
+                    // TODO: include component DeconstructionEfficiency in the grind time math!
+
                     if(grindTime > 0)
                     {
                         StringBuilder sb = AddLine().Append("Dismantled: ").TimeFormat(grindTime).Color(COLOR_UNIMPORTANT).OptionalMultiplier(MyAPIGateway.Session.GrinderSpeedMultiplier).ResetFormatting();

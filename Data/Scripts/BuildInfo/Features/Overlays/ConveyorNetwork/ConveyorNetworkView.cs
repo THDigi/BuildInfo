@@ -110,11 +110,13 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
             }
         }
 
-        public void StopShowing(string customMessage = null)
+        public void StopShowing(string customMessage = null, bool notify = true)
         {
             Reset();
             Compute.Reset();
-            Notify(customMessage ?? "Stopped showing");
+
+            if(notify)
+                Notify(customMessage ?? "Stopped showing");
         }
 
         public void ScheduleRescan()
@@ -124,6 +126,9 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
 
         public override void UpdateDraw()
         {
+            if(TargetGrid == null)
+                return;
+
             if(!Render.IsValid())
             {
                 StopShowing();

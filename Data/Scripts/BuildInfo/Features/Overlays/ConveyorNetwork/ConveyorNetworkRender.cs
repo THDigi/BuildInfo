@@ -81,7 +81,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
 
         float Pulse;
 
-        BoundingFrustumD CameraFrustum = new BoundingFrustumD(MatrixD.Identity);
+        readonly BoundingFrustumD CameraFrustum = new BoundingFrustumD();
 
         public ConveyorNetworkRender(ConveyorNetworkView handler)
         {

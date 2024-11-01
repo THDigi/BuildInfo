@@ -18,6 +18,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
         static Vector4 ColorCameraPyramid = (ColorCamera * SolidOverlayAlpha).ToVector4();
         static Vector4 ColorCameraLine = ColorCamera.ToVector4();
 
+        readonly BoundingFrustumD Frustum = new BoundingFrustumD();
+
         public Camera(SpecializedOverlays processor) : base(processor)
         {
             Add(typeof(MyObjectBuilder_CameraBlock));
@@ -50,7 +52,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 // HACK: near plane and math from MyCamera
                 MatrixD projection = MatrixD.CreatePerspectiveFieldOfView(angle, Main.GameConfig.AspectRatio, 0.05f, length);
                 MatrixD viewInverted = MatrixD.Invert(viewWorld);
-                BoundingFrustumD frustum = new BoundingFrustumD(viewInverted * projection);
+                Frustum.Matrix = viewInverted * projection;
 
                 const float thick = 0.025f;
 
@@ -74,7 +76,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
                     DrawLine? end = null;
 
-                    Utils.DrawFrustum(ref frustum, faces, parallel, start, end);
+                    Utils.DrawFrustum(Frustum, faces, parallel, start, end);
                 }
 
                 if(canDrawLabel)
