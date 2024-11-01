@@ -216,6 +216,7 @@ namespace Digi.BuildInfo
         public Constants(BuildInfoMod main) : base(main)
         {
             ComputeResourceGroups();
+            Hardcoded.LoadData();
         }
 
         public override void RegisterComponent()
@@ -226,7 +227,7 @@ namespace Digi.BuildInfo
         public override void UnregisterComponent()
         {
             TypeToFriendlyName = null;
-            Hardcoded.CleanRefs();
+            Hardcoded.Unload();
         }
 
         void GetBankingInfo()

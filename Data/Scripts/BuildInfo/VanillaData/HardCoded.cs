@@ -18,16 +18,48 @@ using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
+using CollisionLayers = Sandbox.Engine.Physics.MyPhysics.CollisionLayers;
+using TypeExtensions = VRage.TypeExtensions; // HACK: some people have ambiguity on this, probably linux or such
 
 namespace Digi.BuildInfo.VanillaData
 {
+    public struct PhysicsLayerInfo
+    {
+        public readonly int Layer;
+        public readonly string Name;
+        public readonly string OriginalName;
+        public readonly string Comment;
+
+        public PhysicsLayerInfo(string originalName, int layer, string shortName, string comment)
+        {
+            Name = shortName ?? originalName;
+
+            if(shortName == null)
+            {
+                if(originalName.EndsWith("CollisionLayer"))
+                    Name = originalName.Substring(0, originalName.Length - "CollisionLayer".Length);
+                else if(originalName.EndsWith("Layer"))
+                    Name = originalName.Substring(0, originalName.Length - "Layer".Length);
+            }
+
+            OriginalName = originalName;
+            Layer = layer;
+            Comment = comment;
+        }
+    }
+
     // HACK: various hardcoded data from game sources
     /// <summary>
     /// Various hardcoded data and behavior extracted from game source because it's not directly accessible.
     /// </summary>
     public static class Hardcoded
     {
-        public static void CleanRefs()
+        public static void LoadData()
+        {
+            DefinePhysicsLayers();
+        }
+
+        public static void Unload()
         {
             GameDefinition = null;
             ReloadableBlockTypes = null;
@@ -37,6 +69,80 @@ namespace Digi.BuildInfo.VanillaData
             TargetOptionsSorted = null;
             MountPointMaskNames = null;
             MountPointMaskValues = null;
+            PhysicsLayers = null;
+        }
+
+        public static Dictionary<int, PhysicsLayerInfo> PhysicsLayers = new Dictionary<int, PhysicsLayerInfo>();
+
+        public const int PhysicsLayerMaxIndex = 31;
+
+        static void AddLayer(string name, int layer, string shortName = null, string comment = null)
+        {
+            PhysicsLayers.Add(layer, new PhysicsLayerInfo(name, layer, shortName, comment));
+        }
+
+        static void DefinePhysicsLayers()
+        {
+            AddLayer("All", 0);
+            AddLayer("OpenableSubpartLayer", 4);
+            AddLayer("StaticGridsSearchCollisionLayer", 5);
+            AddLayer("TargetDummyLayer", 6);
+            AddLayer("BlockPlacementTestCollisionLayer", 7);
+            AddLayer("MissileLayer", 8);
+            AddLayer("NoVoxelCollisionLayer", 9);
+            AddLayer("LightFloatingObjectCollisionLayer", 10);
+            AddLayer("VoxelLod1CollisionLayer", 11, comment: "Layer that doesn't collide with static grids and voxels");
+            AddLayer("NotCollideWithStaticLayer", 12);
+            AddLayer("StaticCollisionLayer", 13, "StaticGrids");
+            AddLayer("CollideWithStaticLayer", 14);
+            AddLayer("DefaultCollisionLayer", 15);
+            AddLayer("DynamicDoubledCollisionLayer", 16);
+            AddLayer("KinematicDoubledCollisionLayer", 17);
+            AddLayer("CharacterCollisionLayer", 18);
+            AddLayer("NoCollisionLayer", 19, "NoCollision");
+            AddLayer("DebrisCollisionLayer", 20);
+            AddLayer("GravityPhantomLayer", 21);
+            AddLayer("CharacterNetworkCollisionLayer", 22);
+            AddLayer("FloatingObjectCollisionLayer", 23);
+            AddLayer("ObjectDetectionCollisionLayer", 24);
+            AddLayer("VirtualMassLayer", 25);
+            AddLayer("CollectorCollisionLayer", 26);
+            AddLayer("AmmoLayer", 27);
+            AddLayer("VoxelCollisionLayer", 28);
+            AddLayer("ExplosionRaycastLayer", 29);
+            AddLayer("CollisionLayerWithoutCharacter", 30, "WithoutCharacter");
+            AddLayer("RagdollCollisionLayer", 31);
+
+            if(BuildInfoMod.IsDevMod)
+            {
+                bool foundNew = false;
+
+                foreach(var member in TypeExtensions.GetDataMembers(typeof(CollisionLayers), true, false, false, false, true, false, true, false))
+                {
+                    string name = member.Name;
+
+                    bool exists = false;
+                    foreach(var pli in PhysicsLayers.Values)
+                    {
+                        if(pli.Name == name)
+                        {
+                            exists = true;
+                            break;
+                        }
+                    }
+
+                    if(!exists)
+                    {
+                        Log.Info($"[DEV] New/renamed physics layer: {name}");
+                        foundNew = true;
+                    }
+                }
+
+                if(foundNew)
+                {
+                    Log.Error("Found new things in MyPhysics.CollisionLayers!");
+                }
+            }
         }
 
         // from VRage.GameServices.PlatformIcon
