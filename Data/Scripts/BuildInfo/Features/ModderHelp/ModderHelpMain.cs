@@ -928,19 +928,6 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     continue;
                 }
 
-                MyRespawnShipDefinition respawnShipDef = def as MyRespawnShipDefinition;
-                if(respawnShipDef != null)
-                {
-                    // game does not alert if this is the case, you only find out when you try to use it and it infinitely streams.
-                    if(respawnShipDef.Prefab == null)
-                    {
-                        MyDefinitionErrors.Add(def.Context, $"{Signature}RespawnShip '{def.Id.SubtypeName}' does not point to a valid prefab!"
-                                                           + "\nMake sure to input the SubtypeId from inside the prefab file. Like all SBCs, the file name does not matter!", TErrorSeverity.Error);
-                    }
-
-                    continue;
-                }
-
                 MyComponentDefinitionBase compDef = def as MyComponentDefinitionBase;
                 if(compDef != null)
                 {
@@ -953,6 +940,19 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     {
                         var ob = (MyObjectBuilder_AiBlockPowerComponentDefinition)compDef.GetObjectBuilder();
                         CheckResourceGroup(compDef, ob.ResourceSinkGroup);
+                    }
+
+                    continue;
+                }
+
+                MyRespawnShipDefinition respawnShipDef = def as MyRespawnShipDefinition;
+                if(respawnShipDef != null)
+                {
+                    // game does not alert if this is the case, you only find out when you try to use it and it infinitely streams.
+                    if(respawnShipDef.Prefab == null)
+                    {
+                        MyDefinitionErrors.Add(def.Context, $"{Signature}RespawnShip '{def.Id.SubtypeName}' does not point to a valid prefab!"
+                                                           + "\nMake sure to input the SubtypeId from inside the prefab file. Like all SBCs, the file name does not matter!", TErrorSeverity.Error);
                     }
 
                     continue;
