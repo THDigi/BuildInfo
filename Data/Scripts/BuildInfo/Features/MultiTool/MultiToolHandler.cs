@@ -89,6 +89,7 @@ namespace Digi.BuildInfo.Features.MultiTool
             try
             {
                 RegisterInstrument(new Measure());
+                RegisterInstrument(new PhysicsSnapshot());
                 RegisterInstrument(new ConveyorVis());
             }
             catch(Exception e)
