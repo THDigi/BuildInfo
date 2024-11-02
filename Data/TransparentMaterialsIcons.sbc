@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<Definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <TransparentMaterials>
+    <TransparentMaterial>
+      <Id>
+        <TypeId>TransparentMaterialDefinition</TypeId>
+        <SubtypeId>BuildInfo_Icon_ConveyorVis</SubtypeId>
+      </Id>
+      <Texture>Textures\HUD\ConveyorVis.dds</Texture>
+      <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
+      <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
+      <AlphaMistingEnable>false</AlphaMistingEnable>
+      <AlphaSaturation>1</AlphaSaturation>
+      <Reflectivity>0</Reflectivity>
+    </TransparentMaterial>
+  </TransparentMaterials>
+</Definitions>

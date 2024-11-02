@@ -38,20 +38,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             // look-at grid support
             if(aimedGrid == null)
             {
-                MatrixD camWM = MyAPIGateway.Session.Camera.WorldMatrix;
-
-                const double MaxDistance = 50;
-
-                List<IHitInfo> hits = new List<IHitInfo>(16);
-                MyAPIGateway.Physics.CastRay(camWM.Translation, camWM.Translation + camWM.Forward * MaxDistance, hits, CollisionLayers.NoVoxelCollisionLayer);
-
-                // find first grid hit, ignore everything else
-                foreach(IHitInfo hit in hits)
-                {
-                    aimedGrid = hit.HitEntity as IMyCubeGrid;
-                    if(aimedGrid != null)
-                        break;
-                }
+                aimedGrid = Utils.GetAimedGrid();
             }
 
             if(aimedGrid != null)

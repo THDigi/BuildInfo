@@ -18,6 +18,7 @@ using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
+using CollisionLayers = Sandbox.Engine.Physics.MyPhysics.CollisionLayers;
 
 namespace Digi.BuildInfo.Utilities
 {
@@ -291,6 +292,43 @@ namespace Digi.BuildInfo.Utilities
                 return Vector3D.Zero;
 
             return a - (b * (a.Dot(b) / b.LengthSquared()));
+        }
+
+        static readonly List<IHitInfo> TempHits = new List<IHitInfo>(16);
+
+        public static IMyCubeGrid GetAimedGrid(double maxDistance = 50, int layer = CollisionLayers.NoVoxelCollisionLayer)
+        {
+            try
+            {
+                MatrixD camWM = MyAPIGateway.Session.Camera.WorldMatrix;
+
+                TempHits.Clear();
+                MyAPIGateway.Physics.CastRay(camWM.Translation, camWM.Translation + camWM.Forward * maxDistance, TempHits, layer);
+
+                IMyCubeGrid aimedGrid = null;
+
+                // find first grid hit, ignore everything else
+                foreach(IHitInfo hit in TempHits)
+                {
+                    aimedGrid = hit.HitEntity as IMyCubeGrid;
+                    if(aimedGrid != null)
+                        break;
+
+                    var subpart = hit.HitEntity as MyEntitySubpart;
+                    if(subpart != null)
+                    {
+                        aimedGrid = subpart.GetTopMostParent() as IMyCubeGrid;
+                        if(aimedGrid != null)
+                            break;
+                    }
+                }
+
+                return aimedGrid;
+            }
+            finally
+            {
+                TempHits.Clear();
+            }
         }
 
         public static MatrixD GetBlockCenteredWorldMatrix(IMySlimBlock block)
