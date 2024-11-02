@@ -4,6 +4,18 @@
     <TransparentMaterial>
       <Id>
         <TypeId>TransparentMaterialDefinition</TypeId>
+        <SubtypeId>BuildInfo_Icon_Measure</SubtypeId>
+      </Id>
+      <Texture>Textures\HUD\Measure.dds</Texture>
+      <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
+      <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
+      <AlphaMistingEnable>false</AlphaMistingEnable>
+      <AlphaSaturation>1</AlphaSaturation>
+      <Reflectivity>0</Reflectivity>
+    </TransparentMaterial>
+    <TransparentMaterial>
+      <Id>
+        <TypeId>TransparentMaterialDefinition</TypeId>
         <SubtypeId>BuildInfo_Icon_ConveyorVis</SubtypeId>
       </Id>
       <Texture>Textures\HUD\ConveyorVis.dds</Texture>
