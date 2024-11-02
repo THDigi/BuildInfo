@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+    <!-- doesn't accept blocks :(
+    <CategoryClasses>
+        <Category xsi:type="MyObjectBuilder_GuiBlockCategoryDefinition">
+            <Id>
+                <TypeId>GuiBlockCategoryDefinition</TypeId>
+                <SubtypeId/>
+            </Id>
+            <DisplayName>DisplayName_Category_CharacterItems</DisplayName>
+            <Name>Section0_Position1_CharacterItems</Name>
+            <SearchBlocks>false</SearchBlocks>
+            <IsToolCategory>true</IsToolCategory>
+            <ItemIds>
+                <string>MyObjectBuilder_CubeBlock/BuildInfo_MultiToolLG</string>
+            </ItemIds>
+        </Category>
+        <Category xsi:type="MyObjectBuilder_GuiBlockCategoryDefinition">
+            <Id>
+                <TypeId>GuiBlockCategoryDefinition</TypeId>
+                <SubtypeId/>
+            </Id>
+            <DisplayName>DisplayName_Category_CharacterTools</DisplayName>
+            <Name>Section0_Position2_CharacterTools</Name>
+            <SearchBlocks>false</SearchBlocks>
+            <IsToolCategory>true</IsToolCategory>
+            <ItemIds>
+                <string>MyObjectBuilder_CubeBlock/BuildInfo_MultiToolLG</string>
+            </ItemIds>
+        </Category>
+    </CategoryClasses>
+    -->
+    
+    <BlockVariantGroups>
+        <BlockVariantGroup>
+            <Id Type="MyObjectBuilder_BlockVariantGroup" Subtype="MultiTool" />
+            <DisplayName>Multi Tool</DisplayName>
+            <Icon>Textures\HUD\MultiTool.dds</Icon>
+            <Blocks>
+                <Block Type="MyObjectBuilder_CubeBlock" Subtype="BuildInfo_MultiToolLG" />
+                <Block Type="MyObjectBuilder_CubeBlock" Subtype="BuildInfo_MultiToolSG" />
+            </Blocks>
+        </BlockVariantGroup>
+    </BlockVariantGroups>
+    
+    <CubeBlocks>
+        <Definition>
+            <Id>
+                <TypeId>CubeBlock</TypeId>
+                <SubtypeId>BuildInfo_MultiToolSG</SubtypeId>
+            </Id>
+            <GuiVisible>false</GuiVisible>
+            <BlockPairName>MultiTool</BlockPairName>
+            <DisplayName>Multi Tool</DisplayName>
+            <Icon>Textures\HUD\MultiTool.dds</Icon>
+            <Description>A tool that hosts various instruments</Description>
+            <Model>Models\Debug\Sphere_low.mwm</Model>
+            <CubeSize>Small</CubeSize>
+            <BlockTopology>TriangleMesh</BlockTopology>
+            <Size x="1" y="1" z="1" />
+            <ModelOffset x="0" y="0" z="0" />
+            <Components>
+                <Component Subtype="InteriorPlate" Count="1" />
+            </Components>
+            <CriticalComponent Subtype="InteriorPlate" Index="1" />
+            <MountPoints>
+                <!-- empty mountpoints get filled automatically so have to work around it -->
+                <MountPoint Side="Front" StartX="0" StartY="0" EndX="0" EndY="0" Enabled="false" />
+            </MountPoints>
+            <BuildTimeSeconds>99999</BuildTimeSeconds>
+            <IsAirTight>false</IsAirTight>
+            <IsStandAlone>false</IsStandAlone>
+            <HasPhysics>false</HasPhysics>
+            <PCU>1</PCU>
+        </Definition>
+        <Definition>
+            <Id>
+                <TypeId>CubeBlock</TypeId>
+                <SubtypeId>BuildInfo_MultiToolLG</SubtypeId>
+            </Id>
+            <GuiVisible>false</GuiVisible>
+            <BlockPairName>MultiTool</BlockPairName>
+            <DisplayName>Multi Tool</DisplayName>
+            <Icon>Textures\HUD\MultiTool.dds</Icon>
+            <Description>A tool that hosts various instruments</Description>
+            <Model>Models\Debug\Sphere_low.mwm</Model>
+            <CubeSize>Large</CubeSize>
+            <BlockTopology>TriangleMesh</BlockTopology>
+            <Size x="1" y="1" z="1" />
+            <ModelOffset x="0" y="0" z="0" />
+            <Components>
+                <Component Subtype="InteriorPlate" Count="1" />
+            </Components>
+            <CriticalComponent Subtype="InteriorPlate" Index="1" />
+            <MountPoints>
+                <!-- empty mountpoints get filled automatically so have to work around it -->
+                <MountPoint Side="Front" StartX="0" StartY="0" EndX="0" EndY="0" Enabled="false" />
+            </MountPoints>
+            <BuildTimeSeconds>99999</BuildTimeSeconds>
+            <IsAirTight>false</IsAirTight>
+            <IsStandAlone>false</IsStandAlone>
+            <HasPhysics>false</HasPhysics>
+            <PCU>1</PCU>
+        </Definition>
+    </CubeBlocks>
+</Definitions>

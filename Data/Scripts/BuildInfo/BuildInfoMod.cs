@@ -7,6 +7,7 @@ using Digi.BuildInfo.Features.ConfigMenu;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Features.ModderHelp;
 using Digi.BuildInfo.Features.ModelPreview;
+using Digi.BuildInfo.Features.MultiTool;
 using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Features.Overlays.ConveyorNetwork;
 using Digi.BuildInfo.Features.ReloadTracker;
@@ -78,6 +79,7 @@ namespace Digi.BuildInfo
         public readonly PickBlock PickBlock;
         public readonly QuickMenu QuickMenu;
         public readonly AnalyseShip AnalyseShip;
+        public readonly MultiToolHandler MultiTool;
         public readonly ChatCommandHandler ChatCommandHandler;
         public readonly ReloadTracking ReloadTracking;
         public readonly TerminalInfo TerminalInfo;
@@ -180,6 +182,7 @@ namespace Digi.BuildInfo
             PickBlock = new PickBlock(this);
             QuickMenu = new QuickMenu(this);
             AnalyseShip = new AnalyseShip(this);
+            MultiTool = new MultiToolHandler(this);
             ChatCommandHandler = new ChatCommandHandler(this);
             ReloadTracking = new ReloadTracking(this);
             TerminalInfo = new TerminalInfo(this);
