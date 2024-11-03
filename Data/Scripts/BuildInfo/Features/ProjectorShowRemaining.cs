@@ -174,7 +174,7 @@ namespace Digi.BuildInfo.Features
         class ProjectorInfo
         {
             public readonly IMyProjector Projector;
-            public readonly int ExpiresAt;
+            //public readonly int ExpiresAt;
             public int TickOffset;
             public List<IMySlimBlock> Marked = new List<IMySlimBlock>();
 
@@ -185,7 +185,7 @@ namespace Digi.BuildInfo.Features
             public ProjectorInfo(IMyProjector block)
             {
                 Projector = block;
-                ExpiresAt = MyAPIGateway.Session.GameplayFrameCounter + Constants.TicksPerSecond * ExpiresMinutes * 60;
+                //ExpiresAt = MyAPIGateway.Session.GameplayFrameCounter + Constants.TicksPerSecond * ExpiresMinutes * 60;
 
                 TickOffsetTracker = (TickOffsetTracker + 1) % TickRangeForUpdateBalance;
                 TickOffset = TickOffsetTracker;
@@ -232,7 +232,12 @@ namespace Digi.BuildInfo.Features
                 if(Projector.MarkedForClose)
                     return false;
 
-                if(MyAPIGateway.Session.GameplayFrameCounter >= ExpiresAt)
+                //if(MyAPIGateway.Session.GameplayFrameCounter >= ExpiresAt)
+                //    return false;
+
+                BoundingSphereD gridVolume = Projector.CubeGrid.WorldVolume;
+                double maxDist = gridVolume.Radius + 200;
+                if(Vector3D.DistanceSquared(gridVolume.Center, MyAPIGateway.Session.Camera.Position) > (maxDist * maxDist))
                     return false;
 
                 Marked.Clear();
