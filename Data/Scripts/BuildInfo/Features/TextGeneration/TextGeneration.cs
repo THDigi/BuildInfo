@@ -3057,6 +3057,8 @@ namespace Digi.BuildInfo.Features
         #region Ship tools
         void Format_Drill(MyCubeBlockDefinition def)
         {
+            // TODO MyShipDrillDefinition now extends MyShipToolDefinition... merge?
+
             MyShipDrillDefinition shipDrill = (MyShipDrillDefinition)def;
 
             PowerRequired(Hardcoded.ShipDrill_Power, shipDrill.ResourceSinkGroup, powerHardcoded: true);

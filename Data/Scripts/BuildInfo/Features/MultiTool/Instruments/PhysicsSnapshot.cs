@@ -4,27 +4,32 @@ using Digi.BuildInfo.VanillaData;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.Library.Utils;
 using VRage.ModAPI;
 using VRage.Utils;
 using VRageMath;
-using VRageRender;
 using static VRageRender.MyBillboard;
 
 namespace Digi.BuildInfo.Features.MultiTool.Instruments
 {
     public class PhysicsSnapshot : InstrumentBase
     {
+        // global billboard limit is 32768, and other things need them too like TextAPI rendering the HUD
+        readonly Vector2I Resolution = new Vector2I(100, 100); // 10k
+        static readonly float FOV = MathHelper.ToRadians(50);
+        const float NearPlane = 0.5f;
+        const float FarPlane = 20f;
+        const float AspectRatio = 1f;
+
         struct Hit
         {
             /// <summary>
             /// Add shot position to it to get world position
             /// </summary>
             public Vector3 DirScaled;
-
+            public float Length;
             public Vector3 Normal;
         }
-
-        readonly Vector2I Resolution = new Vector2I(100, 100);
 
         Hit[] Hits;
         int HitsCount = 0;
@@ -33,7 +38,7 @@ namespace Digi.BuildInfo.Features.MultiTool.Instruments
         enum State { Idle, Thread, Draw }
         State CastState = State.Idle;
 
-        int HitLayer = 15;
+        int HitLayer = 15; // 15 is default
         bool FirstCast = true;
 
         readonly MatrixD Projection;
@@ -45,12 +50,28 @@ namespace Digi.BuildInfo.Features.MultiTool.Instruments
         MatrixD ProjectionViewInv;
         int SnapLayer;
 
+        enum Colors { CameraNormal, WorldNormal, Depth }
+
+        Colors ColorMode = Colors.CameraNormal;
+
         int DrawTick = 0;
 
-        static readonly float FOV = MathHelper.ToRadians(50);
-        const float NearPlane = 0.5f;
-        const float FarPlane = 20f;
-        const float AspectRatio = 1f;
+        const float PointDepthRatio = 0.01f;
+        const float PointSize = 0.009f;
+        const float PointAlpha = 0.8f;
+
+        readonly float PointSizeMul = PointSize * (float)Math.Tan(FOV * 0.5) * PointDepthRatio;
+
+        static readonly Vector3D ColorDiv = new Vector3D(255, 255, 255);
+        readonly Vector3D[] DepthColors =
+        {
+            new Vector3D(255, 0, 0) / ColorDiv,
+            new Vector3D(255, 165, 0) / ColorDiv,
+            new Vector3D(255, 255, 0) / ColorDiv,
+            new Vector3D(0, 255, 255) / ColorDiv,
+            new Vector3D(0, 0, 255) / ColorDiv,
+            new Vector3D(64, 64, 128) / ColorDiv,
+        };
 
         public PhysicsSnapshot() : base("Short Range LIDAR (Beta)", Constants.MatUI_IconWeaponModeSingle)
         {
@@ -92,6 +113,10 @@ namespace Digi.BuildInfo.Features.MultiTool.Instruments
             sb.Append(" to clear");
             sb.AppendLine();
 
+            MultiTool.ControlSymmetry.GetBind(sb);
+            sb.Append(" color mode: ").Append(MyEnum<Colors>.GetName(ColorMode));
+            sb.AppendLine();
+
             sb.Append("Shift+Scroll cycle layer");
             sb.AppendLine();
 
@@ -112,10 +137,25 @@ namespace Digi.BuildInfo.Features.MultiTool.Instruments
             Description.UpdateFromBuilder();
         }
 
+        void RemoveRender()
+        {
+            HitsCount = 0;
+            CastState = State.Idle;
+        }
+
         public override void Update(bool inputReadable)
         {
             if(inputReadable)
             {
+                if(MultiTool.ControlSymmetry.IsJustPressed())
+                {
+                    ColorMode++;
+                    if(ColorMode > MyEnum<Colors>.Range.Max)
+                        ColorMode = 0;
+
+                    RefreshDescription();
+                }
+
                 if(MultiTool.ControlPrimary.IsJustPressed())
                 {
                     CastRays();
@@ -124,8 +164,7 @@ namespace Digi.BuildInfo.Features.MultiTool.Instruments
 
                 if(MultiTool.ControlSecondary.IsJustPressed())
                 {
-                    CastState = State.Idle;
-                    HitsCount = 0;
+                    RemoveRender();
                     RefreshDescription();
                 }
 
@@ -173,6 +212,8 @@ namespace Digi.BuildInfo.Features.MultiTool.Instruments
                 MyAPIGateway.Utilities.ShowNotification("Finishing up the previous cast...", 1000, FontsHandler.RedSh);
                 return;
             }
+
+            RemoveRender();
 
             IMyCamera camera = MyAPIGateway.Session.Camera;
 
@@ -224,9 +265,13 @@ namespace Digi.BuildInfo.Features.MultiTool.Instruments
                 IHitInfo hit;
                 if(MyAPIGateway.Physics.CastRay(rayFrom, rayTo, out hit, HitLayer))
                 {
+                    Vector3 dirScaled = hit.Position - SnapCamera.Translation;
+                    float dist = dirScaled.Length();
+
                     Hits[index] = new Hit()
                     {
-                        DirScaled = hit.Position - SnapCamera.Translation,
+                        DirScaled = dirScaled,
+                        Length = dist,
                         Normal = hit.Normal,
                     };
                     Distances[index] = hit.Fraction; // not in meters but doesn't matter in this case
@@ -334,18 +379,6 @@ namespace Digi.BuildInfo.Features.MultiTool.Instruments
             Vector4 colorMid = new Color(15, 75, 25).ToVector4();
             Vector4 colorBright = Color.Red.ToVector4();
 
-            const float DepthRatio = 0.01f;
-
-            // for quad
-            //const float Size = 0.03f;
-            //const float Alpha = 0.4f;
-
-            // for point
-            const float Size = 0.009f;
-            const float Alpha = 0.8f;
-
-            float sizeMul = Size * (float)Math.Tan(FOV * 0.5) * DepthRatio;
-
             Vector3D snapOrigin = SnapCamera.Translation;
 
             if(DrawTick % 15 == 0) // no need to sort frequently
@@ -365,32 +398,48 @@ namespace Digi.BuildInfo.Features.MultiTool.Instruments
             {
                 Hit hit = Hits[i];
 
-                Vector3 pos = snapOrigin + hit.DirScaled;
-                Vector3 closePos = camPos + (pos - camPos) * DepthRatio;
+                Vector3D pos = snapOrigin + hit.DirScaled;
 
-                float size = hit.DirScaled.Length() * sizeMul;
+                Vector3D closePos = camPos + (pos - camPos) * PointDepthRatio;
+                float size = hit.Length * PointSizeMul;
 
-                Vector3 normalSnapshotSpace = Vector3D.TransformNormal(hit.Normal, ref SnapCameraInv);
+                Vector3D sRGB;
 
-                #region Pixel color
-                Vector4 color;
-                color.X = (normalSnapshotSpace.X + 1) * 0.5f;
-                color.Y = (normalSnapshotSpace.Y + 1) * 0.5f;
-                color.Z = (normalSnapshotSpace.Z + 1) * 0.5f;
+                if(ColorMode == Colors.Depth)
+                {
+                    float distance = hit.Length - NearPlane;
+                    float distanceRatio = MathHelper.Clamp(distance / FarPlane, 0f, 1f);
 
-                // higher contrast
-                //color.X *= color.X;
-                //color.Y *= color.Y;
-                //color.Z *= color.Z;
+                    int lastIndex = DepthColors.Length - 1;
+                    float floatIndex = lastIndex * distanceRatio;
+                    int index = (int)Math.Floor(floatIndex);
 
-                color.W = Alpha;
-                // premultiplied alpha
-                color.X *= color.W;
-                color.Y *= color.W;
-                color.Z *= color.W;
-                #endregion
+                    if(index == lastIndex)
+                        sRGB = DepthColors[index];
+                    else
+                        sRGB = Vector3D.Lerp(DepthColors[index], DepthColors[index + 1], floatIndex - index);
+                }
+                else if(ColorMode == Colors.WorldNormal)
+                {
+                    Vector3D normal = hit.Normal;
 
-                MyTransparentGeometry.AddPointBillboard(Constants.Mat_Dot2, color, closePos, size, 0, blendType: BlendTypeEnum.PostPP);
+                    sRGB = (normal + 1) * 0.5;
+                }
+                else
+                {
+                    Vector3D normalSnapshotSpace = Vector3D.TransformNormal(hit.Normal, ref SnapCameraInv);
+
+                    sRGB = (normalSnapshotSpace + 1) * 0.5;
+                }
+
+                sRGB *= PointAlpha; // premultiplied alpha
+
+                // SRGB->Linear without Pow() from https://chilliant.blogspot.com/2012/08/srgb-approximations-for-hlsl.html
+                //sRGB = sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);
+                // MyTransparentGeometry methods already make it linear, the slow way...
+
+                MyTransparentGeometry.AddPointBillboard(Constants.Mat_Dot2, new Vector4(sRGB, PointAlpha), closePos, size, 0, blendType: BlendTypeEnum.PostPP);
+
 
                 //Vector3D faceDirection = hit.Normal;
                 //Vector3D faceDirection = Vector3D.Normalize(camera.Position - pos); // TODO optimize?
