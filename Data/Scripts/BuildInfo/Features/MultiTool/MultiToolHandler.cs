@@ -35,7 +35,7 @@ namespace Digi.BuildInfo.Features.MultiTool
 
         readonly List<InstrumentBase> Instruments = new List<InstrumentBase>();
         int InstrumentIdx = 0;
-        InstrumentBase Instrument;
+        public InstrumentBase Instrument { get; private set; }
 
         TextPackage ListText;
         CornerBackground ListBox;
@@ -287,7 +287,7 @@ namespace Digi.BuildInfo.Features.MultiTool
                 {
                     if(isMultiTool)
                     {
-                        MyCubeBuilder.Static.DeactivateBlockCreation();
+                        DeactivateCubeBuilder();
                         Equip();
                         RefreshBlockInfo();
                     }
@@ -300,6 +300,15 @@ namespace Digi.BuildInfo.Features.MultiTool
             }
         }
 
+        void DeactivateCubeBuilder()
+        {
+            // HACK: trick to keep cubebuilder equipped to prevent click from doing interaction
+            MyCubeBuilder.Static.DeactivateBlockCreation();
+
+            // HACK: to prevent "You need <Material> to build <ThisTool>"
+            MyCubeBuilder.Static.ToolType = MyCubeBuilderToolType.ColorTool;
+        }
+
         public override void UpdateAfterSim(int tick)
         {
             CheckEquipped();
@@ -307,9 +316,11 @@ namespace Digi.BuildInfo.Features.MultiTool
             if(!IsEquipped)
                 return;
 
-            // HACK: trick to keep cubebuilder equipped to prevent click from doing interaction
+            // re-enables itself on pressing R
             if(MyCubeBuilder.Static.BlockCreationIsActivated)
-                MyCubeBuilder.Static.DeactivateBlockCreation();
+            {
+                DeactivateCubeBuilder();
+            }
 
             if(Instruments.Count <= 0)
                 return;
