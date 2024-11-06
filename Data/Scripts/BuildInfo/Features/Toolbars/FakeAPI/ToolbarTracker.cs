@@ -68,34 +68,37 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
 
         void BlockAdded(IMySlimBlock slim)
         {
-            if(slim.FatBlock == null)
+            IMyCubeBlock block = slim.FatBlock;
+
+            if(block == null)
                 return;
 
-            if(EntitiesWithToolbars.ContainsKey(slim.FatBlock))
+            if(EntitiesWithToolbars.ContainsKey(block))
                 return;
 
             // it's created but not actually used
             //{
-            //    var casted = slim.FatBlock as IMyLargeTurretBase;
+            //    var casted = block as IMyLargeTurretBase;
             //    if(casted != null)
             //    {
-            //        SingleToolbar(slim.FatBlock, MyToolbarType.LargeCockpit);
+            //        SingleToolbar(block, MyToolbarType.LargeCockpit);
             //        return;
             //    }
             //}
             {
-                var casted = slim.FatBlock as IMyTurretControlBlock;
+                var casted = block as IMyTurretControlBlock;
                 if(casted != null)
                 {
-                    SingleToolbar(slim.FatBlock, MyToolbarType.ButtonPanel, 2, 1);
+                    // MyTurretControlBlock.Init()
+                    SingleToolbar(block, MyToolbarType.ButtonPanel, 2, 10);
                     return;
                 }
             }
             {
-                var casted = slim.FatBlock as MyShipController;
+                var casted = block as MyShipController;
                 if(casted != null)
                 {
-                    var owner = (MyEntity)slim.FatBlock;
+                    var owner = (MyEntity)block;
 
                     var th = new ToolbarHolder()
                     {
@@ -103,111 +106,121 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
                     };
                     EntitiesWithToolbars[owner] = th;
 
+                    // MyShipController.Init()
                     th.MultipleToolbars[ToolbarId.Normal] = new Toolbar(owner, casted.ToolbarType);
                     //th.MultipleToolbars[ToolbarId.BuildMode] = new Toolbar(owner, MyToolbarType.BuildCockpit);
                     th.MultipleToolbars[ToolbarId.LockedOn] = new Toolbar(owner, MyToolbarType.ButtonPanel, 2, 10);
 
                     if(casted is IMyRemoteControl)
                     {
-                        th.MultipleToolbars[ToolbarId.Waypoint] = new Toolbar(owner, MyToolbarType.ButtonPanel, 9, 1);
+                        // MyRemoteControl.Init()
+                        th.MultipleToolbars[ToolbarId.Waypoint] = new Toolbar(owner, MyToolbarType.ButtonPanel, 9, 10);
                     }
 
-                    slim.FatBlock.OnClosing += BlockClosing;
+                    block.OnClosing += BlockClosing;
                     return;
                 }
             }
             {
-                var casted = slim.FatBlock as IMySensorBlock;
+                var casted = block as IMySensorBlock;
                 if(casted != null)
                 {
-                    SingleToolbar(slim.FatBlock, MyToolbarType.ButtonPanel, 2, 1);
+                    // MySensorBlock.Init()
+                    SingleToolbar(block, MyToolbarType.ButtonPanel, 2, 10);
                     return;
                 }
             }
             {
-                var casted = slim.FatBlock as IMyTimerBlock;
+                var casted = block as IMyTimerBlock;
                 if(casted != null)
                 {
-                    SingleToolbar(slim.FatBlock, MyToolbarType.ButtonPanel, 9, 10);
+                    // MyTimerBlock.Init()
+                    SingleToolbar(block, MyToolbarType.ButtonPanel, 9, 10);
                     return;
                 }
             }
             {
-                var casted = slim.FatBlock as IMyAirVent;
+                var casted = block as IMyAirVent;
                 if(casted != null)
                 {
-                    SingleToolbar(slim.FatBlock, MyToolbarType.ButtonPanel, 2, 1);
+                    // MyTimerBlock.Init()
+                    SingleToolbar(block, MyToolbarType.ButtonPanel, 2, 10);
                     return;
                 }
             }
             {
-                var casted = slim.FatBlock as IMyButtonPanel;
+                var casted = block as IMyButtonPanel;
                 if(casted != null)
                 {
+                    // MyButtonPanel.Init()
                     var def = (MyButtonPanelDefinition)slim.BlockDefinition;
-                    SingleToolbar(slim.FatBlock, MyToolbarType.ButtonPanel, Math.Min(def.ButtonCount, 9), def.ButtonCount / 9 + 1);
+                    SingleToolbar(block, MyToolbarType.ButtonPanel, Math.Min(def.ButtonCount, 9), def.ButtonCount / 9 + 1);
                     return;
                 }
             }
             {
-                var casted = slim.FatBlock as IMyEventControllerBlock;
+                var casted = block as IMyEventControllerBlock;
                 if(casted != null)
                 {
-                    SingleToolbar(slim.FatBlock, MyToolbarType.ButtonPanel, 2);
+                    // MyEventControllerBlock.Init()
+                    SingleToolbar(block, MyToolbarType.ButtonPanel, 2);
                     return;
                 }
             }
             {
-                var casted = slim.FatBlock as IMyTargetDummyBlock;
+                var casted = block as IMyTargetDummyBlock;
                 if(casted != null)
                 {
-                    SingleToolbar(slim.FatBlock, MyToolbarType.ButtonPanel, 2, 1);
+                    // MyTargetDummyBlock.Init()
+                    SingleToolbar(block, MyToolbarType.ButtonPanel, 2, 10);
                     return;
                 }
             }
             {
-                var casted = slim.FatBlock as IMyBasicMissionBlock;
+                var casted = block as IMyDefensiveCombatBlock;
                 if(casted != null)
                 {
-                    var owner = (MyEntity)slim.FatBlock;
-
-                    EntitiesWithToolbars[owner] = new ToolbarHolder()
-                    {
-                        MultipleToolbars = new Dictionary<ToolbarId, Toolbar>()
-                        {
-                            [ToolbarId.Normal] = new Toolbar(owner, MyToolbarType.Ship, 9, 1),
-                            [ToolbarId.Waypoint] = new Toolbar(owner, MyToolbarType.ButtonPanel, 1, 1),
-                        }
-                    };
-
-                    slim.FatBlock.OnClosing += BlockClosing;
+                    // MyDefensiveCombatBlock.ChangeActions() - overwrites all other
+                    SingleToolbar(block, MyToolbarType.ButtonPanel, 2, 10);
                     return;
                 }
             }
             {
-                var casted = slim.FatBlock as IMyPathRecorderBlock;
-                if(casted != null)
+                MyPathRecorderComponent comp;
+                if(block.Components.TryGet(out comp))
                 {
                     // MyPathRecorderComponent.SetupAction() is the real one, not the one from ctor()
-                    SingleToolbar(slim.FatBlock, MyToolbarType.ButtonPanel, 1, 1);
+                    SingleToolbar(block, MyToolbarType.ButtonPanel, 9, 10);
                     return;
                 }
             }
             {
-                var casted = slim.FatBlock as IMyDefensiveCombatBlock;
-                if(casted != null)
+                IMyBasicMissionAutopilot comp;
+                if(block.Components.TryGet(out comp))
                 {
-                    SingleToolbar(slim.FatBlock, MyToolbarType.ButtonPanel, 2, 10);
+                    // from MyBasicMissionAutopilot.CreateTerminalControls() - overwrites all other
+                    SingleToolbar(block, MyToolbarType.Ship, 1, 1);
                     return;
                 }
             }
             {
-                var casted = slim.FatBlock as IMyTransponder;
-                if(casted != null)
+                IMySignalReceiverEntityComponent comp;
+                if(block.Components.TryGet(out comp))
                 {
-                    SingleToolbar(slim.FatBlock, MyToolbarType.ButtonPanel, 9, 10);
+                    // MySignalReceiverEntityComponent.OnAddedToContainer()
+                    SingleToolbar(block, MyToolbarType.ButtonPanel, 9, 10);
                     return;
                 }
+            }
+            {
+                // not saved to OB therefore can't retrieve it; likely a dummy for the interface
+                //var casted = block as IMyFlightMovementBlock;
+                //if(casted != null)
+                //{
+                //    // MyFlightMovementBlock.Init()
+                //    SingleToolbar(block, MyToolbarType.ButtonPanel, 1, 1);
+                //    return;
+                //}
             }
         }
 
@@ -337,6 +350,26 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
                     blockOB = block.GetObjectBuilderCubeBlock(false);
 
                 {
+                    // transponder and anything else that uses this component
+                    IMySignalReceiverEntityComponent comp;
+                    if(ent.Components.TryGet(out comp))
+                    {
+                        if(blockOB?.ComponentContainer?.Components != null)
+                        {
+                            foreach(var cd in blockOB.ComponentContainer.Components)
+                            {
+                                var signalReceiverOB = cd.Component as MyObjectBuilder_SignalReceiverEntityComponent;
+                                if(signalReceiverOB != null)
+                                    return signalReceiverOB.Toolbar;
+                            }
+                        }
+
+                        //Log.Error($"couldn't find serialized SignalReceiverEntityComponent in block: {block.GetType().Name} (entId={block.EntityId})");
+                        return null;
+                    }
+                }
+
+                {
                     var casted = blockOB as MyObjectBuilder_AirVent;
                     if(casted != null)
                         return casted.Toolbar;
@@ -371,6 +404,11 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
                     if(casted != null)
                         return casted.Toolbar;
                 }
+                //{
+                //    var casted = blockOB as MyObjectBuilder_FlightMovementBlock;
+                //    if(casted != null)
+                //        return casted.Toolbar;
+                //}
                 {
                     var casted = blockOB as MyObjectBuilder_ShipController;
                     if(casted != null)
@@ -382,24 +420,6 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
                             case ToolbarId.LockedOn: return casted.OnLockedToolbar;
                             default: Log.Error($"unknown toolbarId={toolbarId} for {block}"); return null;
                         }
-                    }
-                }
-                {
-                    var casted = blockOB as MyObjectBuilder_TransponderBlock;
-                    if(casted != null)
-                    {
-                        if(casted?.ComponentContainer?.Components != null)
-                        {
-                            foreach(var cd in casted.ComponentContainer.Components)
-                            {
-                                var signalReceiverOB = cd.Component as MyObjectBuilder_SignalReceiverEntityComponent;
-                                if(signalReceiverOB != null)
-                                    return signalReceiverOB.Toolbar;
-                            }
-                        }
-
-                        //Log.Error($"couldn't find SignalReceiverEntityComponent in transponder block: {block.EntityId}");
-                        return null;
                     }
                 }
 
