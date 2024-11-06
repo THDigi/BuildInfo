@@ -53,8 +53,9 @@ namespace Digi.BuildInfo
 
         public static readonly MyStringId MatUI_TextAPICursor = MyStringId.GetOrCompute("MouseCursor"); // HACK: MouseCursor material is from textAPI
 
-        public static readonly MyStringId MatUI_Icon_ConveyorVis = MyStringId.GetOrCompute("BuildInfo_Icon_ConveyorVis");
         public static readonly MyStringId MatUI_Icon_Measure = MyStringId.GetOrCompute("BuildInfo_Icon_Measure");
+        public static readonly MyStringId MatUI_Icon_ConveyorVis = MyStringId.GetOrCompute("BuildInfo_Icon_ConveyorVis");
+        public static readonly MyStringId MatUI_Icon_PhysicsSnapshot = MyStringId.GetOrCompute("BuildInfo_Icon_PhysicsSnapshot");
 
         public static readonly MyStringId MatUI_HotkeyBackground = MyStringId.GetOrCompute("BuildInfo_UI_HudHotkeyBackground");
         public static readonly MyStringId MatUI_IconWeaponModeAll = MyStringId.GetOrCompute("BuildInfo_UI_HudWeaponModeAll");

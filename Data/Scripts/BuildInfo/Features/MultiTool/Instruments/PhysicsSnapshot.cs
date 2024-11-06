@@ -1,6 +1,7 @@
 ﻿using System;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
+using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -73,7 +74,7 @@ namespace Digi.BuildInfo.Features.MultiTool.Instruments
             new Vector3D(64, 64, 128) / ColorDiv,
         };
 
-        public PhysicsSnapshot() : base("Short Range LIDAR (Beta)", Constants.MatUI_IconWeaponModeSingle)
+        public PhysicsSnapshot() : base("Short Range LIDAR (Beta)", Constants.MatUI_Icon_PhysicsSnapshot)
         {
             DisplayNameHUD = "Short Range LIDAR\n(Beta)";
 
