@@ -161,9 +161,9 @@ namespace Digi.BuildInfo.Features.Toolbars
 
             sb.Color(ToolbarRender.HeaderColor * opacity).Append("Toolbar Info");
 
-            if(TargetBlock is IMyEventControllerBlock && Toolbar.PageCount > 1 && Toolbar.SlotsPerPage == 2)
+            if(Toolbar.PageCount > 1 && Toolbar.SlotsPerPage == 2)
             {
-                DesignEventCompact(sb, opacity);
+                DesignDualList(sb, opacity);
             }
             else
             {
@@ -179,9 +179,9 @@ namespace Digi.BuildInfo.Features.Toolbars
         /// <summary>
         /// Expects exactly 2 slots per page and multiple pages
         /// </summary>
-        void DesignEventCompact(StringBuilder sb, float opacity)
+        void DesignDualList(StringBuilder sb, float opacity)
         {
-            sb.Append(" - Left side slots:");
+            sb.Append(" - Left side slots");
             sb.NewCleanLine();
 
             int max = Toolbar.PageCount * Toolbar.SlotsPerPage;
@@ -192,7 +192,7 @@ namespace Digi.BuildInfo.Features.Toolbars
             {
                 if(index >= slots.Length)
                 {
-                    Log.Error($"Toolbar render error: index={index}; slots={slots.Length}; page={Toolbar.CurrentPageIndex}; using event-toolbar render");
+                    Log.Error($"Toolbar render error: index={index}; slots={slots.Length}; page={Toolbar.CurrentPageIndex}; using {nameof(DesignDualList)}");
                     return;
                 }
 
@@ -227,7 +227,7 @@ namespace Digi.BuildInfo.Features.Toolbars
             {
                 if(index >= slots.Length)
                 {
-                    Log.Error($"Toolbar render error: index={index}; slots={slots.Length}; page={Toolbar.CurrentPageIndex}; using event-toolbar render");
+                    Log.Error($"Toolbar render error: index={index}; slots={slots.Length}; page={Toolbar.CurrentPageIndex}; using {nameof(DesignDualList)}");
                     return;
                 }
 
