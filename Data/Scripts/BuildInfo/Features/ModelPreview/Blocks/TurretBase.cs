@@ -10,9 +10,19 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
     {
         protected override bool Initialized()
         {
-            if(!base.Initialized())
-                return false;
+            bool baseReturn = base.Initialized();
 
+            // not checking for weaponcore because they're likely resetting subpart orientation too
+            if(HasParts)
+            {
+                FixSubparts();
+            }
+
+            return baseReturn;
+        }
+
+        void FixSubparts()
+        {
             MyLargeTurretBaseDefinition turretDef = (MyLargeTurretBaseDefinition)BlockDef;
 
             foreach(PreviewEntityWrapper part in Parts)
@@ -72,8 +82,6 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
                     break;
                 }
             }
-
-            return true;
         }
 
         void Fix(PreviewEntityWrapper part, string subpartId)
@@ -81,21 +89,28 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             if(!part.LocalMatrix.HasValue)
                 return;
 
-            // part seems already aligned well, let's not touch it
-            if(Vector3.Dot(part.LocalMatrix.Value.Forward, Vector3.Forward) >= 0.99f
-            && Vector3.Dot(part.LocalMatrix.Value.Right, Vector3.Right) >= 0.99f)
+            MyEntitySubpart subpart;
+            if(!part.Entity.TryGetSubpart(subpartId, out subpart))
                 return;
 
-            part.LocalMatrix = Matrix.CreateTranslation(part.LocalMatrix.Value.Translation);
+            bool baseOk = Vector3.Dot(part.LocalMatrix.Value.Forward, Vector3.Forward) >= 0.99f
+                       && Vector3.Dot(part.LocalMatrix.Value.Right, Vector3.Right) >= 0.99f;
 
-            // allow the layer-1 model to be seen duplicated because we're fixing its orientation here
-            part.BaseModelVisible = true;
+            bool partOk = Vector3.Dot(subpart.PositionComp.LocalMatrixRef.Forward, Vector3.Forward) >= 0.99f
+                       && Vector3.Dot(subpart.PositionComp.LocalMatrixRef.Right, Vector3.Right) >= 0.99f;
 
-            MyEntitySubpart subpart;
-            if(part.Entity.TryGetSubpart(subpartId, out subpart))
+            if(baseOk && partOk)
+                return; // both are already close to matrix identity, let's not touch them
+
+            if(!baseOk)
             {
-                BData_Turret.UnrotateSubparts(Matrix.Identity, part.Entity, subpart);
+                part.LocalMatrix = Matrix.CreateTranslation(part.LocalMatrix.Value.Translation);
+
+                // allow the layer-1 model to be seen duplicated because we're fixing its orientation here
+                part.BaseModelVisible = true;
             }
+
+            BData_Turret.UnrotateSubparts(Matrix.Identity, part.Entity, subpart);
         }
     }
 }
