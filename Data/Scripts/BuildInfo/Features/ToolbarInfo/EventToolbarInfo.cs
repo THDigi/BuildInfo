@@ -9,6 +9,7 @@ using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
+using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
@@ -276,7 +277,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 }
 
                 sb.NewCleanLine();
-                sb.Append("Hint: The same action can be used on both sides by using different pages.\n");
+                sb.Append("Hint: The same action can be used on both slots by using different pages.\n");
 
                 // TODO: need a way to know when a slot is triggered multiple times, some might even trigger in quick succession to even be possible in emissive...
                 sb.Append("Hint: Block's lights change color depending on triggered side: ")
@@ -337,6 +338,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": room pressurized\n");
                 sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": room no longer pressurized\n");
+                sb.Append("Hint: The same action can be used on both slots by using different pages.\n");
                 return true;
             }
 
@@ -347,6 +349,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": on first detection\n");
                 sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": when nothing is detected anymore\n");
+                sb.Append("Hint: The same action can be used on both slots by using different pages.\n");
                 return true;
             }
 
@@ -357,6 +360,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": dummy is hit (or destroyed)\n");
                 sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": dummy is destroyed\n");
+                sb.Append("Hint: The same action can be used on both slots by using different pages.\n");
                 return true;
             }
 
@@ -368,6 +372,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     RenderBoxHeader(sb, blocks.Count);
                     sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": once this ship is locked on\n");
                     sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": no longer locked on\n");
+                    sb.Append("Hint: The same action can be used on both slots by using different pages.\n");
                     return true;
                 }
 
@@ -384,7 +389,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                     RenderBoxHeader(sb, blocks.Count, title);
 
-                    sb.Append("All slots: waypoint reached\n");
+                    sb.Color(SlotColor).Append("All slots").ResetFormatting().Append(": waypoint reached\n");
+                    sb.Append("Note: only one waypoint is being configured even if multiple are selected!\n");
                     return true;
                 }
             }
@@ -394,7 +400,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             {
                 RenderBoxHeader(sb, blocks.Count);
 
-                sb.Append("All slots: timer countdown reached\n");
+                sb.Color(SlotColor).Append("All slots").ResetFormatting().Append(": timer countdown reached\n");
                 return true;
             }
 
@@ -405,6 +411,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": turret aligned with target (angle deviation)\n");
                 sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": turret no longer aligned with target\n");
+                sb.Append("Hint: The same action can be used on both slots by using different pages.\n");
                 return true;
             }
 
@@ -415,16 +422,26 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": first enemy detected\n");
                 sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": no more enemites detected\n");
+                sb.Append("Hint: The same action can be used on both slots by using different pages.\n");
                 return true;
             }
 
-            IMyPathRecorderBlock pathRecorder = TargetBlock as IMyPathRecorderBlock;
-            if(pathRecorder != null)
+            // IMyTransponder and anything else that uses this component
+            IMySignalReceiverEntityComponent transponderComp;
+            if(TargetBlock.Components.TryGet(out transponderComp))
+            {
+                RenderBoxHeader(sb, blocks.Count);
+                sb.Color(SlotColor).Append("All slots").ResetFormatting().Append(": signal received\n");
+                return true;
+            }
+
+            // IMyPathRecorder and anything else using this component
+            MyPathRecorderComponent pathRecordComp;
+            if(TargetBlock.Components.TryGet(out pathRecordComp))
             {
                 string title = "Unknown waypoint on ";
 
-                var prc = pathRecorder.Components.Get<MyPathRecorderComponent>();
-                var waypoints = prc?.Waypoints;
+                var waypoints = pathRecordComp?.Waypoints;
                 if(waypoints != null && waypoints.Count > 0)
                 {
                     foreach(var wp in waypoints)
@@ -439,21 +456,48 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 RenderBoxHeader(sb, blocks.Count, title);
 
-                sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": waypoint reached\n");
+                sb.Color(SlotColor).Append("All slots").ResetFormatting().Append(": waypoint reached\n");
+                sb.Append("Note: only one waypoint is being configured even if multiple are selected!\n");
                 return true;
             }
 
-            IMyTransponder transponder = TargetBlock as IMyTransponder;
-            if(transponder != null)
+            // IMyBasicMissionBlock and anything else using this component
+            IMyBasicMissionAutopilot autopilotComp;
+            if(TargetBlock.Components.TryGet(out autopilotComp) && autopilotComp.IsSelected)
             {
-                RenderBoxHeader(sb, blocks.Count);
+                string title = "Unknown waypoint on ";
 
-                sb.Append("All slots: signal received\n");
+                // TODO: this does not work, find some alternative...
+                //TempWaypoints.Clear();
+                //try
+                //{
+                //    autopilotComp.GetWaypoints(TempWaypoints);
+                //    foreach(var wp in TempWaypoints)
+                //    {
+                //        var internalWp = (MyAutopilotWaypoint)wp;
+                //        if(internalWp.SelectedForDraw)
+                //        {
+                //            title = $"\"{wp.Name}\" waypoint on ";
+                //            break; // HACK: same as in ID_AUTOPILOT_SETUP_ACTION_BUTTON in MyBasicMissionAutopilot.CreateTerminalControls() - only the first selected is configured.
+                //        }
+                //    }
+                //}
+                //finally
+                //{
+                //    TempWaypoints.Clear();
+                //}
+
+                RenderBoxHeader(sb, blocks.Count, title);
+
+                sb.Color(SlotColor).Append("All slots").ResetFormatting().Append(": waypoint reached\n");
+                sb.Append("Note: only one waypoint is being configured even if multiple are selected!\n");
                 return true;
             }
 
             return false; // unknown block, don't draw
         }
+
+        //List<Sandbox.ModAPI.Ingame.IMyAutopilotWaypoint> TempWaypoints = new List<Sandbox.ModAPI.Ingame.IMyAutopilotWaypoint>();
 
         void RenderBoxHeader(StringBuilder sb, int blockCount, string customTitle = null, bool includeBlocks = true)
         {
