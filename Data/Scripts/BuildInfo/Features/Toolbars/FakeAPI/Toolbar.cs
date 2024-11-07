@@ -22,6 +22,7 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
         public readonly int SlotsPerPage;
         public readonly int PageCount;
 
+        public readonly ToolbarId Id;
         public MyToolbarType Type { get; private set; } = MyToolbarType.None;
         public int? SelectedSlot { get; private set; } = null;
         public int CurrentPageIndex { get; private set; } = 0;
@@ -38,11 +39,12 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
 
         readonly BuildInfoMod Main;
 
-        public Toolbar(MyEntity owner, MyToolbarType type, int slotsPerPage = 9, int pages = 9)
+        public Toolbar(MyEntity owner, ToolbarId id, MyToolbarType type, int slotsPerPage = 9, int pages = 9)
         {
             Main = BuildInfoMod.Instance;
 
             Owner = owner;
+            Id = id;
             Type = type;
             SlotsPerPage = slotsPerPage;
             PageCount = pages;

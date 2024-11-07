@@ -16,26 +16,25 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
 {
     public enum ToolbarId : byte
     {
-        Normal = 0,
-        Waypoint = 1,
-        LockedOn = 2,
+        None,
+        Hotbar,
+        Waypoint,
+        LockedOn,
         // TODO: build mode toolbar when relevant/needed
-        //BuildMode = 3,
+        //BuildMode,
     }
 
     public struct ToolbarHolder
     {
-        public Toolbar SingleToolbar;
-        public Dictionary<ToolbarId, Toolbar> MultipleToolbars;
+        public Toolbar[] Toolbars;
 
         public void Dispose()
         {
-            SingleToolbar?.Dispose();
+            if(Toolbars == null) throw new Exception("null Toolbars!");
 
-            if(MultipleToolbars != null)
+            foreach(var tb in Toolbars)
             {
-                foreach(var tb in MultipleToolbars.Values)
-                    tb.Dispose();
+                tb.Dispose();
             }
         }
     }
@@ -100,22 +99,23 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
                 {
                     var owner = (MyEntity)block;
 
-                    var th = new ToolbarHolder()
-                    {
-                        MultipleToolbars = new Dictionary<ToolbarId, Toolbar>(),
-                    };
-                    EntitiesWithToolbars[owner] = th;
+                    bool isRC = casted is IMyRemoteControl;
+
+                    var th = new ToolbarHolder();
+                    th.Toolbars = new Toolbar[isRC ? 3 : 2];
 
                     // MyShipController.Init()
-                    th.MultipleToolbars[ToolbarId.Normal] = new Toolbar(owner, casted.ToolbarType);
-                    //th.MultipleToolbars[ToolbarId.BuildMode] = new Toolbar(owner, MyToolbarType.BuildCockpit);
-                    th.MultipleToolbars[ToolbarId.LockedOn] = new Toolbar(owner, MyToolbarType.ButtonPanel, 2, 10);
+                    th.Toolbars[0] = new Toolbar(owner, ToolbarId.Hotbar, casted.ToolbarType);
+                    th.Toolbars[1] = new Toolbar(owner, ToolbarId.LockedOn, MyToolbarType.ButtonPanel, 2, 10);
+                    // new Toolbar(owner, ToolbarId.BuildMode, MyToolbarType.BuildCockpit);
 
-                    if(casted is IMyRemoteControl)
+                    if(isRC)
                     {
                         // MyRemoteControl.Init()
-                        th.MultipleToolbars[ToolbarId.Waypoint] = new Toolbar(owner, MyToolbarType.ButtonPanel, 9, 10);
+                        th.Toolbars[2] = new Toolbar(owner, ToolbarId.Waypoint, MyToolbarType.ButtonPanel, 9, 10);
                     }
+
+                    EntitiesWithToolbars[owner] = th;
 
                     block.OnClosing += BlockClosing;
                     return;
@@ -224,13 +224,13 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
             }
         }
 
-        void SingleToolbar(IMyCubeBlock block, MyToolbarType toolbarType, int slotsPerPage = 9, int pages = 9)
+        void SingleToolbar(IMyCubeBlock block, MyToolbarType toolbarType, int slotsPerPage = 9, int pages = 9, ToolbarId id = ToolbarId.None)
         {
-            var toolbar = new Toolbar((MyEntity)block, toolbarType, slotsPerPage, pages);
+            var toolbar = new Toolbar((MyEntity)block, id, toolbarType, slotsPerPage, pages);
 
             EntitiesWithToolbars[block] = new ToolbarHolder()
             {
-                SingleToolbar = toolbar,
+                Toolbars = new Toolbar[] { toolbar },
             };
 
             block.OnClosing += BlockClosing;
@@ -260,7 +260,7 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
         /// <param name="toolbarId"></param>
         /// <param name="blockOB">only provide it if you have it from something else as an optimization, otherwise leave null</param>
         /// <returns></returns>
-        public static MyObjectBuilder_Toolbar GetToolbarOBFromEntity(IMyEntity ent, ToolbarId toolbarId = ToolbarId.Normal, MyObjectBuilder_CubeBlock blockOB = null)
+        public static MyObjectBuilder_Toolbar GetToolbarOBFromEntity(IMyEntity ent, ToolbarId toolbarId = ToolbarId.Hotbar, MyObjectBuilder_CubeBlock blockOB = null)
         {
             var block = ent as IMyCubeBlock;
             if(block != null)
@@ -415,7 +415,7 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
                     {
                         switch(toolbarId)
                         {
-                            case ToolbarId.Normal: return casted.Toolbar;
+                            case ToolbarId.Hotbar: return casted.Toolbar;
                             // case ToolbarId.BuildMode: return casted.BuildToolbar;
                             case ToolbarId.LockedOn: return casted.OnLockedToolbar;
                             default: Log.Error($"unknown toolbarId={toolbarId} for {block}"); return null;

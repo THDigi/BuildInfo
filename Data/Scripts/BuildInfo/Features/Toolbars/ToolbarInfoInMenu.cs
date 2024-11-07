@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Features.Toolbars.FakeAPI;
 using Digi.BuildInfo.Utilities;
@@ -100,9 +101,12 @@ namespace Digi.BuildInfo.Features.Toolbars
                 return;
             }
 
-            ToolbarId toolbarId = ToolbarId.Normal;
+            ToolbarId toolbarId = ToolbarId.Hotbar;
 
-            if(th.MultipleToolbars != null)
+            if(th.Toolbars == null) throw new Exception($"{TargetBlock.CustomName}'s ({GetType().Name}) stored toolbar array is null");
+            if(th.Toolbars.Length == 0) throw new Exception($"{TargetBlock.CustomName}'s ({GetType().Name}) stored toolbar array is empty");
+
+            if(th.Toolbars.Length > 1)
             {
                 switch(Main.EventToolbarMonitor.LastOpenedToolbarType)
                 {
@@ -110,11 +114,18 @@ namespace Digi.BuildInfo.Features.Toolbars
                     case ToolbarInfo.EventToolbarMonitor.ToolbarType.LockOnVictim: toolbarId = ToolbarId.LockedOn; break;
                 }
 
-                Toolbar = th.MultipleToolbars.GetValueOrDefault(toolbarId);
+                foreach(Toolbar t in th.Toolbars)
+                {
+                    if(t.Id == toolbarId)
+                    {
+                        Toolbar = t;
+                        break;
+                    }
+                }
             }
             else
             {
-                Toolbar = th.SingleToolbar;
+                Toolbar = th.Toolbars[0];
             }
 
             if(Toolbar == null)
