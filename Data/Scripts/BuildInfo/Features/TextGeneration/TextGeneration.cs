@@ -869,11 +869,6 @@ namespace Digi.BuildInfo.Features
         {
             if(textShown)
             {
-                if(textObject != null)
-                {
-                    textObject.Visible = false;
-                }
-
                 if(forceDrawTicks <= 0)
                 {
                     textShown = false;
@@ -887,6 +882,11 @@ namespace Digi.BuildInfo.Features
                     //    textObject.Visible = false;
                     //    bgObject.Visible = false;
                     //}
+
+                    if(textObject != null)
+                    {
+                        textObject.Visible = false;
+                    }
                 }
 
                 // HUD notifications don't need hiding, they expire in one frame.
