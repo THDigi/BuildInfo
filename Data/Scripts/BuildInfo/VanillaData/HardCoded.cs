@@ -124,7 +124,7 @@ namespace Digi.BuildInfo.VanillaData
                     bool exists = false;
                     foreach(var pli in PhysicsLayers.Values)
                     {
-                        if(pli.Name == name)
+                        if(pli.OriginalName == name)
                         {
                             exists = true;
                             break;
