@@ -817,19 +817,20 @@ namespace Digi.BuildInfo.VanillaData
             float consumptionMultiplier = 1f + def.ConsumptionFactorPerG * (gravityLength / Hardcoded.EarthGravity / Hardcoded.EarthGravity);
             float earthConsumptionMultipler = 1f + def.ConsumptionFactorPerG * (Hardcoded.EarthGravity / Hardcoded.EarthGravity / Hardcoded.EarthGravity);
 
-            if(thrustInternal.FuelDefinition != null && thrustInternal.FuelDefinition.Id != MyResourceDistributorComponent.ElectricityId)
+            MyDefinitionId fuelId = MyResourceDistributorComponent.ElectricityId;
+            float fuelEnergyDensity = 1f;
+            if(thrustInternal.FuelDefinition != null)
             {
-                // formula from MyEntityThrustComponent.PowerAmountToFuel()
-                float eff = (thrustInternal.FuelConverterDefinition.Efficiency * thrustInternal.FuelDefinition.EnergyDensity);
-                float currentFuelUsage = (thrust.IsWorking ? (currentPowerUsage / eff) : 0);
-                float maxFuelUsage = (maxPowerUsage / eff);
+                fuelId = thrustInternal.FuelDefinition.Id;
+                fuelEnergyDensity = thrustInternal.FuelDefinition.EnergyDensity;
+            }
 
-                return new ThrustInfo(def, thrustInternal, thrustInternal.FuelDefinition.Id, currentFuelUsage * consumptionMultiplier, maxFuelUsage * earthConsumptionMultipler, consumptionMultiplier, earthConsumptionMultipler);
-            }
-            else
-            {
-                return new ThrustInfo(def, thrustInternal, MyResourceDistributorComponent.ElectricityId, currentPowerUsage * consumptionMultiplier, maxPowerUsage * earthConsumptionMultipler, consumptionMultiplier, earthConsumptionMultipler);
-            }
+            // formula from MyEntityThrustComponent.PowerAmountToFuel()
+            float energy = (thrustInternal.FuelConverterDefinition.Efficiency * fuelEnergyDensity);
+            float currentFuelUsage = (thrust.IsWorking ? (currentPowerUsage / energy) : 0);
+            float maxFuelUsage = (maxPowerUsage / energy);
+
+            return new ThrustInfo(def, thrustInternal, fuelId, currentFuelUsage * consumptionMultiplier, maxFuelUsage * earthConsumptionMultipler, consumptionMultiplier, earthConsumptionMultipler);
         }
 
         // from MyThrust.LoadDummies()
