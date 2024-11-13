@@ -449,7 +449,11 @@ namespace Digi.BuildInfo.Features
             StringBuilder tooltip = CreateTooltip(action, coveringLines: coveringLines);
 
             if(tooltip != null)
-                tooltip.Append("You can <color=lime>click<reset> to go to the mod's workshop page.");
+            {
+                tooltip.Append("NOTE: This mod indicator only works for SBC adds/overrides.");
+                tooltip.Append("\nScripts don't generally sign themselves in the definitions they change.");
+                tooltip.Append("\n\nYou can <color=lime>click<reset> to go to the mod's workshop page.");
+            }
 
             return tooltip;
         }
