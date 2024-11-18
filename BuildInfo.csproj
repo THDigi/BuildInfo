@@ -17,7 +17,9 @@
 
   <ItemGroup>
     <Compile Remove="Data\Scripts\BuildInfo\Features\CheckVSLPEvents.cs" />
+    <Compile Remove="Data\Scripts\BuildInfo\Features\MergeFailDetector.cs" />
     <Compile Remove="Data\Scripts\BuildInfo\Features\ModderHelp.cs" />
+    <Compile Remove="Data\Scripts\BuildInfo\Features\UpgradeModuleIndicator.cs" />
   </ItemGroup>
 
   <ItemGroup>
