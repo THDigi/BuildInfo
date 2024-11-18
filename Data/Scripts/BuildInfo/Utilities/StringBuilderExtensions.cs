@@ -358,10 +358,12 @@ namespace Digi.BuildInfo.Utilities
         {
             if(BuildInfoMod.Instance.TextAPI.IsEnabled)
             {
-                s.Append("<color=").Append(color.R).Append(',').Append(color.G).Append(',').Append(color.B).Append('>');
+                s.Append("<color=").Append(color.R).Append(',').Append(color.G).Append(',').Append(color.B);
 
                 if(color.A < 255)
-                    s.Append(color.A).Append('>');
+                    s.Append(',').Append(color.A);
+
+                s.Append('>');
 
                 CurrentColor = color;
             }
