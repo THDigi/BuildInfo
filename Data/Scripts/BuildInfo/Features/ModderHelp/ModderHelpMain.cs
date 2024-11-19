@@ -87,7 +87,8 @@ namespace Digi.BuildInfo.Features.ModderHelp
             // alert player in chat if applicable
             Main.GameConfig.FirstSpawn += FirstSpawn;
 
-            CheckVideos();
+            // This game bug was fixed in SE v205
+            //CheckVideos();
         }
 
         public override void UnregisterComponent()
@@ -1184,10 +1185,10 @@ namespace Digi.BuildInfo.Features.ModderHelp
                 }
             }
 
-            if(AlertVideosInChat)
-            {
-                Utils.ShowColoredChatMessage(BuildInfoMod.ModName, AlertVideosMessage);
-            }
+            //if(AlertVideosInChat)
+            //{
+            //    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, AlertVideosMessage);
+            //}
         }
 
         #region F11 menu backdrop
@@ -1222,6 +1223,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
         }
         #endregion
 
+#if false
         #region Check menu videos existence
         bool AlertVideosInChat = false;
         const string AlertVideosMessage = "If you have black screen & no sound, restore the SE's Videos folder and restart game to fix.";
@@ -1289,5 +1291,6 @@ namespace Digi.BuildInfo.Features.ModderHelp
             }
         }
         #endregion
+#endif
     }
 }
