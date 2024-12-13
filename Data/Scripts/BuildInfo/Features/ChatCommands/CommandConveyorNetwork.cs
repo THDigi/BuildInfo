@@ -17,7 +17,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         public override void PrintHelp(StringBuilder sb)
         {
             AppendCommands(sb);
-            sb.Append("  Renders conveyor networks from the ship you're looking at.").NewLine();
+            sb.Append("  Renders conveyor networks from the ship you're looking at (up close).").NewLine();
             sb.Append("  Use command again to turn off.").NewLine();
         }
 
@@ -79,7 +79,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             }
             else
             {
-                Main.ConveyorNetworkView.Notify("Look at a grid before entering the command.", 4000, FontsHandler.RedSh);
+                Main.ConveyorNetworkView.Notify("Look at a ship first, up close.", 4000, FontsHandler.RedSh);
             }
         }
     }

@@ -13,16 +13,20 @@ namespace Digi.BuildInfo.Features.ChatCommands
         public override void PrintHelp(StringBuilder sb)
         {
             AppendCommands(sb);
-            sb.Append("  Shows what mods and DLCs are used on the aimed block's ship.").NewLine();
+            sb.Append("  Shows what mods and DLCs are used on the ship you're looking at (up close).").NewLine();
             sb.Append("  Also available for blueprints in projectors' terminal.").NewLine();
         }
 
         public override void Execute(Arguments args)
         {
             IMyCubeGrid aimedGrid = Main.EquipmentMonitor?.AimedBlock?.CubeGrid;
+
+            if(aimedGrid == null)
+                aimedGrid = Utils.GetAimedGrid();
+
             if(aimedGrid == null)
             {
-                PrintChat("Aim at a ship with a welder/grinder first.", FontsHandler.RedSh);
+                PrintChat("Look at a ship up close first.", FontsHandler.RedSh);
                 PrintChat("This feature is also in projectors' terminal.", FontsHandler.RedSh);
                 return;
             }
