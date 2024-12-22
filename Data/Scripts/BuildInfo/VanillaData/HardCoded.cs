@@ -72,6 +72,9 @@ namespace Digi.BuildInfo.VanillaData
             PhysicsLayers = null;
         }
 
+        public const string Service_Steam = "Steam"; // MySteamUGCService.ServiceName
+        public const string Service_ModIo = "mod.io"; // MyModIoServiceInternal.ServiceName
+
         public static Dictionary<int, PhysicsLayerInfo> PhysicsLayers = new Dictionary<int, PhysicsLayerInfo>();
 
         public const int PhysicsLayerMaxIndex = 31;
