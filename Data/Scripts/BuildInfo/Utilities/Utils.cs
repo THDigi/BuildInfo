@@ -170,7 +170,7 @@ namespace Digi.BuildInfo.Utilities
             }
             catch
             {
-                Log.Error($"Ammo definition id '{defId}' does not exist. Context={GetContextName(context)}", null);
+                Log.Error($"Ammo definition id '{defId}' does not exist. Context={context.GetNameAndId()}", null);
                 return null;
             }
         }
@@ -186,20 +186,9 @@ namespace Digi.BuildInfo.Utilities
             }
             catch
             {
-                Log.Error($"AmmoMagazine definition id '{defId}' does not exist. Context={GetContextName(context)}", null);
+                Log.Error($"AmmoMagazine definition id '{defId}' does not exist. Context={context.GetNameAndId()}", null);
                 return null;
             }
-        }
-
-        public static string GetContextName(IMyModContext context)
-        {
-            if(context == null)
-                return "<NULL>";
-
-            if(context.IsBaseGame)
-                return "<BaseGame>";
-
-            return $"{context.ModName} ({context.ModItem.PublishedFileId})";
         }
 
         /// <summary>

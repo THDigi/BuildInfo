@@ -263,7 +263,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
                 if(BuildInfoMod.Instance.ModderHelpMain.IsF11MenuAccessible)
                     Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "A mod is overriding/leaking VSLP events! F11 menu or SE log have further instructions.", FontsHandler.RedSh);
                 else
-                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "A mod is overriding/leaking VSLP events! SE Log has further instrcutions.", FontsHandler.RedSh);
+                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "A mod is overriding/leaking VSLP events! SE Log has further instructions.", FontsHandler.RedSh);
             }
         }
 
@@ -492,7 +492,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
                             if(modContext.IsBaseGame)
                                 sb.Append("<basegame or plugin>");
                             else
-                                sb.Append(modContext.ModName).Append(" (").Append(modContext.ModItem.PublishedServiceName).Append(":").Append(modContext.ModItem.PublishedFileId).Append(")");
+                                sb.Append(modContext.GetName()).Append(" (").Append(modContext.ModItem.PublishedServiceName).Append(":").Append(modContext.ModItem.PublishedFileId).Append(")");
                         }
                         else
                             sb.Append("<unknown>");

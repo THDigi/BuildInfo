@@ -16,23 +16,49 @@ namespace Digi.BuildInfo.Utilities
             return modContext != null && !modContext.IsBaseGame && modContext.ModItem.PublishedFileId == 0;
         }
 
-        public static string GetNameAndId(this MyModContext modContext)
+        public static string GetNameAndId(this IMyModContext modContext)
         {
             if(modContext == null)
-                return "(unknown)";
+                return "<Unknown>";
 
             if(modContext.IsBaseGame)
-                return "(basegame)";
+                return "<BaseGame>";
 
             return modContext.ModItem.GetNameAndId();
         }
 
         public static string GetNameAndId(this MyObjectBuilder_Checkpoint.ModItem modItem)
         {
-            if(modItem.PublishedFileId == 0)
-                return $"{modItem.Name} (local)";
+            bool isPublished = modItem.PublishedFileId != 0;
+            if(isPublished)
+                return $"{modItem.GetName()} ({modItem.PublishedServiceName}:{modItem.PublishedFileId})";
             else
-                return $"{modItem.FriendlyName} ({modItem.PublishedServiceName}:{modItem.PublishedFileId})";
+                return $"{modItem.GetName()} (local)";
+        }
+
+        public static string GetName(this IMyModContext modContext)
+        {
+            if(modContext == null)
+                return "<Unknown>";
+
+            if(modContext.IsBaseGame)
+                return "<BaseGame>";
+
+            string name = modContext.ModName;
+            if(string.IsNullOrEmpty(name))
+                name = "<Unknown; from PluginLoader?>";
+
+            return name;
+        }
+
+        public static string GetName(this MyObjectBuilder_Checkpoint.ModItem modItem)
+        {
+            bool isPublished = modItem.PublishedFileId != 0;
+            string name = (isPublished ? modItem.FriendlyName : modItem.Name);
+            if(string.IsNullOrEmpty(name))
+                name = "<Unnamed; from PluginLoader?>";
+
+            return name;
         }
 
         /// <summary>

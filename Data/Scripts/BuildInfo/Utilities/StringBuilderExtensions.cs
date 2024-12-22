@@ -1325,7 +1325,8 @@ namespace Digi.BuildInfo.Utilities
         public static StringBuilder ModFormat(this StringBuilder s, MyModContext context)
         {
             TextGeneration tg = BuildInfoMod.Instance.TextGeneration;
-            s.Color(tg.COLOR_MOD_TITLE).AppendMaxLength(context.ModName, TextGeneration.MOD_NAME_MAX_LENGTH);
+
+            s.Color(tg.COLOR_MOD_TITLE).AppendMaxLength(context.GetName(), TextGeneration.MOD_NAME_MAX_LENGTH);
 
             MyObjectBuilder_Checkpoint.ModItem modItem = context.ModItem;
             if(modItem.Name != null && modItem.PublishedFileId > 0)

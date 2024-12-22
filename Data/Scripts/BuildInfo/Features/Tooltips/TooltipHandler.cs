@@ -281,7 +281,7 @@ namespace Digi.BuildInfo.Features.Tooltips
         {
             if(!def.Context.IsBaseGame)
             {
-                s.Append("Mod: ").AppendMaxLength(def.Context.ModName, modNameMaxLen).Append('\n');
+                s.Append("Mod: ").AppendMaxLength(def.Context.GetName(), modNameMaxLen).Append('\n');
 
                 MyObjectBuilder_Checkpoint.ModItem modItem = def.Context.ModItem;
                 if(modItem.Name != null && modItem.PublishedFileId > 0)

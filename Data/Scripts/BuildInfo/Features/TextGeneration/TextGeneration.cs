@@ -1748,7 +1748,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(Main.TextAPI.IsEnabled)
                 {
-                    AddLine().Color(COLOR_MOD).Append("Mod: ").Color(COLOR_MOD_TITLE).AppendMaxLength(context.ModName, MOD_NAME_MAX_LENGTH);
+                    AddLine().Color(COLOR_MOD).Append("Mod: ").Color(COLOR_MOD_TITLE).AppendMaxLength(context.GetName(), MOD_NAME_MAX_LENGTH);
 
                     MyObjectBuilder_Checkpoint.ModItem modItem = context.ModItem;
 
