@@ -51,6 +51,7 @@
                 <SubtypeId>BuildInfo_MultiToolSG</SubtypeId>
             </Id>
             <GuiVisible>false</GuiVisible>
+            <PCU>2147483647</PCU>
             <BlockPairName>MultiTool</BlockPairName>
             <DisplayName>Multi Tool</DisplayName>
             <Icon>Textures\HUD\MultiTool.dds</Icon>
@@ -68,11 +69,18 @@
                 <!-- empty mountpoints get filled automatically so have to work around it -->
                 <MountPoint Side="Front" StartX="0" StartY="0" EndX="0" EndY="0" Enabled="false" />
             </MountPoints>
+            <VoxelPlacement> <!-- don't allow placement even if script broke -->
+                <StaticMode>
+                    <PlacementMode>None</PlacementMode>
+                </StaticMode>
+                <DynamicMode>
+                    <PlacementMode>None</PlacementMode>
+                </DynamicMode>
+            </VoxelPlacement>
             <BuildTimeSeconds>99999</BuildTimeSeconds>
             <IsAirTight>false</IsAirTight>
             <IsStandAlone>false</IsStandAlone>
             <HasPhysics>false</HasPhysics>
-            <PCU>1</PCU>
         </Definition>
         <Definition>
             <Id>
@@ -80,6 +88,7 @@
                 <SubtypeId>BuildInfo_MultiToolLG</SubtypeId>
             </Id>
             <GuiVisible>false</GuiVisible>
+            <PCU>2147483647</PCU>
             <BlockPairName>MultiTool</BlockPairName>
             <DisplayName>Multi Tool</DisplayName>
             <Icon>Textures\HUD\MultiTool.dds</Icon>
@@ -97,11 +106,18 @@
                 <!-- empty mountpoints get filled automatically so have to work around it -->
                 <MountPoint Side="Front" StartX="0" StartY="0" EndX="0" EndY="0" Enabled="false" />
             </MountPoints>
+            <VoxelPlacement> <!-- don't allow placement even if script broke -->
+                <StaticMode>
+                    <PlacementMode>None</PlacementMode>
+                </StaticMode>
+                <DynamicMode>
+                    <PlacementMode>None</PlacementMode>
+                </DynamicMode>
+            </VoxelPlacement>
             <BuildTimeSeconds>99999</BuildTimeSeconds>
             <IsAirTight>false</IsAirTight>
             <IsStandAlone>false</IsStandAlone>
             <HasPhysics>false</HasPhysics>
-            <PCU>1</PCU>
         </Definition>
     </CubeBlocks>
 </Definitions>
