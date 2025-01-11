@@ -52,9 +52,20 @@ namespace Digi.BuildInfo.Features.MultiTool
         Vector2D HUDPosition = new Vector2D(0.98, 0.448);
         bool ForceRefresh;
 
+        /// <summary>
+        /// Only for tracking equipped changes
+        /// </summary>
+        MyCubeBlockDefinition EquippedDef;
+
         bool PreviousAlignDefault;
 
-        MyCubeBlockDefinition LastDef;
+        MyCubeBlockDefinitionGroup MultiToolPair;
+
+        /// <summary>
+        /// For dynamic description
+        /// </summary>
+        MyCubeBlockDefinition FakeDef = new MyCubeBlockDefinition();
+
         readonly string[] Icons = new string[1];
         const string BlockPairName = "MultiTool";
 
@@ -72,10 +83,24 @@ namespace Digi.BuildInfo.Features.MultiTool
 
         public MultiToolHandler(BuildInfoMod main) : base(main)
         {
+            MultiToolPair = MyDefinitionManager.Static.GetDefinitionGroup(BlockPairName);
+
+            if(MultiToolPair != null && MultiToolPair.Any != null)
+            {
+                ConfigureToolBlock(MultiToolPair.Small);
+                ConfigureToolBlock(MultiToolPair.Large);
+
+                var cats = MyDefinitionManager.Static.GetCategories();
+                ConfigureCategory(cats.GetValueOrDefault("Section0_Position1_CharacterItems"));
+                ConfigureCategory(cats.GetValueOrDefault("Section0_Position2_CharacterTools"));
+            }
         }
 
         public override void RegisterComponent()
         {
+            if(MultiToolPair == null || MultiToolPair.Any == null)
+                return;
+
             ControlPrimary = InputLib.GetInput(ControlContext.CHARACTER, MyControlsSpace.PRIMARY_TOOL_ACTION);
             ControlSecondary = InputLib.GetInput(ControlContext.CHARACTER, MyControlsSpace.SECONDARY_TOOL_ACTION);
             ControlReload = InputLib.GetInput(ControlContext.CHARACTER, MyControlsSpace.RELOAD);
@@ -110,6 +135,27 @@ namespace Digi.BuildInfo.Features.MultiTool
             {
                 instrument.Dispose();
             }
+        }
+
+        void ConfigureToolBlock(MyCubeBlockDefinition def)
+        {
+            if(def == null)
+                return;
+
+            def.GuiVisible = false;
+            def.Public = true;
+            def.DescriptionEnum = null;
+            def.DescriptionArgs = null;
+            def.DescriptionString = "A tool that hosts various instruments";
+        }
+
+        void ConfigureCategory(MyGuiBlockCategoryDefinition catDef)
+        {
+            if(catDef == null)
+                return;
+
+            catDef.SearchBlocks = true;
+            catDef.ItemIds.Add("CubeBlock/BuildInfo_MultiToolLG");
         }
 
         #region UI Handling
@@ -274,9 +320,9 @@ namespace Digi.BuildInfo.Features.MultiTool
         void CheckEquipped()
         {
             MyCubeBlockDefinition def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
-            if(def != LastDef)
+            if(def != EquippedDef)
             {
-                LastDef = def;
+                EquippedDef = def;
 
                 bool isMultiTool = def?.BlockPairName == BlockPairName;
 
@@ -381,14 +427,14 @@ namespace Digi.BuildInfo.Features.MultiTool
 
             string displayName;
 
-            def.DescriptionEnum = null;
-            def.DescriptionArgs = null;
+            FakeDef.DescriptionEnum = null;
+            FakeDef.DescriptionArgs = null;
 
             if(!AllowInShips && Main.EquipmentMonitor.IsCockpitBuildMode)
             {
                 Icons[0] = WarningIcon;
                 displayName = def.DisplayNameText;
-                def.DescriptionString = "Cannot be used in ships";
+                FakeDef.DescriptionString = "Cannot be used in ships";
             }
             else
             {
@@ -396,13 +442,13 @@ namespace Digi.BuildInfo.Features.MultiTool
                 {
                     Icons[0] = Instrument.HUDIcon;
                     displayName = Instrument.DisplayNameHUD;
-                    def.DescriptionString = Instrument.Description.Text;
+                    FakeDef.DescriptionString = Instrument.Description.Text;
                 }
                 else
                 {
                     Icons[0] = def.Icons[0];
                     displayName = def.DisplayNameText;
-                    def.DescriptionString = string.Empty;
+                    FakeDef.DescriptionString = string.Empty;
                 }
             }
 
@@ -414,12 +460,12 @@ namespace Digi.BuildInfo.Features.MultiTool
             blockInfo.DefinitionId = def.Id;
             blockInfo.BlockIcons = Icons;
             blockInfo.BlockName = displayName;
-            blockInfo.SetContextHelp(def);
+            blockInfo.SetContextHelp(FakeDef);
             blockInfo.PCUCost = 0;
             blockInfo.BlockIntegrity = 0f;
-            blockInfo.CriticalComponentIndex = def.CriticalGroup;
-            blockInfo.CriticalIntegrity = def.CriticalIntegrityRatio;
-            blockInfo.OwnershipIntegrity = def.OwnershipIntegrityRatio;
+            blockInfo.CriticalComponentIndex = 0;
+            blockInfo.CriticalIntegrity = 1f;
+            blockInfo.OwnershipIntegrity = 1f;
             blockInfo.MissingComponentIndex = -1;
             blockInfo.GridSize = def.CubeSize;
             blockInfo.Components.Clear();
@@ -459,11 +505,7 @@ namespace Digi.BuildInfo.Features.MultiTool
             if(!IsEquipped)
                 return;
 
-            if(LastDef != null)
-                LastDef.DescriptionString = string.Empty;
-
             IsEquipped = false;
-            LastDef = null;
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, false);
             SetUIVisible(false);
 

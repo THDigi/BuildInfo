@@ -50,12 +50,13 @@
                 <TypeId>CubeBlock</TypeId>
                 <SubtypeId>BuildInfo_MultiToolSG</SubtypeId>
             </Id>
+            <Public>false</Public> <!-- mod script will show it when it functions -->
             <GuiVisible>false</GuiVisible>
             <PCU>2147483647</PCU>
             <BlockPairName>MultiTool</BlockPairName>
             <DisplayName>Multi Tool</DisplayName>
             <Icon>Textures\HUD\MultiTool.dds</Icon>
-            <Description>A tool that hosts various instruments</Description>
+            <Description>ERROR: BuildInfo mod did not compile to replace this description!</Description>
             <Model>Models\Debug\Sphere_low.mwm</Model>
             <CubeSize>Small</CubeSize>
             <BlockTopology>TriangleMesh</BlockTopology>
@@ -87,12 +88,13 @@
                 <TypeId>CubeBlock</TypeId>
                 <SubtypeId>BuildInfo_MultiToolLG</SubtypeId>
             </Id>
+            <Public>false</Public> <!-- mod script will show it when it functions -->
             <GuiVisible>false</GuiVisible>
             <PCU>2147483647</PCU>
             <BlockPairName>MultiTool</BlockPairName>
             <DisplayName>Multi Tool</DisplayName>
             <Icon>Textures\HUD\MultiTool.dds</Icon>
-            <Description>A tool that hosts various instruments</Description>
+            <Description>ERROR: BuildInfo mod did not compile to replace this description!</Description>
             <Model>Models\Debug\Sphere_low.mwm</Model>
             <CubeSize>Large</CubeSize>
             <BlockTopology>TriangleMesh</BlockTopology>
