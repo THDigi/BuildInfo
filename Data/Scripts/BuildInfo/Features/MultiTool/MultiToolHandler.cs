@@ -14,7 +14,9 @@ using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using VRage.Game.Entity;
 using VRage.Game.ModAPI;
+using VRage.Utils;
 using VRageMath;
 using static Digi.BuildInfo.Systems.TextAPI;
 
@@ -61,6 +63,9 @@ namespace Digi.BuildInfo.Features.MultiTool
 
         MyCubeBlockDefinitionGroup MultiToolPair;
 
+        List<MyCubeGrid> DeleteGrids;
+        List<MyCubeBlock> DeleteBlocks;
+
         /// <summary>
         /// For dynamic description
         /// </summary>
@@ -93,11 +98,50 @@ namespace Digi.BuildInfo.Features.MultiTool
                 var cats = MyDefinitionManager.Static.GetCategories();
                 ConfigureCategory(cats.GetValueOrDefault("Section0_Position1_CharacterItems"));
                 ConfigureCategory(cats.GetValueOrDefault("Section0_Position2_CharacterTools"));
+
+                // to remove all multitool blocks that are found in the world when it loads
+                if(MyAPIGateway.Session.IsServer)
+                {
+                    MyEntities.OnEntityAdd += EntityAdded;
+                }
             }
         }
 
         public override void RegisterComponent()
         {
+            if(MyAPIGateway.Session.IsServer)
+            {
+                MyEntities.OnEntityAdd -= EntityAdded;
+
+                if(DeleteGrids != null)
+                {
+                    foreach(var grid in DeleteGrids)
+                    {
+                        grid.Close();
+
+                        string msg = $"[FIX] Found multitool block floating as a grid (entityId={grid.EntityId}), deleted.";
+                        Log.Info(msg);
+                        MyLog.Default.WriteLineAndConsole($"### {Log.ModName}: {msg}");
+                    }
+
+                    DeleteGrids = null;
+                }
+
+                if(DeleteBlocks != null)
+                {
+                    foreach(var block in DeleteBlocks)
+                    {
+                        block.CubeGrid.RemoveBlock(block.SlimBlock);
+
+                        string msg = $"[FIX] Found multitool block inside grid (entityId={block.CubeGrid.EntityId}), deleted only that block.";
+                        Log.Info(msg);
+                        MyLog.Default.WriteLineAndConsole($"### {Log.ModName}: {msg}");
+                    }
+
+                    DeleteBlocks = null;
+                }
+            }
+
             if(MultiToolPair == null || MultiToolPair.Any == null)
                 return;
 
@@ -134,6 +178,42 @@ namespace Digi.BuildInfo.Features.MultiTool
             foreach(InstrumentBase instrument in Instruments)
             {
                 instrument.Dispose();
+            }
+        }
+
+        void EntityAdded(MyEntity ent)
+        {
+            try
+            {
+                var grid = ent as MyCubeGrid;
+                if(grid != null)
+                {
+                    foreach(MyCubeBlock block in grid.GetFatBlocks())
+                    {
+                        var def = block.BlockDefinition;
+                        if((def == MultiToolPair.Small || def == MultiToolPair.Large) && def.BlockPairName == BlockPairName) // redundancy just in case
+                        {
+                            if(grid.BlocksCount == 1)
+                            {
+                                if(DeleteGrids == null)
+                                    DeleteGrids = new List<MyCubeGrid>();
+
+                                DeleteGrids.Add(grid);
+                            }
+                            else
+                            {
+                                if(DeleteBlocks == null)
+                                    DeleteBlocks = new List<MyCubeBlock>();
+
+                                DeleteBlocks.Add(block);
+                            }
+                        }
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
             }
         }
 
