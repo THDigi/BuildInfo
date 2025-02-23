@@ -324,6 +324,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleToggle(Category_Misc, null, Main.Config.AdjustBuildDistanceSurvival);
             SimpleToggle(Category_Misc, null, Main.Config.AdjustBuildDistanceShipCreative);
             SimpleToggle(Category_Misc, Main.Config.SpectatorAllowRotationModifier.Name, Main.Config.SpectatorAllowRotationModifier);
+            SimpleEnumCycle(Category_Misc, null, Main.Config.ForceControllerHUD);
             SimpleToggle(Category_Misc, null, Main.Config.InternalInfo);
             SimpleToggle(Category_Misc, null, Main.Config.ScientificNotation);
             SimpleToggle(Category_Misc, null, Main.Config.TextReplace);

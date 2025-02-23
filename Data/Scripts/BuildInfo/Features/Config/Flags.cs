@@ -114,4 +114,11 @@ namespace Digi.BuildInfo.Features.Config
         CustomMetric = 2,
         CustomSI = 3,
     }
+
+    public enum ForceControllerMode
+    {
+        Off = 0,
+        KeyboardMouseOnly,
+        ControllerOnly,
+    }
 }

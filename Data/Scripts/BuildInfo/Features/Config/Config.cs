@@ -111,6 +111,8 @@ namespace Digi.BuildInfo.Features.Config
 
         public BoolSetting SpectatorAllowRotationModifier;
 
+        public EnumSetting<ForceControllerMode> ForceControllerHUD;
+
         public InputCombinationSetting MenuBind;
         public InputCombinationSetting TextShowBind;
         public InputCombinationSetting CycleOverlaysBind;
@@ -715,6 +717,10 @@ namespace Digi.BuildInfo.Features.Config
             SpectatorAllowRotationModifier = new BoolSetting(Handler, "Spectator: Allow Rotation Modifier", false,
                 "Whether to allow ctrl+scroll to adjust view sensitivity in spectator (game feature).",
                 "Mind that ctrl is used as a modifier for many other things, making it very easy to accidentally change this, which is why this setting exists to block it.");
+
+            ForceControllerHUD = new EnumSetting<ForceControllerMode>(Handler, "Force Controller HUD", ForceControllerMode.Off,
+                "Normally the HUD automatically changes depending on the last used input type (kb/m vs gamepad).",
+                "This setting allows you to force it to one of the HUD types if you're using a mix of both.");
 
             ScientificNotation = new BoolSetting(Handler, "Scientific Notation", false,
                 "Enabling this will make most numbers provided by this mod turn into scientific notation for larger than 1e4 or lower than 1e-4.",
