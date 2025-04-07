@@ -34,9 +34,90 @@ using VRage.Game.Entity;
 using static VRageRender.MyBillboard;
 using VRage.Game.ObjectBuilders.Definitions.SessionComponents;
 using VRage.Voxels;
+using Sandbox.Game.Weapons;
+using VRage.Game.Definitions;
 
 namespace Digi.BuildInfo.Features
 {
+#if false
+    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_SmallGatlingGun), false)]
+    public class TestRPM_Gatling : TestRPM { }
+
+    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_SmallMissileLauncher), false)]
+    public class TestRPM_Launcher : TestRPM { }
+
+    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_SmallMissileLauncherReload), false)]
+    public class TestRPM_LauncherReload : TestRPM { }
+
+    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_LargeGatlingTurret), false)]
+    public class TestRPM_GatlingTurret : TestRPM { }
+
+    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_LargeMissileTurret), false)]
+    public class TestRPM_MissileTurret : TestRPM { }
+
+    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_InteriorTurret), false)]
+    public class TestRPM_InteriorTurret : TestRPM { }
+
+    public class TestRPM : MyGameLogicComponent
+    {
+        IMyFunctionalBlock Block;
+        IMyGunObject<MyGunBase> Gun;
+        long LastShotTime;
+
+        int RoundsFired = 0;
+        int Minute = 0;
+
+        public override void Init(MyObjectBuilder_EntityBase objectBuilder)
+        {
+            NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
+        }
+
+        public override void UpdateOnceBeforeFrame()
+        {
+            Block = (IMyFunctionalBlock)Entity;
+
+            if(Block.CubeGrid?.Physics == null)
+                return;
+
+            Gun = (IMyGunObject<MyGunBase>)Entity;
+            LastShotTime = Gun.GunBase.LastShootTime.Ticks;
+
+            NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;
+        }
+
+        public override void UpdateBeforeSimulation()
+        {
+            try
+            {
+                if(Minute != DateTime.Now.Minute)
+                {
+                    Minute = DateTime.Now.Minute;
+
+                    MyAPIGateway.Utilities.ShowNotification($"{Block.CustomName} RPM: {RoundsFired}", 5000);
+
+                    RoundsFired = 0;
+                }
+
+                if(!Block.IsFunctional)
+                    return;
+
+                long shotTime = Gun.GunBase.LastShootTime.Ticks;
+                if(shotTime > LastShotTime)
+                {
+                    LastShotTime = shotTime;
+                    RoundsFired++;
+
+                    MyAPIGateway.Utilities.ShowNotification($"{Block.CustomName} fired ({RoundsFired})", 500);
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+        }
+    }
+#endif
+
     //[MyEntityComponentDescriptor(typeof(MyObjectBuilder_CameraBlock), false)]
     //public class TestCameraRaycastCharge : MyGameLogicComponent
     //{
@@ -212,6 +293,82 @@ namespace Digi.BuildInfo.Features
             //EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
             //EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
+
+
+
+
+
+
+
+
+        // character CrouchHeadServerOffset and HeadServerOffset testing
+        //public Quaternion Character_GetRotation(IMyCharacter character)
+        //{
+        //    if(character.EnabledThrusts)
+        //    {
+        //        MatrixD matrix = character.WorldMatrix;
+        //        Quaternion result;
+        //        Quaternion.CreateFromRotationMatrix(ref matrix, out result);
+        //        return result;
+        //    }
+        //
+        //    //if(Physics?.CharacterProxy != null)
+        //    //{
+        //    //    return Quaternion.CreateFromForwardUp(Physics.CharacterProxy.Forward, Physics.CharacterProxy.Up);
+        //    //}
+        //
+        //    return Quaternion.CreateFromForwardUp(character.WorldMatrix.Forward, character.WorldMatrix.Up);
+        //}
+        //
+        //public override void UpdateAfterSim(int tick)
+        //{
+        //    var character = MyAPIGateway.Session?.Player?.Character;
+        //    if(character != null)
+        //    {
+        //        var charDef = (MyCharacterDefinition)character.Definition;
+        //
+        //        Quaternion rotation = Character_GetRotation(character);
+        //        Vector3D rotationF = new Vector3(rotation.X, rotation.Y, rotation.Z);
+        //
+        //        bool isCrouching = character.CurrentMovementState.GetMode() == 2;
+        //
+        //        float crouchOffset = charDef.CrouchHeadServerOffset + (float)Dev.GetValueScroll("crouch", 0, MyKeys.D1);
+        //        float standOffset = charDef.HeadServerOffset + (float)Dev.GetValueScroll("stand", 0, MyKeys.D2);
+        //
+        //        Vector3D offset = isCrouching ?
+        //            new Vector3(0f, crouchOffset / 2f, 0f)
+        //          : new Vector3(0f, standOffset / 2f, 0f);
+        //
+        //        float w = rotation.W;
+        //
+        //        Vector3D finalAim = character.PositionComp.WorldAABB.Center
+        //                          + (2.0 * Vector3D.Dot(rotationF, offset) * rotationF
+        //                          + ((double)(w * w) - Vector3D.Dot(rotationF, rotationF)) * offset
+        //                          + 2f * w * Vector3D.Cross(rotationF, offset));
+        //
+        //        Vector3D wolfTarget = Vector3D.Transform(new Vector3(0f, standOffset / 2f, 0f), character.PositionComp.WorldMatrixRef);
+        //
+        //        MyAPIGateway.Utilities.ShowNotification($"orig crouch={charDef.CrouchHeadServerOffset}; orig stand={charDef.HeadServerOffset}", 16);
+        //
+        //        MyTransparentGeometry.AddPointBillboard(MyStringId.GetOrCompute("WhiteDot"), Color.Lime, character.PositionComp.WorldAABB.Center, 0.025f, 0, blendType: BlendType.AdditiveTop);
+        //
+        //        MyTransparentGeometry.AddPointBillboard(MyStringId.GetOrCompute("WhiteDot"), Color.Red, finalAim, 0.05f, 0, blendType: BlendType.AdditiveTop);
+        //        MyTransparentGeometry.AddPointBillboard(MyStringId.GetOrCompute("WhiteDot"), Color.Cyan, wolfTarget, 0.04f, 0, blendType: BlendType.AdditiveTop);
+        //
+        //
+        //        MatrixD headMatrix = character.GetHeadMatrix(includeY: true);
+        //        Vector3D dynamicRangeStart = headMatrix.Translation;
+        //        if(isCrouching)
+        //        {
+        //            dynamicRangeStart = character.WorldMatrix.Translation + character.WorldMatrix.Up * crouchOffset;
+        //        }
+        //
+        //        MyTransparentGeometry.AddPointBillboard(MyStringId.GetOrCompute("WhiteDot"), Color.Purple, dynamicRangeStart, 0.075f, 0, blendType: BlendType.AdditiveTop);
+        //
+        //        //DebugDraw.DrawSphere(new BoundingSphereD(finalAim, 0.1f), Color.Red, MySimpleObjectRasterizer.Wireframe, BlendType.AdditiveTop);
+        //    }
+        //}
+
 
         //public override void UpdateAfterSim(int tick)
         //{

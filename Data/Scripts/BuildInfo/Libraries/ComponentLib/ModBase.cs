@@ -43,7 +43,7 @@ namespace Digi.ComponentLib
         public bool IsDedicatedServer { get; private set; }
 
         /// <summary>
-        /// Wether simulation is paused.
+        /// Whether simulation is paused.
         /// NOTE: requires ModBase to have simulation updates.
         /// </summary>
         public bool IsPaused { get; private set; }

@@ -22,7 +22,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
         public Matrix? LocalMatrix;
 
         /// <summary>
-        /// Wether this entity's model is visible, does not affect subparts.
+        /// Whether this entity's model is visible, does not affect subparts.
         /// </summary>
         public bool BaseModelVisible;
 

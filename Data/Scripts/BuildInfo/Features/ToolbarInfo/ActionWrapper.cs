@@ -118,6 +118,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
         }
 
+        /// <summary>
+        /// For anyone reading this through a debugger:
+        /// The error is ignored because of a game bug causing it to happen if the original writer was null, it happens inside the game code and there's nothing to do but to catch and ignore.
+        /// Was reported to keen for years...
+        /// </summary>
         public void AppendOriginalStatus(IMyTerminalBlock block, StringBuilder sb)
         {
             try

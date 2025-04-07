@@ -1087,7 +1087,7 @@ namespace Digi.BuildInfo.Features.GUI
             PrintSetting(sb, nameof(settings.DestructibleBlocks), settings.DestructibleBlocks, DefaultSettings.DestructibleBlocks, true,
                 "Destructible blocks", "Allows blocks to be destroyed.");
             PrintSetting(sb, nameof(settings.AdjustableMaxVehicleSpeed), settings.AdjustableMaxVehicleSpeed, DefaultSettings.AdjustableMaxVehicleSpeed, false,
-                "Adjustable suspension speed limit", "Wether the speed limit slider is visible in terminal of suspension blocks.");
+                "Adjustable suspension speed limit", "Whether the speed limit slider is visible in terminal of suspension blocks.");
             PrintSetting(sb, nameof(settings.StationVoxelSupport), settings.StationVoxelSupport, DefaultSettings.StationVoxelSupport, true,
                 "Maintain static on split", "By enabling this option grids will no longer turn dynamic when disconnected from static grids." + TooltipOriginalName("WorldSettings_StationVoxelSupport"));
             PrintSetting(sb, nameof(settings.EnableConvertToStation), settings.EnableConvertToStation, DefaultSettings.EnableConvertToStation, true,

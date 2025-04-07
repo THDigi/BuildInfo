@@ -186,7 +186,7 @@ namespace Digi.Input
             /// Same as <seealso cref="GetBinds(StringBuilder, ControlContext, bool)"/> but with a string allocation.
             /// </summary>
             /// <param name="contextId">Control context, <see cref="InputLib.GetCurrentInputContext"/></param>
-            /// <param name="specialChars">Wether to add special characters like the xbox character-images to the string or to use regular characters.</param>
+            /// <param name="specialChars">Whether to add special characters like the xbox character-images to the string or to use regular characters.</param>
             public string GetBinds(ControlContext contextId = ControlContext.CHARACTER, bool specialChars = true)
             {
                 StringBuilder str = new StringBuilder();
@@ -199,7 +199,7 @@ namespace Digi.Input
             /// </summary>
             /// <param name="output">What to append the info to</param>
             /// <param name="contextId">Control context, <see cref="InputLib.GetCurrentInputContext"/></param>
-            /// <param name="specialChars">Wether to add special characters like the xbox character-images to the string or to use regular characters.</param>
+            /// <param name="specialChars">Whether to add special characters like the xbox character-images to the string or to use regular characters.</param>
             public void GetBinds(StringBuilder output, ControlContext contextId = ControlContext.CHARACTER, bool specialChars = true)
             {
                 if(output == null)

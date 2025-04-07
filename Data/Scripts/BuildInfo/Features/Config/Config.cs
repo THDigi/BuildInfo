@@ -732,7 +732,7 @@ namespace Digi.BuildInfo.Features.Config
                 "This feature will not do anything if the game language is set to anything but English.");
 
             ModderHelpAlerts = new BoolSetting(Handler, "ModderHelp: Show problems/hints", true,
-                "Toggles wether this mod looks at definitions from local mods for sneaky problems or hints." +
+                "Toggles whether this mod looks at definitions from local mods for sneaky problems or hints." +
                 "Also if any mod has compile errors it shows F11 menu in offline mode or shows a chat message in non-offline worlds.");
 
             InternalInfo = new BoolSetting(Handler, "Internal Info", false,

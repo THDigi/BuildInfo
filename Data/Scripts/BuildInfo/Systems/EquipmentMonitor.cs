@@ -100,12 +100,12 @@ namespace Digi.BuildInfo.Systems
         public IMyHandDrill HandDrill { get; private set; }
 
         /// <summary>
-        /// Wether the selected tool is a welder (ship or handheld)
+        /// Whether the selected tool is a welder (ship or handheld)
         /// </summary>
         public bool IsAnyWelder { get; private set; }
 
         /// <summary>
-        /// Wether the selected tool is a grinder (ship or handheld)
+        /// Whether the selected tool is a grinder (ship or handheld)
         /// </summary>
         public bool IsAnyGrinder { get; private set; }
 
