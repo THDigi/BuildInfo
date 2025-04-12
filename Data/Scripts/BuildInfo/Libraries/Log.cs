@@ -528,7 +528,7 @@ namespace Digi
                 }
                 catch(Exception e)
                 {
-                    MyLog.Default.WriteLineAndConsole($"{modName} :: LOGGER error/exception while logging: '{message}'\nLogger error: {e.Message}\n{e.StackTrace}");
+                    MyLog.Default.WriteLineAndConsole($"{modName} :: LOGGER error/exception while logging: '{message}'\nLogger error: {e}");
                 }
             }
         }

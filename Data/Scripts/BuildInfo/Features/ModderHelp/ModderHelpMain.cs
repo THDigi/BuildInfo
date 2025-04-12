@@ -172,7 +172,8 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     + LineSignature + "If the mod path is added twice then the problem is that the texture exists AND using a new planet generator definition style (compare EarthLike and Pertram start/end tags)."
                     + LineSignature + "Either modify definition to use the old style (recommended) or make it so the <Texture> tag doesn't point to an existing file while also having _cm and _alphamask prefixed ones with same name nearby.",
                     TErrorSeverity.Error);
-                return;
+
+                return; // intentionally eating the error
             }
 
             bool startsWithModPath = filePath.StartsWith(def.Context.ModPath);

@@ -215,7 +215,7 @@ namespace Digi.ComponentLib
                 catch(Exception e)
                 {
                     if(e is CrashGameException)
-                        throw e;
+                        throw;
 
                     string msg = $"Exception during {Components[i].GetType().Name}.RegisterComponent()";
                     Log.Error($"{msg}: {e}", msg);
@@ -283,7 +283,7 @@ namespace Digi.ComponentLib
                         catch(Exception e)
                         {
                             if(e is CrashGameException)
-                                throw e;
+                                throw;
 
                             string msg = $"Exception during {Components[i].GetType().Name}.UnregisterComponent()";
                             Log.Error($"{msg}: {e}", msg);
@@ -371,7 +371,7 @@ namespace Digi.ComponentLib
                             catch(Exception e)
                             {
                                 if(e is CrashGameException)
-                                    throw e;
+                                    throw;
 
                                 string msg = $"Exception during {ComponentUpdateInput[i].GetType().Name}.UpdateInput()";
                                 Log.Error($"{msg}: {e}", msg);
@@ -390,7 +390,7 @@ namespace Digi.ComponentLib
                             catch(Exception e)
                             {
                                 if(e is CrashGameException)
-                                    throw e;
+                                    throw;
 
                                 string msg = $"Exception during {ComponentUpdateInput[i].GetType().Name}.UpdateInput()";
                                 Log.Error($"{msg}: {e}", msg);
@@ -418,7 +418,7 @@ namespace Digi.ComponentLib
             catch(Exception e)
             {
                 if(e is CrashGameException)
-                    throw e;
+                    throw;
 
                 Log.Error(e);
             }
@@ -481,7 +481,7 @@ namespace Digi.ComponentLib
                             catch(Exception e)
                             {
                                 if(e is CrashGameException)
-                                    throw e;
+                                    throw;
 
                                 string msg = $"Exception during {ComponentUpdateBeforeSim[i].GetType().Name}.UpdateBeforeSim()";
                                 Log.Error($"{msg}: {e}", msg);
@@ -500,7 +500,7 @@ namespace Digi.ComponentLib
                             catch(Exception e)
                             {
                                 if(e is CrashGameException)
-                                    throw e;
+                                    throw;
 
                                 string msg = $"Exception during {ComponentUpdateBeforeSim[i].GetType().Name}.UpdateBeforeSim()";
                                 Log.Error($"{msg}: {e}", msg);
@@ -528,7 +528,7 @@ namespace Digi.ComponentLib
             catch(Exception e)
             {
                 if(e is CrashGameException)
-                    throw e;
+                    throw;
 
                 Log.Error(e);
             }
@@ -591,7 +591,7 @@ namespace Digi.ComponentLib
                             catch(Exception e)
                             {
                                 if(e is CrashGameException)
-                                    throw e;
+                                    throw;
 
                                 string msg = $"Exception during {ComponentUpdateAfterSim[i].GetType().Name}.UpdateAfterSim()";
                                 Log.Error($"{msg}: {e}", msg);
@@ -610,7 +610,7 @@ namespace Digi.ComponentLib
                             catch(Exception e)
                             {
                                 if(e is CrashGameException)
-                                    throw e;
+                                    throw;
 
                                 string msg = $"Exception during {ComponentUpdateAfterSim[i].GetType().Name}.UpdateAfterSim()";
                                 Log.Error($"{msg}: {e}", msg);
@@ -638,7 +638,7 @@ namespace Digi.ComponentLib
             catch(Exception e)
             {
                 if(e is CrashGameException)
-                    throw e;
+                    throw;
 
                 Log.Error(e);
             }
@@ -684,7 +684,7 @@ namespace Digi.ComponentLib
                             catch(Exception e)
                             {
                                 if(e is CrashGameException)
-                                    throw e;
+                                    throw;
 
                                 string msg = $"Exception during {ComponentUpdateDraw[i].GetType().Name}.UpdateDraw()";
                                 Log.Error($"{msg}: {e}", msg);
@@ -703,7 +703,7 @@ namespace Digi.ComponentLib
                             catch(Exception e)
                             {
                                 if(e is CrashGameException)
-                                    throw e;
+                                    throw;
 
                                 string msg = $"Exception during {ComponentUpdateDraw[i].GetType().Name}.UpdateDraw()";
                                 Log.Error($"{msg}: {e}", msg);
@@ -733,7 +733,7 @@ namespace Digi.ComponentLib
             catch(Exception e)
             {
                 if(e is CrashGameException)
-                    throw e;
+                    throw;
 
                 Log.Error(e);
             }
@@ -753,7 +753,7 @@ namespace Digi.ComponentLib
             catch(Exception e)
             {
                 if(e is CrashGameException)
-                    throw e;
+                    throw;
 
                 Log.Error(e);
             }

@@ -16,6 +16,7 @@ using VRage.ModAPI;
 using VRage.Utils;
 
 using ModId = VRage.MyTuple<ulong, string, string>;
+using ModIdComparer = VRage.MyTupleComparer<ulong, string, string>;
 
 namespace Digi.BuildInfo.Features
 {
@@ -30,8 +31,8 @@ namespace Digi.BuildInfo.Features
         // temporary data to generate info
         readonly StringBuilder SB = new StringBuilder(512);
         readonly Dictionary<string, Objects> DLCs = new Dictionary<string, Objects>();
-        readonly Dictionary<ModId, Objects> Mods = new Dictionary<ModId, Objects>();
-        readonly Dictionary<ModId, Objects> ModsChangingVanilla = new Dictionary<ModId, Objects>();
+        readonly Dictionary<ModId, Objects> Mods = new Dictionary<ModId, Objects>(new ModIdComparer());
+        readonly Dictionary<ModId, Objects> ModsChangingVanilla = new Dictionary<ModId, Objects>(new ModIdComparer());
         readonly Dictionary<MyDefinitionId, Objects> Inexistent = new Dictionary<MyDefinitionId, Objects>(MyDefinitionId.Comparer);
 
         void ResetLists()

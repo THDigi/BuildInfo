@@ -598,7 +598,7 @@ namespace Digi.BuildInfo.Features.Overlays
             }
             catch(Exception e)
             {
-                Log.Error($"Overlay draw error for {DebugName}; block={block?.BlockDefinition?.Id.ToString()}; def={def?.Id.ToString()}; error={e.Message}\n{e.StackTrace}");
+                Log.Error($"Overlay draw error for {DebugName}; block={block?.BlockDefinition?.Id.ToString()}; def={def?.Id.ToString()}; error={e}");
             }
         }
 

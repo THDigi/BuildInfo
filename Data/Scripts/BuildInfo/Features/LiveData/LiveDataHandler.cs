@@ -171,7 +171,7 @@ namespace Digi.BuildInfo.Features.LiveData
                 }
                 catch(Exception e)
                 {
-                    Log.Error($"Error in BData for {defId.ToString()} :: {e.Message}\n{e.StackTrace}");
+                    Log.Error($"Error in BData for {defId.ToString()} :: {e}");
                     success = false;
                 }
 

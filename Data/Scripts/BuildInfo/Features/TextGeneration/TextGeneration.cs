@@ -341,7 +341,7 @@ namespace Digi.BuildInfo.Features
                             }
                             catch(Exception e)
                             {
-                                Log.Error($"Error on aimed defId={def?.Id.ToString()} - {e.Message}\n{e.StackTrace}");
+                                Log.Error($"Error on aimed defId={def?.Id.ToString()} - {e}");
                             }
                         }
                         else if(hasBlockDef)
@@ -359,7 +359,7 @@ namespace Digi.BuildInfo.Features
                                 }
                                 catch(Exception e)
                                 {
-                                    Log.Error($"Error on equipped defId={def?.Id.ToString()} - {e.Message}\n{e.StackTrace}");
+                                    Log.Error($"Error on equipped defId={def?.Id.ToString()} - {e}");
                                 }
                             }
                         }
@@ -374,7 +374,7 @@ namespace Digi.BuildInfo.Features
                             }
                             catch(Exception e)
                             {
-                                Log.Error($"Error on aimed defId={def?.Id.ToString()} - {e.Message}\n{e.StackTrace}");
+                                Log.Error($"Error on aimed defId={def?.Id.ToString()} - {e}");
                             }
                         }
                     }
