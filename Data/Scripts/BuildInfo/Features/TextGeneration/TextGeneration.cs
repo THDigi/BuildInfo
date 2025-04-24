@@ -1209,19 +1209,7 @@ namespace Digi.BuildInfo.Features
                         }
                     }
 
-                    StringBuilder sb = AddLine().Color(massColor).ExactMassFormat(mass);
-
-                    if(grid.Physics != null)
-                    {
-                        if(grid.EntityId != prevSelectedGrid || --gridMassComputeCooldown <= 0)
-                        {
-                            prevSelectedGrid = grid.EntityId;
-                            gridMassComputeCooldown = (60 * 3) / 10; // divide by 10 because this method executes very 10 ticks
-                            gridMassCache = BuildInfoMod.Instance.GridMassCompute.GetGridMass(grid);
-                        }
-
-                        sb.ResetFormatting().Separator().Append("Grid mass: ").ExactMassFormat(gridMassCache);
-                    }
+                    AddLine().Color(massColor).ExactMassFormat(mass);
                 }
             }
             #endregion Mass, grid mass
@@ -1774,6 +1762,26 @@ namespace Digi.BuildInfo.Features
                 DLCFormat(def);
             }
             #endregion Optional: requires DLC
+
+            //if(Main.Config.AimInfo.IsSet(AimInfoFlags.GridInfo))
+            {
+                if(!isProjected)
+                {
+                    var sb = AddLine().Label("Grid - Name").AppendMaxLength(grid.CustomName, BLOCK_NAME_MAX_LENGTH);
+
+                    if(grid.Physics != null)
+                    {
+                        if(grid.EntityId != prevSelectedGrid || --gridMassComputeCooldown <= 0)
+                        {
+                            prevSelectedGrid = grid.EntityId;
+                            gridMassComputeCooldown = (60 * 3) / 10; // divide by 10 because this method executes very 10 ticks
+                            gridMassCache = BuildInfoMod.Instance.GridMassCompute.GetGridMass(grid);
+                        }
+
+                        sb.ResetFormatting().Separator().Label("Mass").ExactMassFormat(gridMassCache);
+                    }
+                }
+            }
 
             #region Overlay hints
             if(Main.Config.AimInfo.IsSet(AimInfoFlags.OverlayHint))
