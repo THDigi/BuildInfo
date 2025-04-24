@@ -166,6 +166,10 @@ namespace Digi.BuildInfo.VanillaData
         // from MyPhysics.CreateWorldCInfo()
         public const int SolverIterationsMin = 8;
 
+        // from MyGridEmissiveSystem.Init()
+        public const float EmissiveBlocks_PowerReqPerGrid = 1e-06f;
+        public const string EmissiveBlocks_PowerGroup = null;
+
         // from MyGridConveyorSystem
         public const float Conveyors_PowerReqPerGrid = 1e-07f;
         public const string Conveyors_PowerGroup = "Conveyors"; // in ctor()

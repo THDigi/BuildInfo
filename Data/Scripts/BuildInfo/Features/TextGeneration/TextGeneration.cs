@@ -2856,6 +2856,8 @@ namespace Digi.BuildInfo.Features
 
             Add(typeof(MyObjectBuilder_HeatVentBlock), Format_HeatVent);
 
+            Add(typeof(MyObjectBuilder_EmissiveBlock), Format_EmissiveBlock);
+
             Add(typeof(MyObjectBuilder_SafeZoneBlock), Format_SafeZone);
             Add(typeof(MyObjectBuilder_ContractBlock), Format_ContractBlock);
             Add(typeof(MyObjectBuilder_StoreBlock), Format_StoreBlock);
@@ -6223,6 +6225,19 @@ namespace Digi.BuildInfo.Features
                 AddLine().Append("Offset: ").RoundedNumber(offset.Min, 2).Append(" to ").RoundedNumber(offset.Max, 2).Separator().Append("Default: ").RoundedNumber(offset.Default, 2);
             }
             */
+        }
+
+        void Format_EmissiveBlock(MyCubeBlockDefinition def)
+        {
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+            {
+                StringBuilder sb = AddLine().LabelHardcoded("Power required");
+
+                sb.PowerFormat(Hardcoded.EmissiveBlocks_PowerReqPerGrid).Append(" per grid (when at least one of this block is present)");
+
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                    AddLine().Append("    ").ResourcePriority(Hardcoded.EmissiveBlocks_PowerGroup, hardcoded: true);
+            }
         }
 
         void Format_SafeZone(MyCubeBlockDefinition def)
