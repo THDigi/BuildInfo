@@ -9,13 +9,14 @@ using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
 using VRage.Input;
+using VRage.ModAPI;
 using VRage.Utils;
 using VRageMath;
 using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 
 namespace Digi.Input
 {
-    // TODO MyControlsSpace has lots of new controls
+    // TODO: MyControlsSpace has lots of new controls
 
     /// <summary>
     /// <para>Usage: create an instance in BeforeStart(); call Update() in any simulation update; Dispose() in UnloadData().</para>
@@ -733,10 +734,24 @@ namespace Digi.Input
 
         public static bool GetGameControlPressed(ControlContext contextId, MyStringId controlId)
         {
-            VRage.ModAPI.IMyControl control = MyAPIGateway.Input.GetGameControl(controlId);
+            IMyControl control = MyAPIGateway.Input.GetGameControl(controlId);
 
+#if VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 // some backwards compatibility
             if(control.IsPressed())
                 return true;
+#else
+            bool origEnabled = control.IsEnabled;
+            try
+            {
+                control.IsEnabled = true;
+                if(control.IsPressed())
+                    return true;
+            }
+            finally
+            {
+                control.IsEnabled = origEnabled;
+            }
+#endif
 
             GamepadBindings.IControl bind = instance.gamepadBindings.GetControl(contextId, controlId);
 
@@ -748,10 +763,24 @@ namespace Digi.Input
 
         public static bool GetGameControlJustPressed(ControlContext contextId, MyStringId controlId)
         {
-            VRage.ModAPI.IMyControl control = MyAPIGateway.Input.GetGameControl(controlId);
+            IMyControl control = MyAPIGateway.Input.GetGameControl(controlId);
 
+#if VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 // some backwards compatibility
             if(control.IsNewPressed())
                 return true;
+#else
+            bool origEnabled = control.IsEnabled;
+            try
+            {
+                control.IsEnabled = true;
+                if(control.IsNewPressed())
+                    return true;
+            }
+            finally
+            {
+                control.IsEnabled = origEnabled;
+            }
+#endif
 
             GamepadBindings.IControl bind = instance.gamepadBindings.GetControl(contextId, controlId);
 
