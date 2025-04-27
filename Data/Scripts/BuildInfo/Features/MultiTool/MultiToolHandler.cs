@@ -14,7 +14,8 @@ using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
-using VRage.Game.Entity;
+using VRage.Game;
+using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRage.Utils;
 using VRageMath;
@@ -63,9 +64,6 @@ namespace Digi.BuildInfo.Features.MultiTool
 
         MyCubeBlockDefinitionGroup MultiToolPair;
 
-        List<MyCubeGrid> DeleteGrids;
-        List<MyCubeBlock> DeleteBlocks;
-
         /// <summary>
         /// For dynamic description
         /// </summary>
@@ -83,7 +81,7 @@ namespace Digi.BuildInfo.Features.MultiTool
 
         Color ColorHeader = new Color(55, 200, 255);
         Color ColorSelectedInstrument = new Color(125, 255, 175);
-        Color ColorBind = new Color(200, 255, 230);
+        //Color ColorBind = new Color(200, 255, 230);
         Color ColorBackground = Constants.Color_UIBackground;
 
         public MultiToolHandler(BuildInfoMod main) : base(main)
@@ -99,49 +97,12 @@ namespace Digi.BuildInfo.Features.MultiTool
                 ConfigureCategory(cats.GetValueOrDefault("Section0_Position1_CharacterItems"));
                 ConfigureCategory(cats.GetValueOrDefault("Section0_Position2_CharacterTools"));
 
-                // to remove all multitool blocks that are found in the world when it loads
-                if(MyAPIGateway.Session.IsServer)
-                {
-                    MyEntities.OnEntityAdd += EntityAdded;
-                }
+                MyVisualScriptLogicProvider.BlockBuilt += BlockBuilt;
             }
         }
 
         public override void RegisterComponent()
         {
-            if(MyAPIGateway.Session.IsServer)
-            {
-                MyEntities.OnEntityAdd -= EntityAdded;
-
-                if(DeleteGrids != null)
-                {
-                    foreach(var grid in DeleteGrids)
-                    {
-                        grid.Close();
-
-                        string msg = $"[FIX] Found multitool block floating as a grid (entityId={grid.EntityId}), deleted.";
-                        Log.Info(msg);
-                        MyLog.Default.WriteLineAndConsole($"### {Log.ModName}: {msg}");
-                    }
-
-                    DeleteGrids = null;
-                }
-
-                if(DeleteBlocks != null)
-                {
-                    foreach(var block in DeleteBlocks)
-                    {
-                        block.CubeGrid.RemoveBlock(block.SlimBlock);
-
-                        string msg = $"[FIX] Found multitool block inside grid (entityId={block.CubeGrid.EntityId}), deleted only that block.";
-                        Log.Info(msg);
-                        MyLog.Default.WriteLineAndConsole($"### {Log.ModName}: {msg}");
-                    }
-
-                    DeleteBlocks = null;
-                }
-            }
-
             if(MultiToolPair == null || MultiToolPair.Any == null)
                 return;
 
@@ -169,6 +130,8 @@ namespace Digi.BuildInfo.Features.MultiTool
 
         public override void UnregisterComponent()
         {
+            MyVisualScriptLogicProvider.BlockBuilt -= BlockBuilt;
+
             if(!Main.ComponentsRegistered)
                 return;
 
@@ -181,39 +144,79 @@ namespace Digi.BuildInfo.Features.MultiTool
             }
         }
 
-        void EntityAdded(MyEntity ent)
+        // HACK: maybe can catch some new ones...
+        void BlockBuilt(string typeId, string subtypeId, string gridName, long blockId)
         {
             try
             {
-                var grid = ent as MyCubeGrid;
-                if(grid != null)
+                if(typeId == nameof(MyObjectBuilder_CubeBlock) && subtypeId != null && subtypeId.StartsWith("BuildInfo_MultiTool"))
                 {
-                    foreach(MyCubeBlock block in grid.GetFatBlocks())
+                    var block = MyEntities.GetEntityById(blockId) as MyCubeBlock;
+                    var grid = MyEntities.GetEntityByName(gridName) as MyCubeGrid;
+
+                    string gridInfo = (grid != null ? $"'{grid.DisplayName}' ({grid.EntityId})" : "(grid not found!)");
+
+                    if(block != null)
                     {
-                        var def = block.BlockDefinition;
-                        if((def == MultiToolPair.Small || def == MultiToolPair.Large) && def.BlockPairName == BlockPairName) // redundancy just in case
+                        if(Vector3D.DistanceSquared(MyAPIGateway.Session.Camera.Position, block.PositionComp.GetPosition()) < 100 * 100)
                         {
-                            if(grid.BlocksCount == 1)
-                            {
-                                if(DeleteGrids == null)
-                                    DeleteGrids = new List<MyCubeGrid>();
-
-                                DeleteGrids.Add(grid);
-                            }
-                            else
-                            {
-                                if(DeleteBlocks == null)
-                                    DeleteBlocks = new List<MyCubeBlock>();
-
-                                DeleteBlocks.Add(block);
-                            }
+                            Log.Error($"Multitool's block was able to be placed nearby, how?! please report the way to reproduce! grid: {gridInfo}");
                         }
                     }
+                    else
+                    {
+                        Log.Error($"Multitool's block was able to be placed somewhere, how?! please report the way to reproduce! grid: {gridInfo} (block was not retrievable by id)");
+                    }
+
+                    Checker.Check(MyDefinitionManager.Static.GetCubeBlockDefinition(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), subtypeId)));
                 }
             }
             catch(Exception e)
             {
                 Log.Error(e);
+            }
+        }
+
+        // HACK: maybe some mod/plugin is setting blocks' IsStandAlone to true again?
+        [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate)]
+        class Checker : MySessionComponentBase // session comp to run on DS too to detect this...
+        {
+            public override void BeforeStart()
+            {
+                try
+                {
+                    MyCubeBlockDefinitionGroup pair = MyDefinitionManager.Static.GetDefinitionGroup(BlockPairName);
+                    if(pair != null && pair.Any != null)
+                    {
+                        Check(pair.Small);
+                        Check(pair.Large);
+                    }
+                }
+                catch(Exception e)
+                {
+                    MyLog.Default.WriteLine(e);
+                }
+            }
+
+            public static void Check(MyCubeBlockDefinition def)
+            {
+                if(def == null)
+                    return;
+
+                if(def.IsStandAlone)
+                {
+                    def.IsStandAlone = false;
+
+                    string msg = $"MultiTool's {def.Id.SubtypeName} was forced IsStandAlone=true by something!";
+                    MyLog.Default.Error($"{BuildInfoMod.ModName} mod: {msg}");
+                    MyLog.Default.WriteLineToConsole($"{BuildInfoMod.ModName} mod: {msg}");
+
+                    if(MyAPIGateway.Session?.Player != null)
+                    {
+                        //MyAPIGateway.Utilities.ShowNotification(msg, 10000, MyFontEnum.Red);
+                        MyAPIGateway.Utilities.ShowMessage(BuildInfoMod.ModName, $"ERROR: {msg}");
+                    }
+                }
             }
         }
 
@@ -234,8 +237,11 @@ namespace Digi.BuildInfo.Features.MultiTool
             if(catDef == null)
                 return;
 
-            catDef.SearchBlocks = true;
-            catDef.ItemIds.Add("CubeBlock/BuildInfo_MultiToolLG");
+            if(MultiToolPair?.AnyPublic != null)
+            {
+                catDef.SearchBlocks = true;
+                catDef.ItemIds.Add(MultiToolPair.AnyPublic.Id.ToString());
+            }
         }
 
         #region UI Handling

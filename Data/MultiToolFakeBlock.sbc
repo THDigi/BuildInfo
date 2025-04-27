@@ -13,7 +13,7 @@
             <SearchBlocks>false</SearchBlocks>
             <IsToolCategory>true</IsToolCategory>
             <ItemIds>
-                <string>MyObjectBuilder_CubeBlock/BuildInfo_MultiToolLG</string>
+                <string>MyObjectBuilder_CubeBlock/BuildInfo_MultiTool_Large</string>
             </ItemIds>
         </Category>
         <Category xsi:type="MyObjectBuilder_GuiBlockCategoryDefinition">
@@ -26,7 +26,7 @@
             <SearchBlocks>false</SearchBlocks>
             <IsToolCategory>true</IsToolCategory>
             <ItemIds>
-                <string>MyObjectBuilder_CubeBlock/BuildInfo_MultiToolLG</string>
+                <string>MyObjectBuilder_CubeBlock/BuildInfo_MultiTool_Large</string>
             </ItemIds>
         </Category>
     </CategoryClasses>
@@ -38,8 +38,8 @@
             <DisplayName>Multi Tool</DisplayName>
             <Icon>Textures\HUD\MultiTool.dds</Icon>
             <Blocks>
-                <Block Type="MyObjectBuilder_CubeBlock" Subtype="BuildInfo_MultiToolLG" />
-                <Block Type="MyObjectBuilder_CubeBlock" Subtype="BuildInfo_MultiToolSG" />
+                <Block Type="MyObjectBuilder_CubeBlock" Subtype="BuildInfo_MultiTool_Large" />
+                <Block Type="MyObjectBuilder_CubeBlock" Subtype="BuildInfo_MultiTool_Small" />
             </Blocks>
         </BlockVariantGroup>
     </BlockVariantGroups>
@@ -48,11 +48,9 @@
         <Definition>
             <Id>
                 <TypeId>CubeBlock</TypeId>
-                <SubtypeId>BuildInfo_MultiToolSG</SubtypeId>
+                <SubtypeId>BuildInfo_MultiTool_Small</SubtypeId>
             </Id>
-            <Public>false</Public> <!-- mod script will show it when it functions -->
-            <GuiVisible>false</GuiVisible>
-            <PCU>2147483647</PCU>
+            <PCU>1</PCU> <!-- must NOT be high PCU because construction will still be allowed with 1 PCU then goes to this because it's considered built -->
             <BlockPairName>MultiTool</BlockPairName>
             <DisplayName>Multi Tool</DisplayName>
             <Icon>Textures\HUD\MultiTool.dds</Icon>
@@ -63,12 +61,14 @@
             <Size x="1" y="1" z="1" />
             <ModelOffset x="0" y="0" z="0" />
             <Components>
-                <Component Subtype="InteriorPlate" Count="1" />
+                <Component Subtype="SabiroidPlushie" Count="1"> <!-- reduce the chance of being accidentally placed? -->
+                    <DeconstructId Type="Ore" Subtype="Scrap" />
+                </Component>
             </Components>
-            <CriticalComponent Subtype="InteriorPlate" Index="1" />
+            <CriticalComponent Subtype="SabiroidPlushie" Index="0" />
             <MountPoints>
                 <!-- empty mountpoints get filled automatically so have to work around it -->
-                <MountPoint Side="Front" StartX="0" StartY="0" EndX="0" EndY="0" Enabled="false" />
+                <MountPoint Enabled="false" Side="Front" StartX="0" StartY="0" EndX="0" EndY="0" />
             </MountPoints>
             <VoxelPlacement> <!-- don't allow placement even if script broke -->
                 <StaticMode>
@@ -86,11 +86,9 @@
         <Definition>
             <Id>
                 <TypeId>CubeBlock</TypeId>
-                <SubtypeId>BuildInfo_MultiToolLG</SubtypeId>
+                <SubtypeId>BuildInfo_MultiTool_Large</SubtypeId>
             </Id>
-            <Public>false</Public> <!-- mod script will show it when it functions -->
-            <GuiVisible>false</GuiVisible>
-            <PCU>2147483647</PCU>
+            <PCU>1</PCU> <!-- must NOT be high PCU because construction will still be allowed with 1 PCU then goes to this because it's considered built -->
             <BlockPairName>MultiTool</BlockPairName>
             <DisplayName>Multi Tool</DisplayName>
             <Icon>Textures\HUD\MultiTool.dds</Icon>
@@ -101,12 +99,14 @@
             <Size x="1" y="1" z="1" />
             <ModelOffset x="0" y="0" z="0" />
             <Components>
-                <Component Subtype="InteriorPlate" Count="1" />
+                <Component Subtype="SabiroidPlushie" Count="1"> <!-- reduce the chance of being accidentally placed? -->
+                    <DeconstructId Type="Ore" Subtype="Scrap" />
+                </Component>
             </Components>
-            <CriticalComponent Subtype="InteriorPlate" Index="1" />
+            <CriticalComponent Subtype="SabiroidPlushie" Index="0" />
             <MountPoints>
                 <!-- empty mountpoints get filled automatically so have to work around it -->
-                <MountPoint Side="Front" StartX="0" StartY="0" EndX="0" EndY="0" Enabled="false" />
+                <MountPoint Enabled="false" Side="Front" StartX="0" StartY="0" EndX="0" EndY="0" />
             </MountPoints>
             <VoxelPlacement> <!-- don't allow placement even if script broke -->
                 <StaticMode>
