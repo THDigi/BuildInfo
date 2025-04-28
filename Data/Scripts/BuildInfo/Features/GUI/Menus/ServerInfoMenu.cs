@@ -10,11 +10,14 @@ using Digi.BuildInfo.VanillaData;
 using Draygo.API;
 using Sandbox.Definitions;
 using Sandbox.Game;
+using Sandbox.Game.Components;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage;
 using VRage.Collections;
 using VRage.Game;
+using VRage.Game.Entity.UseObject;
+using VRage.Game.ModAPI;
 using VRage.Library.Utils;
 using VRage.Serialization;
 using VRage.Utils;
@@ -65,7 +68,7 @@ namespace Digi.BuildInfo.Features.GUI
         Column CurrentColumn;
         int ColumnIndex;
 
-        ScrollableSection ScrollableBlockLimits = new ScrollableSection(10);
+        ScrollableSection ScrollableBlockLimits = new ScrollableSection(5);
         ScrollableSection ScrollableModsList = new ScrollableSection(50);
         ScrollableSection ScrollableWarnings = new ScrollableSection(10);
         List<ScrollableSection> ScrollableSections;
@@ -1080,6 +1083,19 @@ namespace Digi.BuildInfo.Features.GUI
                     "Smallgrid max speed", " m/s", "Max speed that smallgrid ships can move at." + ShipSpeedTooltipAdd);
             }
 
+            if(envDef.LargeShipMaxAngularSpeed == envDef.SmallShipMaxAngularSpeed)
+            {
+                PrintFormattedNumber(sb, string.Empty, envDef.LargeShipMaxAngularSpeed, DefaultEnvDef.LargeShipMaxAngularSpeed, false,
+                    "Ship max rotation speed", " deg/s", "Max speed that large and small grids can rotate at.");
+            }
+            else
+            {
+                PrintFormattedNumber(sb, string.Empty, envDef.LargeShipMaxAngularSpeed, DefaultEnvDef.LargeShipMaxAngularSpeed, false,
+                    "Largegrid max rotation speed", " deg/s", "Max speed that largegrid ships can rotate at.");
+                PrintFormattedNumber(sb, string.Empty, envDef.SmallShipMaxAngularSpeed, DefaultEnvDef.SmallShipMaxAngularSpeed, false,
+                    "Smallgrid max rotation speed", " deg/s", "Max speed that smallgrid ships can rotate at.");
+            }
+
             PrintSetting(sb, nameof(settings.EnableResearch), settings.EnableResearch, DefaultSettings.EnableResearch, false,
                 "Progression", "If enabled, blocks must be unlocked by building other blocks.\nSee progression tab in toolbar config menu.");
             PrintSetting(sb, nameof(settings.EnableTurretsFriendlyFire), settings.EnableTurretsFriendlyFire, DefaultSettings.EnableTurretsFriendlyFire, false,
@@ -1149,18 +1165,6 @@ namespace Digi.BuildInfo.Features.GUI
             PrintFormattedNumber(sb, nameof(settings.EnemyTargetIndicatorDistance), settings.EnemyTargetIndicatorDistance, DefaultSettings.EnemyTargetIndicatorDistance, false,
                 "Aimed Enemy Indicator Distance", " m", "Max distance to show enemy indicator when aiming at a character.");
             #endregion PvP
-
-
-            #region Bots
-            Header(sb, "Bots");
-
-            PrintSetting(sb, nameof(settings.TotalBotLimit), settings.TotalBotLimit, DefaultSettings.TotalBotLimit, false,
-                "Animal NPC Limit", "Maximum number of organic bots in the world");
-            PrintSetting(sb, nameof(settings.EnableSpiders), settings.EnableSpiders, DefaultSettings.EnableSpiders, true,
-                "Spiders", "Enables spawning of spiders in the world.");
-            PrintSetting(sb, nameof(settings.EnableWolfs), settings.EnableWolfs, DefaultSettings.EnableWolfs, true,
-                "Wolves", "Enables spawning of wolves in the world.");
-            #endregion
 
 
             sb = NextColumn(); // ------------------------------------------------------------------------------------------------------------------------------
@@ -1510,8 +1514,8 @@ namespace Digi.BuildInfo.Features.GUI
             Header(sb, "Limits");
 
             PrintSetting(sb, nameof(settings.BlockLimitsEnabled), GetLimitsModeName(settings.BlockLimitsEnabled), GetLimitsModeName(DefaultSettings.BlockLimitsEnabled), true,
-                "Limits Mode", "Defines the mode that block&PCU limits use." +
-                               "\nA few other settings rely on this aswell like Max Grid Blocks and Max Blocks per Player." +
+                "Limits Mode", "Defines the mode that Block Limits & PCU limits use." +
+                               "\nIf turned off, Max Blocks per Grid and Max Blocks per Player also stop working." +
                                "\nPerformance Cost Units (PCU) is a way to limit block counts based on their potential performance impact.");
 
             string labelInitialPCU = "PCU Limit";
@@ -1708,7 +1712,10 @@ namespace Digi.BuildInfo.Features.GUI
             PrintEnvGraphicsChanges(sb, envDef, DefaultEnvDef,
                 "LOD&Shadow distances", "This can only be changed by mods.\nInfluences how model detail and shadow graphics option behave.\nThis is merely a notice, compare with mods list to ensure it's intended.");
             PrintFormattedNumber(sb, nameof(settings.ViewDistance), settings.ViewDistance, DefaultSettings.ViewDistance, true,
-                "View Distance", " m", "");
+                "View Distance", " m", "Affects multiple things:" +
+                                       "\n- Render distance in single-player worlds (SyncDistance is used for multiplayer ones)." +
+                                       "\n- Procedural generation range around entities." +
+                                       "\n- Max distance for the line-of-sight check on Laser Antennas (except planets, those are checked at the full distance).");
             PrintSetting(sb, nameof(settings.AdaptiveSimulationQuality), settings.AdaptiveSimulationQuality, DefaultSettings.AdaptiveSimulationQuality, false,
                 "Adaptive Simulation Quality", "If enabled and CPU load (locally) is higher than 90% sustained, then a few things stop happening:" +
                                                "\nBlock deformations, some voxel cutouts, voxel cutouts from explosions, projectiles update less frequent, character limb IK and ragdoll, some grid impact details.");
@@ -1732,6 +1739,18 @@ namespace Digi.BuildInfo.Features.GUI
                                                      "\n\nIn technical terms: prevents MyPlanet.PrefetchShapeOnRay() from prefetching voxels if the line is longer than this." +
                                                      "\nThis call is used by bullet projectiles, targeting systems and mods can use it too.");
             #endregion Performance
+
+
+            #region Bots
+            Header(sb, "Bots");
+
+            PrintSetting(sb, nameof(settings.TotalBotLimit), settings.TotalBotLimit, DefaultSettings.TotalBotLimit, false,
+                "Animal NPC Limit", "Maximum number of organic bots in the world");
+            PrintSetting(sb, nameof(settings.EnableSpiders), settings.EnableSpiders, DefaultSettings.EnableSpiders, true,
+                "Spiders", "Enables spawning of spiders in the world.");
+            PrintSetting(sb, nameof(settings.EnableWolfs), settings.EnableWolfs, DefaultSettings.EnableWolfs, true,
+                "Wolves", "Enables spawning of wolves in the world.");
+            #endregion
 
 
             #region Stats
