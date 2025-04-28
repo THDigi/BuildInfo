@@ -19,7 +19,6 @@ namespace Digi
     /// <summary>
     /// <para>Standalone logger, does not require any setup.</para>
     /// <para>Mod name is automatically set from workshop name or folder name. Can also be manually defined using <see cref="ModName"/>.</para>
-    /// <para>Version 1.7 by Digi</para>
     /// </summary>
     [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate, priority: int.MaxValue)]
     public class Log : MySessionComponentBase
@@ -59,9 +58,16 @@ namespace Digi
 
         protected override void UnloadData()
         {
-            if(handler != null && handler.AutoClose)
+            try
             {
-                Unload();
+                if(handler != null && handler.AutoClose)
+                {
+                    Unload();
+                }
+            }
+            catch(Exception e)
+            {
+                MyLog.Default.Error(e.ToString());
             }
         }
 
@@ -280,7 +286,17 @@ namespace Digi
                 if(MyAPIGateway.Utilities == null)
                     throw new Exception("MyAPIGateway.Utilities is NULL !");
 
-                writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(FILE, typeof(Log));
+                try
+                {
+                    writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(FILE, typeof(Log));
+                }
+                catch(Exception e)
+                {
+                    if(e.GetType().Name == "IOException")
+                        MyLog.Default.WriteLine($"ERROR {ModName} mod: couldn't hook its log file for writing, possible causes explained at: https://spaceengineers.wiki.gg/wiki/Modding/Reference/Known_Solutions_to_crashes_or_errors#Error_during_loading_session_/_IOException,_cannot_access_the_file,_used_by_another_process");
+
+                    throw;
+                }
 
                 MyAPIGateway.Session.OnSessionReady += OnSessionReady;
 
@@ -299,11 +315,16 @@ namespace Digi
             {
                 if(writer != null)
                 {
-                    Info("Unloaded.");
-
-                    writer.Flush();
-                    writer.Close();
-                    writer = null;
+                    try
+                    {
+                        Info("Unloaded.");
+                        writer.Flush();
+                    }
+                    finally
+                    {
+                        writer.Close();
+                        writer = null;
+                    }
                 }
 
                 sessionReady = false;
