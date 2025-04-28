@@ -320,6 +320,36 @@ namespace Digi.BuildInfo.Utilities
             }
         }
 
+        public static BoundingBoxD GetGridGroupAABB(IMyCubeGrid anyGrid, ICollection<IMyCubeGrid> grids, GridLinkTypeEnum link = GridLinkTypeEnum.Mechanical)
+        {
+            var group = MyAPIGateway.GridGroups.GetGridGroup(link, anyGrid);
+            if(group == null)
+            {
+                grids?.Add(anyGrid);
+                return anyGrid.WorldAABB;
+            }
+
+            grids.Clear();
+            group.GetGrids(grids);
+
+            BoundingBoxD bb = BoundingBoxD.CreateInvalid();
+
+            foreach(IMyCubeGrid grid in grids)
+            {
+                //bb.Include(grid.WorldAABB);
+
+                MatrixD wm = grid.WorldMatrix;
+
+                foreach(Vector3 corner in grid.LocalAABB.Corners)
+                {
+                    Vector3D world = Vector3D.Transform(corner, ref wm);
+                    bb.Include(world);
+                }
+            }
+
+            return bb;
+        }
+
         public static MatrixD GetBlockCenteredWorldMatrix(IMySlimBlock block)
         {
             Matrix m;
