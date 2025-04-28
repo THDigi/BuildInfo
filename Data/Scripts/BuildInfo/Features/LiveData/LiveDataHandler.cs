@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Digi.BuildInfo.Features.MultiTool;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
@@ -87,6 +88,13 @@ namespace Digi.BuildInfo.Features.LiveData
             AddType<BData_LaserAntenna>(typeof(MyObjectBuilder_LaserAntenna));
 
             AddType<BData_AdvancedDoor>(typeof(MyObjectBuilder_AdvancedDoor));
+
+
+            // no point in getting more info on these blocks
+            foreach(var id in Main.Caches.UnplaceableBlocks)
+            {
+                BlockIdsSpawned.Add(id);
+            }
 
             // every other block type is going to use BData_Base
             Main.BlockMonitor.BlockAdded += BlockMonitor_BlockAdded;

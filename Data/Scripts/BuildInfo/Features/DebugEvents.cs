@@ -274,6 +274,8 @@ namespace Digi.BuildInfo.Features
             //TestUnitFormats();
 
             //TestSpaceBallDeserialize();
+
+            //SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
         }
 
         public override void UnregisterComponent()
@@ -293,6 +295,75 @@ namespace Digi.BuildInfo.Features
             //EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
             //EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
+
+        //public override void UpdateDraw()
+        //{
+        //    if(Main.LockOverlay.LockedOnBlock != null)
+        //    {
+        //        DrawSmallestOBB(Main.LockOverlay.LockedOnBlock.CubeGrid);
+        //    }
+        //}
+
+        //void DrawSmallestOBB(IMyCubeGrid mainGrid)
+        //{
+        //    IMyGridGroupData group = MyAPIGateway.GridGroups.GetGridGroup(GridLinkTypeEnum.Physical, mainGrid);
+
+        //    List<IMyCubeGrid> grids = new List<IMyCubeGrid>();
+        //    group.GetGrids(grids);
+
+        //    float smallestVolume = float.MaxValue;
+        //    MyOrientedBoundingBoxD smallestOBB = default(MyOrientedBoundingBoxD);
+
+        //    Vector3[] corners = new Vector3[8];
+
+        //    for(int a = 0; a < grids.Count; a++)
+        //    {
+        //        IMyCubeGrid grid = grids[a];
+
+        //        BoundingBox localBB = grid.LocalAABB;
+        //        MatrixD toGridLocal = grid.WorldMatrixInvScaled;
+
+        //        for(int b = 0; b < grids.Count; b++)
+        //        {
+        //            if(a == b)
+        //                continue;
+
+        //            IMyCubeGrid otherGrid = grids[b];
+
+        //            otherGrid.LocalAABB.GetCorners(corners);
+        //            MatrixD wm = otherGrid.WorldMatrix;
+
+        //            for(int c = 0; c < corners.Length; c++)
+        //            {
+        //                Vector3D cornerWorld = Vector3D.Transform(corners[c], ref wm);
+        //                Vector3 cornerGridLocal = (Vector3)Vector3D.Transform(cornerWorld, ref toGridLocal);
+        //                localBB = localBB.Include(ref cornerGridLocal);
+        //            }
+        //        }
+
+        //        var obb = new MyOrientedBoundingBoxD(localBB, grid.WorldMatrix);
+
+        //        DebugDraw.DrawOBB(obb, Utils.GetIndexColor(a, grids.Count) * 0.3f, MySimpleObjectRasterizer.Solid, VRageRender.MyBillboard.BlendTypeEnum.PostPP, extraSeeThrough: false);
+
+        //        float volume = localBB.Volume();
+
+        //        if(smallestVolume > volume)
+        //        {
+        //            smallestVolume = volume;
+        //            smallestOBB = obb;
+        //        }
+        //    }
+
+        //    DebugDraw.DrawOBB(smallestOBB, Color.Lime, MySimpleObjectRasterizer.Wireframe, VRageRender.MyBillboard.BlendTypeEnum.PostPP, extraSeeThrough: false);
+        //}
+
+
+
+
+
+
+
+
 
 
 

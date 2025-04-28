@@ -1207,6 +1207,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
                             float aligned = GetNearestGridAlign(block, topMatrix, 0, totalTravel);
 
+                            // TODO: add something like this for suspensions too?
                             info.Label("Grid-aligned displacement");
                             if(aligned < 0 || aligned > totalTravel)
                             {
@@ -1371,7 +1372,7 @@ namespace Digi.BuildInfo.Features.Terminal
         void Format_Battery(IMyTerminalBlock block, StringBuilder info)
         {
             // Vanilla info in 1.199.025:
-            //      Type: <BlockDefName>
+            //      Type: Battery (hardcoded to this)
             //      Max Output: <n> W
             //      Max Required Input: <n> W
             //      Max Stored Power: <n> Wh
@@ -2010,7 +2011,7 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Current Input: <Power>
             //      Stored Power: <Power>
             //      Fully recharged in: <Time>
-            //      Max jump distance: <Distance>
+            //      Max jump distance: <Distance> (total from all jumpdrives, not just selected one)
             //      [Current jump: <Percent>] (if GPS selected)
 
             var jumpDrive = block as MyJumpDrive;
