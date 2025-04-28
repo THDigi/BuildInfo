@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Digi
 {
     /// <summary>
-    /// Instantiate and then use <see cref="MakeEdit{TObj, TVal}(TObj, Action{TObj, TVal}, TVal, TVal)"/> to store edits.
+    /// Instantiate and then use <see cref="MakeEdit{TObj, TVal}(TObj, Action{TObj, TVal}, TVal, TVal)"/> to store edits to instanced objects or <see cref="MakeStaticEdit{TVal}(Action{TVal}, TVal, TVal)"/> for static.
     /// When you want to undo the edits made call <see cref="UndoAll"/> which will restore them and clear the stored edits.
     /// </summary>
     public class UndoableEditToolset
@@ -29,6 +29,18 @@ namespace Digi
                where TObj : class
         {
             Edits.Add(new UndoableEdit<TObj, TVal>(editObject, setter, originalValue, newValue));
+        }
+
+        /// <summary>
+        /// Similar to <see cref="MakeEdit{TObj, TVal}(TObj, Action{TObj, TVal}, TVal, TVal)"/> but without the instance.
+        /// </summary>
+        /// <typeparam name="TVal">The value type, no need to enter this manually.</typeparam>
+        /// <param name="setter">a callback for the field/prop to set on the object</param>
+        /// <param name="originalValue">the current value of the field/prop (which will be used with the setter later to undo it)</param>
+        /// <param name="newValue">the value to set now (which uses the setter callback)</param>
+        public void MakeStaticEdit<TVal>(Action<TVal> setter, TVal originalValue, TVal newValue)
+        {
+            Edits.Add(new UndoableEditStatic<TVal>(setter, originalValue, newValue));
         }
 
         /// <summary>
@@ -68,6 +80,24 @@ namespace Digi
             public void Restore()
             {
                 Setter.Invoke(EditObject, OriginalValue);
+            }
+        }
+
+        private class UndoableEditStatic<TVal> : IUndoableEdit
+        {
+            readonly TVal OriginalValue;
+            readonly Action<TVal> Setter;
+
+            public UndoableEditStatic(Action<TVal> setter, TVal originalValue, TVal newValue)
+            {
+                Setter = setter;
+                OriginalValue = originalValue;
+                Setter.Invoke(newValue);
+            }
+
+            public void Restore()
+            {
+                Setter.Invoke(OriginalValue);
             }
         }
     }
