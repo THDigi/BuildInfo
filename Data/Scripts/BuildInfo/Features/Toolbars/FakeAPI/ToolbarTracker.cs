@@ -163,7 +163,7 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
                 if(casted != null)
                 {
                     // MyEventControllerBlock.Init()
-                    SingleToolbar(block, MyToolbarType.ButtonPanel, 2);
+                    SingleToolbar(block, MyToolbarType.ButtonPanel, 2, 10);
                     return;
                 }
             }
