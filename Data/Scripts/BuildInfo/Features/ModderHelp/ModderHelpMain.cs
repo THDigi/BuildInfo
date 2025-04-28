@@ -10,7 +10,6 @@ using Draygo.API;
 using ProtoBuf;
 using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
-using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using SpaceEngineers.Game.Definitions.SafeZone;
@@ -696,6 +695,11 @@ namespace Digi.BuildInfo.Features.ModderHelp
                         continue;
                 }
 
+                if(def.Id.SubtypeId == MyStringHash.NullOrEmpty)
+                {
+                    ModHint(def, "has empty subtype, is this intended?");
+                }
+
                 MyCubeBlockDefinition blockDef = def as MyCubeBlockDefinition;
                 if(blockDef != null)
                 {
@@ -1065,7 +1069,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
                 if(start.X < 0 || start.Y < 0 || end.X < 0 || end.Y < 0
                 || start.X > sizeRelative.X || start.Y > sizeRelative.Y || end.X > sizeRelative.X || end.Y > sizeRelative.Y)
                 {
-                    ModProblem(blockDef, $"{identifier} #{i + 1} is outside of the block! Start or End are either below 0 or above Size." +
+                    ModProblem(blockDef, $"{identifier} #{i + 1} (1 is first) is outside of the block! Start or End are either below 0 or above Size." +
                                          "\nBlock can be placed but get detached when grid updates from any block being removed.");
                 }
             }
