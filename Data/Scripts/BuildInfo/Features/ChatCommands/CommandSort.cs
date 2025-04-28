@@ -61,6 +61,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 return;
             }
 
+            // TODO: not really a sorting query... maybe move to a new `list` command? or merge it with this... idk
             if(type.Equals("lcds", ChatCommandHandler.StringCompare))
             {
                 ComputeLCDs(type, sort);
@@ -431,17 +432,26 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
             string fileName = tempSB.ToString();
 
-
             tempSB.Clear();
             tempSB.Append("Date: ").Append(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")).Append('\n');
             tempSB.Append("Session name: ").Append(MyAPIGateway.Session.Name).Append('\n');
             tempSB.Append("Game version: ").Append(MyAPIGateway.Session.Version.ToString()).Append('\n');
-            tempSB.Append("Mods: ").Append(MyAPIGateway.Session.Mods.Count).Append('\n');
+
+            int totalModdedBlocks = 0;
+
+            foreach(var def in Main.Caches.BlockDefs)
+            {
+                if(def.Context != null && !def.Context.IsBaseGame)
+                {
+                    totalModdedBlocks++;
+                }
+            }
+
+            tempSB.Append("Modded blocks: ").Append(totalModdedBlocks).Append('\n');
             tempSB.Append('\n');
             tempSB.Append(title);
             tempSB.Append('\n');
             tempSB.Append(text);
-
 
             TextWriter writer = null;
             try
