@@ -88,12 +88,14 @@ namespace Digi.BuildInfo.Utilities
             MySimpleObjectDraw.DrawTransparentSphere(ref wm, (float)sphere.Radius, ref color, draw, 24, MaterialSquare, MaterialSquare, 0.01f, blendType: blend);
         }
 
-        public static void DrawFrustum(BoundingFrustumD frustum, float scale = 1f, MySimpleObjectRasterizer draw = MySimpleObjectRasterizer.SolidAndWireframe, BlendTypeEnum blend = BlendTypeEnum.PostPP)
+        public static void DrawFrustum(BoundingFrustumD frustum, float scale = 1f, MySimpleObjectRasterizer draw = MySimpleObjectRasterizer.SolidAndWireframe, BlendTypeEnum blend = BlendTypeEnum.PostPP, bool extraSeeThrough = true)
         {
             Vector3D[] corners = frustum.GetCorners();
 
             if(draw == MySimpleObjectRasterizer.SolidAndWireframe || draw == MySimpleObjectRasterizer.Wireframe)
             {
+                const float Intensity = 1f;
+
                 float thick;
                 Color color;
 
@@ -110,16 +112,16 @@ namespace Digi.BuildInfo.Utilities
                 color = Color.Yellow;
                 for(int i = 0; i <= 3; i++)
                 {
-                    DrawLine(corners[i], corners[i + 4], color, thick, blend);
+                    DrawLine(corners[i], corners[i + 4], color, thick, blend, Intensity, extraSeeThrough);
                 }
 
                 // far square
                 thick = 0.1f * scale;
                 color = Color.Red;
-                DrawLine(corners[4], corners[5], color, thick, blend);
-                DrawLine(corners[5], corners[6], color, thick, blend);
-                DrawLine(corners[6], corners[7], color, thick, blend);
-                DrawLine(corners[7], corners[4], color, thick, blend);
+                DrawLine(corners[4], corners[5], color, thick, blend, Intensity, extraSeeThrough);
+                DrawLine(corners[5], corners[6], color, thick, blend, Intensity, extraSeeThrough);
+                DrawLine(corners[6], corners[7], color, thick, blend, Intensity, extraSeeThrough);
+                DrawLine(corners[7], corners[4], color, thick, blend, Intensity, extraSeeThrough);
             }
 
             if(draw == MySimpleObjectRasterizer.SolidAndWireframe || draw == MySimpleObjectRasterizer.Solid)
@@ -132,52 +134,65 @@ namespace Digi.BuildInfo.Utilities
 
                 Color color = Color.Wheat * 0.25f;
                 MyQuadD quad = default(MyQuadD);
+                BlendTypeEnum blendCopy = blend;
 
-                // top
+                for(int i = 0; i < 2; i++) // second time for additive top if extraSeeThrough is enabled
                 {
-                    quad.Point0 = corners[0];
-                    quad.Point1 = corners[4];
-                    quad.Point2 = corners[5];
-                    quad.Point3 = corners[1];
-                    Vector3D center = (quad.Point0 + quad.Point1 + quad.Point2 + quad.Point3) / 4;
-                    MyTransparentGeometry.AddQuad(MaterialSquare, ref quad, color, ref center, blendType: blend);
-                }
+                    // top
+                    {
+                        quad.Point0 = corners[0];
+                        quad.Point1 = corners[4];
+                        quad.Point2 = corners[5];
+                        quad.Point3 = corners[1];
+                        Vector3D center = (quad.Point0 + quad.Point1 + quad.Point2 + quad.Point3) / 4;
+                        MyTransparentGeometry.AddQuad(MaterialSquare, ref quad, color, ref center, blendType: blendCopy);
+                    }
 
-                // right
-                {
-                    quad.Point0 = corners[1];
-                    quad.Point1 = corners[5];
-                    quad.Point2 = corners[6];
-                    quad.Point3 = corners[2];
-                    Vector3D center = (quad.Point0 + quad.Point1 + quad.Point2 + quad.Point3) / 4;
-                    MyTransparentGeometry.AddQuad(MaterialSquare, ref quad, color, ref center, blendType: blend);
-                }
+                    // right
+                    {
+                        quad.Point0 = corners[1];
+                        quad.Point1 = corners[5];
+                        quad.Point2 = corners[6];
+                        quad.Point3 = corners[2];
+                        Vector3D center = (quad.Point0 + quad.Point1 + quad.Point2 + quad.Point3) / 4;
+                        MyTransparentGeometry.AddQuad(MaterialSquare, ref quad, color, ref center, blendType: blendCopy);
+                    }
 
-                // left
-                {
-                    quad.Point0 = corners[3];
-                    quad.Point1 = corners[7];
-                    quad.Point2 = corners[4];
-                    quad.Point3 = corners[0];
-                    Vector3D center = (quad.Point0 + quad.Point1 + quad.Point2 + quad.Point3) / 4;
-                    MyTransparentGeometry.AddQuad(MaterialSquare, ref quad, color, ref center, blendType: blend);
-                }
+                    // left
+                    {
+                        quad.Point0 = corners[3];
+                        quad.Point1 = corners[7];
+                        quad.Point2 = corners[4];
+                        quad.Point3 = corners[0];
+                        Vector3D center = (quad.Point0 + quad.Point1 + quad.Point2 + quad.Point3) / 4;
+                        MyTransparentGeometry.AddQuad(MaterialSquare, ref quad, color, ref center, blendType: blendCopy);
+                    }
 
-                // bottom
-                {
-                    quad.Point0 = corners[2];
-                    quad.Point1 = corners[6];
-                    quad.Point2 = corners[7];
-                    quad.Point3 = corners[3];
-                    Vector3D center = (quad.Point0 + quad.Point1 + quad.Point2 + quad.Point3) / 4;
-                    MyTransparentGeometry.AddQuad(MaterialSquare, ref quad, color, ref center, blendType: blend);
+                    // bottom
+                    {
+                        quad.Point0 = corners[2];
+                        quad.Point1 = corners[6];
+                        quad.Point2 = corners[7];
+                        quad.Point3 = corners[3];
+                        Vector3D center = (quad.Point0 + quad.Point1 + quad.Point2 + quad.Point3) / 4;
+                        MyTransparentGeometry.AddQuad(MaterialSquare, ref quad, color, ref center, blendType: blendCopy);
+                    }
+
+                    if(!extraSeeThrough)
+                        break;
+
+                    blendCopy = BlendTypeEnum.AdditiveTop;
                 }
             }
         }
 
-        public static void DrawLine(Vector3D from, Vector3D to, Color color, float thick = 0.005f, BlendTypeEnum blend = BlendTypeEnum.PostPP, float intensity = 1f)
+        public static void DrawLine(Vector3D from, Vector3D to, Color color, float thick = 0.005f, BlendTypeEnum blend = BlendTypeEnum.PostPP, float intensity = 1f, bool extraSeeThrough = true)
         {
-            MyTransparentGeometry.AddLineBillboard(MaterialSquare, color, from, (to - from), 1f, thick, blend, intensity: intensity);
+            Vector3D dir = (to - from);
+            MyTransparentGeometry.AddLineBillboard(MaterialSquare, color, from, dir, 1f, thick, blend, intensity: intensity);
+
+            if(extraSeeThrough)
+                MyTransparentGeometry.AddLineBillboard(MaterialSquare, color, from, dir, 1f, thick, BlendTypeEnum.AdditiveTop, intensity: intensity);
         }
 
         public static void DrawPlane(PlaneD plane, Color color, float size = 1000, BlendTypeEnum blend = BlendTypeEnum.PostPP)

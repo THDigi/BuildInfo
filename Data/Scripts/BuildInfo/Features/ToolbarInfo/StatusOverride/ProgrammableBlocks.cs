@@ -27,6 +27,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             Type type = typeof(MyObjectBuilder_MyProgrammableBlock);
 
+            // TODO need to read the label feature thingie
+
             processor.AddStatus(type, Run, "Run", "RunWithDefaultArgument");
 
             processor.AddGroupStatus(type, GroupRun, "Run", "RunWithDefaultArgument");
@@ -286,6 +288,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             PBDIE_NestedTooComplex = GetTranslatedLimited(MySpaceTexts.ProgrammableBlock_Exception_NestedTooComplex);
             PBDIE_TooComplex = GetTranslatedLimited(MySpaceTexts.ProgrammableBlock_Exception_TooComplex);
             PBDIE_Caught = GetTranslatedLimited(MySpaceTexts.ProgrammableBlock_Exception_ExceptionCaught);
+            // TODO: ScriptOutOfTimeException, ScriptOutOfMemoryException, and whatever other new ones are...
         }
 
         string GetTranslatedLimited(MyStringId langKey, int maxLength = LimitCheckChars)

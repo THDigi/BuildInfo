@@ -100,6 +100,7 @@ namespace Digi.BuildInfo.Features
             #region Update text
             StringBuilder sb = TextBox.TextSB.Clear();
 
+            // TODO print the 206 configurable controls when API has a way to read modifiers - but shift is still used hardcodedly at MoveAndRotate_UserControlled()
             sb.Append("Speed Modifier: ")
                 .Append("x").Append(Math.Round(MySpectator.Static.SpeedModeLinear, 4))
                 .Color(Color.Gray).Append(" (Shift+Scroll adjust; Shift temp boost; Ctrl temp slow)")

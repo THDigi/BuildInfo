@@ -16,6 +16,8 @@ using PB_TextSurfaceProvider = Sandbox.ModAPI.Ingame.IMyTextSurfaceProvider; // 
 
 namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 {
+    // TODO "SetRadius", "SetColor" actions
+
     internal class GenericFallback : StatusOverrideBase
     {
         public GenericFallback(ToolbarStatusProcessor processor) : base(processor)

@@ -144,6 +144,8 @@ namespace Digi.BuildInfo.Features.HUD
             // TODO: toggle string formatting?
             if(WasInShip)
             {
+                // TODO: force this to show up for vanilla HUD? with toggleable option ofc
+
                 if(UsingGroup)
                     return $"'{GroupName}' group: {CurrentValue.ToString(TextFormat)} / {MaxValue.ToString(TextFormat)}";
                 else

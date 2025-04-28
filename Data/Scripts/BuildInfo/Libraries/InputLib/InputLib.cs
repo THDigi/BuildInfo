@@ -15,6 +15,8 @@ using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity
 
 namespace Digi.Input
 {
+    // TODO MyControlsSpace has lots of new controls
+
     /// <summary>
     /// <para>Usage: create an instance in BeforeStart(); call Update() in any simulation update; Dispose() in UnloadData().</para>
     /// </summary>

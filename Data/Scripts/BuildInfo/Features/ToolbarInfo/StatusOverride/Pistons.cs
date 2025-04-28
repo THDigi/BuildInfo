@@ -19,6 +19,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             Processor.AddStatus(type, Attached, "Attach", "Detach", "Add Top Part");
             Processor.AddStatus(type, Reverse, "Reverse", "Extend", "Retract");
 
+            // TODO: add motion status for SetVelocity and SetAndMove?
+
             Processor.AddGroupStatus(type, GroupAttached, "Attach", "Detach", "Add Top Part");
             Processor.AddGroupStatus(type, GroupReverse, "Reverse", "Extend", "Retract");
         }
