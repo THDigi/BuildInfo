@@ -2,6 +2,7 @@
 using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
+using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -85,12 +86,12 @@ namespace Digi.BuildInfo.Features.Overlays
             }
 
             Vector3D blockPos;
-            double maxRangeSq = 3;
+            double maxRange = 3;
 
             if(LockedOnBlock.FatBlock != null)
             {
                 BoundingSphereD blockVolume = LockedOnBlock.FatBlock.WorldVolume;
-                maxRangeSq = blockVolume.Radius;
+                maxRange = blockVolume.Radius;
                 blockPos = blockVolume.Center;
             }
             else
@@ -98,10 +99,9 @@ namespace Digi.BuildInfo.Features.Overlays
                 LockedOnBlock.ComputeWorldCenter(out blockPos);
             }
 
-            maxRangeSq = (maxRangeSq + 20) * 2;
-            maxRangeSq *= maxRangeSq;
+            maxRange = (maxRange + 40) * 2;
 
-            if(Vector3D.DistanceSquared(MyAPIGateway.Session.Camera.WorldMatrix.Translation, blockPos) > maxRangeSq)
+            if(Vector3D.DistanceSquared(MyAPIGateway.Session.Camera.WorldMatrix.Translation, blockPos) > (maxRange * maxRange))
             {
                 SetLockOnBlock(null, "Turned off, too far.");
                 return;
