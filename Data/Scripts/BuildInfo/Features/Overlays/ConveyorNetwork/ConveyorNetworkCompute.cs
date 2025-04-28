@@ -526,8 +526,10 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         {
                             bool otherHasLargePorts = (connectedConveyor.Data.Has & BlockHas.LargeConveyorPorts) != 0;
 
+                            bool connectedFunctional = connected.IsFunctional;
+
                             RenderFlags flags = RenderFlags.None;
-                            if(!functional) flags |= RenderFlags.Pulse;
+                            if(!functional || !connectedFunctional) flags |= RenderFlags.Pulse;
                             if(!(hasLargePorts && otherHasLargePorts)) flags |= RenderFlags.Small;
 
                             Render.GridLinks.Add(new RenderLink()
@@ -537,7 +539,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                                 DataA = conveyor.Data,
                                 DataB = connectedConveyor.Data,
                                 Length = (float)Vector3D.Distance(block.WorldMatrix.Translation, connected.WorldMatrix.Translation),
-                                Color = lineColor,
+                                Color = functional && connectedFunctional ? lineColor : ConveyorNetworkRender.BrokenColor,
                                 Flags = flags,
                             });
 
