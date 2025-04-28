@@ -710,21 +710,28 @@ namespace Digi.BuildInfo.VanillaData
         /// </summary>
         public static float LaserAntenna_PowerUsage(MyLaserAntennaDefinition def, double distanceMeters)
         {
-            double powerRatio = def.PowerInputLasing;
+            double powerInputLasing = def.PowerInputLasing;
             double maxRange = (def.MaxRange < 0 ? double.MaxValue : def.MaxRange);
             double distance = Math.Min(distanceMeters, maxRange);
+
+            double watts;
 
             const double LinearUpToMeters = 200000;
             if(distance > LinearUpToMeters)
             {
-                double a = powerRatio / 2.0 / LinearUpToMeters;
-                double b = powerRatio * LinearUpToMeters - a * LinearUpToMeters * LinearUpToMeters;
-                return (float)(((distance * distance) * a + b) / 1000.0 / 1000.0);
+                //double a = powerInputLasing / 2.0 / LinearUpToMeters;
+                //double b = powerInputLasing * LinearUpToMeters - a * LinearUpToMeters * LinearUpToMeters;
+                //watts = (distance * distance) * a + b;
+
+                // simplified version
+                watts = (100000 * powerInputLasing) + ((distance * distance * powerInputLasing) / 400000);
             }
             else
             {
-                return (float)((powerRatio * distance) / 1000.0 / 1000.0);
+                watts = distance * powerInputLasing;
             }
+
+            return (float)(watts / 1000.0 / 1000.0);
         }
 
         // MyLaserAntenna.INFINITE_RANGE - used to determine what range is considered infinite
