@@ -8,6 +8,7 @@ using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.Game.ObjectBuilders.Definitions.SessionComponents;
 using VRage.ObjectBuilders;
 using VRageMath;
 
@@ -15,9 +16,15 @@ namespace Digi.BuildInfo.Utilities
 {
     public class Caches : ModComponent
     {
-        // caches/lookups
         public readonly List<MyPhysicalItemDefinition> ItemDefs = new List<MyPhysicalItemDefinition>(256); // vanilla has ~120 in v204
+
+        /// <summary>
+        /// Only placeable blocks!
+        /// </summary>
         public readonly List<MyCubeBlockDefinition> BlockDefs = new List<MyCubeBlockDefinition>(2048); // vanilla has ~1170 in v204
+
+        public readonly HashSet<MyDefinitionId> UnplaceableBlocks = new HashSet<MyDefinitionId>(); // like the multitool
+
         public readonly Dictionary<string, MyTargetingGroupDefinition> TargetGroups = new Dictionary<string, MyTargetingGroupDefinition>(4); // vanilla has 3 in v204
         public readonly List<MyTargetingGroupDefinition> OrderedTargetGroups = new List<MyTargetingGroupDefinition>(4);
         public readonly Dictionary<int, List<Vector3>> GeneratedSphereData = new Dictionary<int, List<Vector3>>();
@@ -64,7 +71,7 @@ namespace Digi.BuildInfo.Utilities
             //ComputeMountpointProperties();
             CacheLightningStats();
 
-            Log.Info($"Cached ItemDefs={ItemDefs.Count}, BlockDefs: {BlockDefs.Count}, TargetGroups={TargetGroups.Count}");
+            Log.Info($"Cached ItemDefs={ItemDefs.Count}, BlockDefs: {BlockDefs.Count}, UnplaceableBlocks={UnplaceableBlocks.Count}, TargetGroups={TargetGroups.Count}");
         }
 
         public override void RegisterComponent()
@@ -79,6 +86,9 @@ namespace Digi.BuildInfo.Utilities
         {
             ItemDefs.Clear();
             BlockDefs.Clear();
+            UnplaceableBlocks.Clear();
+
+            var cubeBlockType = typeof(MyObjectBuilder_CubeBlock);
 
             foreach(MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
             {
@@ -94,7 +104,22 @@ namespace Digi.BuildInfo.Utilities
                     var blockDef = def as MyCubeBlockDefinition;
                     if(blockDef != null)
                     {
-                        BlockDefs.Add(blockDef);
+                        if(!blockDef.Public || ((!blockDef.HasPhysics || blockDef.PhysicsOption == MyPhysicsOption.None)
+                        && !blockDef.IsStandAlone
+                        && blockDef.MountPoints.Length == 1
+                        && blockDef.MountPoints[0].Enabled == false
+                        //&& blockDef.Id.TypeId == cubeBlockType
+                        && blockDef.VoxelPlacement.HasValue
+                        && blockDef.VoxelPlacement.Value.StaticMode.PlacementMode == VoxelPlacementMode.None
+                        && blockDef.VoxelPlacement.Value.DynamicMode.PlacementMode == VoxelPlacementMode.None))
+                        {
+                            UnplaceableBlocks.Add(blockDef.Id);
+                            Log.Info($"Found and marked unplaceable block: {def.Id.ToString().Substring("MyObjectBuilder_".Length)} (from {def.Context.GetNameAndId()})");
+                        }
+                        else
+                        {
+                            BlockDefs.Add(blockDef);
+                        }
                         continue;
                     }
                 }

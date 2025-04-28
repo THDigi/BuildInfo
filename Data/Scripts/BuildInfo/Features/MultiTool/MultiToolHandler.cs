@@ -70,7 +70,7 @@ namespace Digi.BuildInfo.Features.MultiTool
         MyCubeBlockDefinition FakeDef = new MyCubeBlockDefinition();
 
         readonly string[] Icons = new string[1];
-        const string BlockPairName = "MultiTool";
+        public const string BlockPairName = "MultiTool";
 
         const int BigIconSizePx = 64;
 

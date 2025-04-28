@@ -58,6 +58,23 @@ namespace Digi.BuildInfo.Features.Tooltips
                 }
             }
 
+            foreach(var id in Main.Caches.UnplaceableBlocks)
+            {
+                MyCubeBlockDefinition blockDef;
+                if(MyDefinitionManager.Static.TryGetCubeBlockDefinition(id, out blockDef))
+                {
+                    try
+                    {
+                        HandleDescription(blockDef, generate);
+                    }
+                    catch(Exception e)
+                    {
+                        string msg = $"Error modifying description for unplaceable block: {blockDef?.Id.ToString()}";
+                        Log.Error($"{msg}\n{e}", msg);
+                    }
+                }
+            }
+
             if(generate)
             {
                 DisposeTempObjects();
