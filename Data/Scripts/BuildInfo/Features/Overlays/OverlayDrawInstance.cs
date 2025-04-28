@@ -477,7 +477,9 @@ namespace Digi.BuildInfo.Features.Overlays
                     if(data != null)
                     {
                         MatrixD blockWorldMatrix = drawMatrix;
-                        blockWorldMatrix.Translation = Vector3D.Transform(def.ModelOffset, blockWorldMatrix);
+
+                        // not sure why this needs to be without this here, but it does (square piston for example)
+                        //blockWorldMatrix.Translation = Vector3D.Transform(def.ModelOffset, blockWorldMatrix);
 
                         if(data.ConveyorPorts != null)
                         {
