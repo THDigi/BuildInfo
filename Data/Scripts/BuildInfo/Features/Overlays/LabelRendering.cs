@@ -96,7 +96,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         public bool CanDrawLabel(OverlayLabelsFlags labelsSetting = OverlayLabelsFlags.Other)
         {
-            return Main.TextAPI.IsEnabled && (ForceDrawLabel || Main.Config.OverlayLabels.IsSet(labelsSetting) || (Main.Config.OverlaysShowLabelsWithBind.Value && InputLib.GetGameControlPressed(ControlContext.CHARACTER, MyControlsSpace.LOOKAROUND)));
+            return Main.TextAPI.IsEnabled && (ForceDrawLabel || Main.Config.OverlayLabels.IsSet(labelsSetting) || (Main.Config.OverlaysShowLabelsWithBind.Value && InputLib.GetGameControlPressed(ControlContext.CHARACTER, ControlIds.LOOKAROUND)));
         }
 
         public void DrawLine(Vector3D start, Vector3D direction, Color color,
@@ -169,7 +169,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 MyTransparentGeometry.AddLineBillboard(LineMaterial, color, start, (Vector3)direction, lineHeight, lineThick, TextBlendType);
             }
 
-            if(!Main.Config.OverlayLabels.IsSet(settingFlag) && !(Main.Config.OverlaysShowLabelsWithBind.Value && InputLib.GetGameControlPressed(ControlContext.CHARACTER, MyControlsSpace.LOOKAROUND)))
+            if(!Main.Config.OverlayLabels.IsSet(settingFlag) && !(Main.Config.OverlaysShowLabelsWithBind.Value && InputLib.GetGameControlPressed(ControlContext.CHARACTER, ControlIds.LOOKAROUND)))
                 return;
 
             // has issue on always-on-top labels

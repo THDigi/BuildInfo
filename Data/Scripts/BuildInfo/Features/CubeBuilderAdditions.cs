@@ -3,6 +3,7 @@ using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
+using Digi.Input;
 using Digi.Input.Devices;
 using Sandbox.Definitions;
 using Sandbox.Game;
@@ -106,7 +107,7 @@ namespace Digi.BuildInfo.Features
             if(Main.Config == null) throw new Exception("Main.Config is null!");
 
             // ignore drag-to-build/drag-to-remove
-            if(!MyAPIGateway.Gui.IsCursorVisible && !MyAPIGateway.Gui.ChatEntryVisible && (MyAPIGateway.Input.IsGameControlPressed(MyControlsSpace.PRIMARY_TOOL_ACTION) || MyAPIGateway.Input.IsGameControlPressed(MyControlsSpace.SECONDARY_TOOL_ACTION)))
+            if(!MyAPIGateway.Gui.IsCursorVisible && !MyAPIGateway.Gui.ChatEntryVisible && (InputWrapper.IsControlPressed(ControlIds.PRIMARY_TOOL_ACTION) || InputWrapper.IsControlPressed(ControlIds.SECONDARY_TOOL_ACTION)))
                 return;
 
             IMySlimBlock aimedBlock = Main.EquipmentMonitor.BuilderAimedBlock;

@@ -77,7 +77,7 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.CUBE_ROTATE_HORISONTAL_NEGATIVE))
+            if(InputWrapper.IsControlJustPressed(ControlIds.CUBE_ROTATE_HORISONTAL_NEGATIVE))
             {
                 NeedsUpdate = true;
 
@@ -85,7 +85,7 @@ namespace Digi.BuildInfo.Features
                     SelectedItem = 0;
             }
 
-            if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.CUBE_ROTATE_HORISONTAL_POSITIVE))
+            if(InputWrapper.IsControlJustPressed(ControlIds.CUBE_ROTATE_HORISONTAL_POSITIVE))
             {
                 NeedsUpdate = true;
 
@@ -93,7 +93,7 @@ namespace Digi.BuildInfo.Features
                     SelectedItem = (MENU_TOTAL_ITEMS - 1);
             }
 
-            if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.CUBE_ROTATE_VERTICAL_NEGATIVE) || MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.CUBE_ROTATE_VERTICAL_POSITIVE))
+            if(InputWrapper.IsControlJustPressed(ControlIds.CUBE_ROTATE_VERTICAL_NEGATIVE) || InputWrapper.IsControlJustPressed(ControlIds.CUBE_ROTATE_VERTICAL_POSITIVE))
             {
                 NeedsUpdate = true;
 

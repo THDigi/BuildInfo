@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Digi.BuildInfo.VanillaData;
+using Digi.Input;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
@@ -148,30 +149,30 @@ namespace Digi.BuildInfo
 
         public readonly MyStringId[] ToolbarSlotControlIds = new MyStringId[]
         {
-            MyControlsSpace.SLOT1, // do not edit order
-            MyControlsSpace.SLOT2,
-            MyControlsSpace.SLOT3,
-            MyControlsSpace.SLOT4,
-            MyControlsSpace.SLOT5,
-            MyControlsSpace.SLOT6,
-            MyControlsSpace.SLOT7,
-            MyControlsSpace.SLOT8,
-            MyControlsSpace.SLOT9,
-            MyControlsSpace.SLOT0,
+            ControlIds.SLOT1, // do not edit order
+            ControlIds.SLOT2,
+            ControlIds.SLOT3,
+            ControlIds.SLOT4,
+            ControlIds.SLOT5,
+            ControlIds.SLOT6,
+            ControlIds.SLOT7,
+            ControlIds.SLOT8,
+            ControlIds.SLOT9,
+            ControlIds.SLOT0,
         };
 
         public readonly MyStringId[] ToolbarPageControlIds = new MyStringId[]
         {
-            MyControlsSpace.PAGE1, // do not edit order
-            MyControlsSpace.PAGE2,
-            MyControlsSpace.PAGE3,
-            MyControlsSpace.PAGE4,
-            MyControlsSpace.PAGE5,
-            MyControlsSpace.PAGE6,
-            MyControlsSpace.PAGE7,
-            MyControlsSpace.PAGE8,
-            MyControlsSpace.PAGE9,
-            MyControlsSpace.PAGE0,
+            ControlIds.PAGE1, // do not edit order
+            ControlIds.PAGE2,
+            ControlIds.PAGE3,
+            ControlIds.PAGE4,
+            ControlIds.PAGE5,
+            ControlIds.PAGE6,
+            ControlIds.PAGE7,
+            ControlIds.PAGE8,
+            ControlIds.PAGE9,
+            ControlIds.PAGE0,
         };
 
         public readonly MyJoystickButtonsEnum[] DPadValues = new MyJoystickButtonsEnum[]

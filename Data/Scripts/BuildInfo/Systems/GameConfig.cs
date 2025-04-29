@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Digi.ComponentLib;
+using Digi.Input;
 using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
@@ -90,7 +91,7 @@ namespace Digi.BuildInfo.Systems
         public override void UpdateAfterSim(int tick)
         {
             // required in simulation update because it gets the previous value if used in HandleInput()
-            if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOGGLE_HUD))
+            if(MyAPIGateway.Input.IsNewGameControlPressed(ControlIds.TOGGLE_HUD)) // keeping this context-sensitive read on purpose
             {
                 UpdateHudState();
             }

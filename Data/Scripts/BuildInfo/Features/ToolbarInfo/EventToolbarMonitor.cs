@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Digi.Input;
 using Sandbox.Game;
 using Sandbox.Game.Entities.Character.Components;
 using Sandbox.ModAPI;
@@ -104,7 +105,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     else if(ctrl is IMyCharacter)
                     {
                         // kb/m & hopefully gamepad
-                        if(MyAPIGateway.Input.IsControl(ctrl.ControlContext, MyControlsSpace.BUILD_SCREEN, MyControlStateType.PRESSED))
+                        if(MyAPIGateway.Input.IsControl(ctrl.ControlContext, ControlIds.BUILD_SCREEN, MyControlStateType.PRESSED))
                             return;
 
                         IMyTerminalBlock targetBlock = LastAimedUseObject?.Owner as IMyTerminalBlock;

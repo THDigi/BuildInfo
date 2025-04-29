@@ -16,7 +16,133 @@ using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity
 
 namespace Digi.Input
 {
-    // TODO: MyControlsSpace has lots of new controls
+    /// <summary>
+    /// Replacement for <see cref="MyControlsSpace"/> because it has many that don't exist anymore...
+    /// </summary>
+    public static class ControlIds
+    {
+        public static readonly MyStringId FORWARD = MyControlsSpace.FORWARD;
+        public static readonly MyStringId BACKWARD = MyControlsSpace.BACKWARD;
+        public static readonly MyStringId STRAFE_LEFT = MyControlsSpace.STRAFE_LEFT;
+        public static readonly MyStringId STRAFE_RIGHT = MyControlsSpace.STRAFE_RIGHT;
+        public static readonly MyStringId ROTATION_LEFT = MyControlsSpace.ROTATION_LEFT;
+        public static readonly MyStringId ROTATION_RIGHT = MyControlsSpace.ROTATION_RIGHT;
+        public static readonly MyStringId ROTATION_UP = MyControlsSpace.ROTATION_UP;
+        public static readonly MyStringId ROTATION_DOWN = MyControlsSpace.ROTATION_DOWN;
+        public static readonly MyStringId ROLL_LEFT = MyControlsSpace.ROLL_LEFT;
+        public static readonly MyStringId ROLL_RIGHT = MyControlsSpace.ROLL_RIGHT;
+        public static readonly MyStringId SPRINT = MyControlsSpace.SPRINT;
+        public static readonly MyStringId SWITCH_WALK = MyControlsSpace.SWITCH_WALK;
+        public static readonly MyStringId JUMP = MyControlsSpace.JUMP;
+        public static readonly MyStringId CROUCH = MyControlsSpace.CROUCH;
+        public static readonly MyStringId PRIMARY_TOOL_ACTION = MyControlsSpace.PRIMARY_TOOL_ACTION;
+        public static readonly MyStringId SECONDARY_TOOL_ACTION = MyControlsSpace.SECONDARY_TOOL_ACTION;
+        public static readonly MyStringId RELOAD = MyControlsSpace.RELOAD;
+        public static readonly MyStringId USE = MyControlsSpace.USE;
+        public static readonly MyStringId HELMET = MyControlsSpace.HELMET;
+        public static readonly MyStringId THRUSTS = MyControlsSpace.THRUSTS;
+        public static readonly MyStringId DAMPING = MyControlsSpace.DAMPING;
+        public static readonly MyStringId DAMPING_RELATIVE = MyControlsSpace.DAMPING_RELATIVE;
+        public static readonly MyStringId BROADCASTING = MyControlsSpace.BROADCASTING;
+        public static readonly MyStringId HEADLIGHTS = MyControlsSpace.HEADLIGHTS;
+        public static readonly MyStringId TERMINAL = MyControlsSpace.TERMINAL;
+        public static readonly MyStringId REMOTE_ACCESS_MENU = MyControlsSpace.REMOTE_ACCESS_MENU;
+        public static readonly MyStringId INVENTORY = MyControlsSpace.INVENTORY;
+        public static readonly MyStringId SUICIDE = MyControlsSpace.SUICIDE;
+        public static readonly MyStringId BUILD_SCREEN = MyControlsSpace.BUILD_SCREEN;
+        public static readonly MyStringId CUBE_ROTATE_VERTICAL_POSITIVE = MyControlsSpace.CUBE_ROTATE_VERTICAL_POSITIVE;
+        public static readonly MyStringId CUBE_ROTATE_VERTICAL_NEGATIVE = MyControlsSpace.CUBE_ROTATE_VERTICAL_NEGATIVE;
+        public static readonly MyStringId CUBE_ROTATE_HORISONTAL_POSITIVE = MyControlsSpace.CUBE_ROTATE_HORISONTAL_POSITIVE;
+        public static readonly MyStringId CUBE_ROTATE_HORISONTAL_NEGATIVE = MyControlsSpace.CUBE_ROTATE_HORISONTAL_NEGATIVE;
+        public static readonly MyStringId CUBE_ROTATE_ROLL_POSITIVE = MyControlsSpace.CUBE_ROTATE_ROLL_POSITIVE;
+        public static readonly MyStringId CUBE_ROTATE_ROLL_NEGATIVE = MyControlsSpace.CUBE_ROTATE_ROLL_NEGATIVE;
+        public static readonly MyStringId CUBE_COLOR_CHANGE = MyControlsSpace.CUBE_COLOR_CHANGE;
+        public static readonly MyStringId CUBE_DEFAULT_MOUNTPOINT = MyControlsSpace.CUBE_DEFAULT_MOUNTPOINT;
+        public static readonly MyStringId USE_SYMMETRY = MyControlsSpace.USE_SYMMETRY;
+        public static readonly MyStringId SYMMETRY_SWITCH = MyControlsSpace.SYMMETRY_SWITCH;
+        public static readonly MyStringId FREE_ROTATION = MyControlsSpace.FREE_ROTATION;
+        public static readonly MyStringId BUILD_PLANNER = MyControlsSpace.BUILD_PLANNER;
+        public static readonly MyStringId CUBE_BUILDER_CUBESIZE_MODE = MyControlsSpace.CUBE_BUILDER_CUBESIZE_MODE;
+        public static readonly MyStringId CREATE_BLUEPRINT = MyControlsSpace.CREATE_BLUEPRINT;
+        public static readonly MyStringId CREATE_BLUEPRINT_DETACHED = MyControlsSpace.CREATE_BLUEPRINT_DETACHED;
+        public static readonly MyStringId CREATE_BLUEPRINT_MAGNETIC_LOCKS = MyControlsSpace.CREATE_BLUEPRINT_MAGNETIC_LOCKS;
+        public static readonly MyStringId COPY_OBJECT = MyControlsSpace.COPY_OBJECT;
+        public static readonly MyStringId COPY_OBJECT_DETACHED = MyControlsSpace.COPY_OBJECT_DETACHED;
+        public static readonly MyStringId COPY_OBJECT_MAGNETIC_LOCKS = MyControlsSpace.COPY_OBJECT_MAGNETIC_LOCKS;
+        public static readonly MyStringId PASTE_OBJECT = MyControlsSpace.PASTE_OBJECT;
+        public static readonly MyStringId CUT_OBJECT = MyControlsSpace.CUT_OBJECT;
+        public static readonly MyStringId CUT_OBJECT_DETACHED = MyControlsSpace.CUT_OBJECT_DETACHED;
+        public static readonly MyStringId CUT_OBJECT_MAGNETIC_LOCKS = MyControlsSpace.CUT_OBJECT_MAGNETIC_LOCKS;
+        public static readonly MyStringId DELETE_OBJECT = MyControlsSpace.DELETE_OBJECT;
+        public static readonly MyStringId DELETE_OBJECT_DETACHED = MyControlsSpace.DELETE_OBJECT_DETACHED;
+        public static readonly MyStringId DELETE_OBJECT_MAGNETIC_LOCKS = MyControlsSpace.DELETE_OBJECT_MAGNETIC_LOCKS;
+        public static readonly MyStringId TOOLBAR_NEXT_ITEM = MyControlsSpace.TOOLBAR_NEXT_ITEM;
+        public static readonly MyStringId TOOLBAR_PREV_ITEM = MyControlsSpace.TOOLBAR_PREV_ITEM;
+        public static readonly MyStringId SLOT1 = MyControlsSpace.SLOT1;
+        public static readonly MyStringId SLOT2 = MyControlsSpace.SLOT2;
+        public static readonly MyStringId SLOT3 = MyControlsSpace.SLOT3;
+        public static readonly MyStringId SLOT4 = MyControlsSpace.SLOT4;
+        public static readonly MyStringId SLOT5 = MyControlsSpace.SLOT5;
+        public static readonly MyStringId SLOT6 = MyControlsSpace.SLOT6;
+        public static readonly MyStringId SLOT7 = MyControlsSpace.SLOT7;
+        public static readonly MyStringId SLOT8 = MyControlsSpace.SLOT8;
+        public static readonly MyStringId SLOT9 = MyControlsSpace.SLOT9;
+        public static readonly MyStringId SLOT0 = MyControlsSpace.SLOT0;
+        public static readonly MyStringId TOOLBAR_UP = MyControlsSpace.TOOLBAR_UP;
+        public static readonly MyStringId TOOLBAR_DOWN = MyControlsSpace.TOOLBAR_DOWN;
+        public static readonly MyStringId PAGE1 = MyControlsSpace.PAGE1;
+        public static readonly MyStringId PAGE2 = MyControlsSpace.PAGE2;
+        public static readonly MyStringId PAGE3 = MyControlsSpace.PAGE3;
+        public static readonly MyStringId PAGE4 = MyControlsSpace.PAGE4;
+        public static readonly MyStringId PAGE5 = MyControlsSpace.PAGE5;
+        public static readonly MyStringId PAGE6 = MyControlsSpace.PAGE6;
+        public static readonly MyStringId PAGE7 = MyControlsSpace.PAGE7;
+        public static readonly MyStringId PAGE8 = MyControlsSpace.PAGE8;
+        public static readonly MyStringId PAGE9 = MyControlsSpace.PAGE9;
+        public static readonly MyStringId PAGE0 = MyControlsSpace.PAGE0;
+        public static readonly MyStringId SWITCH_LEFT = MyControlsSpace.SWITCH_LEFT;
+        public static readonly MyStringId SWITCH_RIGHT = MyControlsSpace.SWITCH_RIGHT;
+        public static readonly MyStringId LANDING_GEAR = MyControlsSpace.LANDING_GEAR;
+        public static readonly MyStringId TOGGLE_REACTORS = MyControlsSpace.TOGGLE_REACTORS;
+        public static readonly MyStringId TOGGLE_REACTORS_ALL = MyControlsSpace.TOGGLE_REACTORS_ALL;
+        public static readonly MyStringId COLOR_PICKER = MyControlsSpace.COLOR_PICKER;
+        public static readonly MyStringId QUICK_PICK_COLOR = MyControlsSpace.QUICK_PICK_COLOR;
+        public static readonly MyStringId VOXEL_HAND_SETTINGS = MyControlsSpace.VOXEL_HAND_SETTINGS;
+        public static readonly MyStringId VOICE_CHAT = MyControlsSpace.VOICE_CHAT;
+        public static readonly MyStringId EXPORT_MODEL = MyControlsSpace.EXPORT_MODEL;
+        public static readonly MyStringId QUICK_LOAD_RECONNECT = MyControlsSpace.QUICK_LOAD_RECONNECT;
+        public static readonly MyStringId QUICK_SAVE = MyControlsSpace.QUICK_SAVE;
+        public static readonly MyStringId PAUSE_GAME = MyControlsSpace.PAUSE_GAME;
+        public static readonly MyStringId HELP_SCREEN = MyControlsSpace.HELP_SCREEN;
+        public static readonly MyStringId WARNING_SCREEN = MyControlsSpace.WARNING_SCREEN;
+        public static readonly MyStringId PLAYERS_SCREEN = MyControlsSpace.PLAYERS_SCREEN;
+        public static readonly MyStringId BLUEPRINTS_MENU = MyControlsSpace.BLUEPRINTS_MENU;
+        public static readonly MyStringId ADMIN_MENU = MyControlsSpace.ADMIN_MENU;
+        public static readonly MyStringId SPAWN_MENU = MyControlsSpace.SPAWN_MENU;
+        public static readonly MyStringId CONTROL_MENU = MyControlsSpace.CONTROL_MENU;
+        public static readonly MyStringId ACTIVE_CONTRACT_SCREEN = MyControlsSpace.ACTIVE_CONTRACT_SCREEN;
+        public static readonly MyStringId CHAT_SCREEN = MyControlsSpace.CHAT_SCREEN;
+        public static readonly MyStringId CONSOLE = MyControlsSpace.CONSOLE;
+        public static readonly MyStringId SPECTATOR_NONE = MyControlsSpace.SPECTATOR_NONE;
+        public static readonly MyStringId SPECTATOR_DELTA = MyControlsSpace.SPECTATOR_DELTA;
+        public static readonly MyStringId SPECTATOR_FREE = MyControlsSpace.SPECTATOR_FREE;
+        public static readonly MyStringId SPECTATOR_STATIC = MyControlsSpace.SPECTATOR_STATIC;
+        public static readonly MyStringId CAMERA_MODE = MyControlsSpace.CAMERA_MODE;
+        public static readonly MyStringId LOOKAROUND = MyControlsSpace.LOOKAROUND;
+        public static readonly MyStringId SCREENSHOT = MyControlsSpace.SCREENSHOT;
+        public static readonly MyStringId TOGGLE_HUD = MyControlsSpace.TOGGLE_HUD;
+        public static readonly MyStringId TOGGLE_SIGNALS = MyControlsSpace.TOGGLE_SIGNALS;
+        public static readonly MyStringId SPECTATOR_LOCK = MyControlsSpace.SPECTATOR_LOCK;
+        public static readonly MyStringId SPECTATOR_SWITCHMODE = MyControlsSpace.SPECTATOR_SWITCHMODE;
+        public static readonly MyStringId SPECTATOR_NEXTPLAYER = MyControlsSpace.SPECTATOR_NEXTPLAYER;
+        public static readonly MyStringId SPECTATOR_PREVPLAYER = MyControlsSpace.SPECTATOR_PREVPLAYER;
+    }
+
+    public static class GamepadControlIds
+    {
+        public static readonly MyStringId MOVE_FURTHER = MyControlsSpace.MOVE_FURTHER;
+        public static readonly MyStringId MOVE_CLOSER = MyControlsSpace.MOVE_CLOSER;
+    }
 
     /// <summary>
     /// <para>Usage: create an instance in BeforeStart(); call Update() in any simulation update; Dispose() in UnloadData().</para>
@@ -953,93 +1079,127 @@ namespace Digi.Input
         {
             output.AppendLine("Dumping binds...");
 
+
+
+
             // pasted from MyControlsSpace
             List<MyStringId> controlNames = new List<MyStringId>
             {
-                MyControlsSpace.FORWARD,
-                MyControlsSpace.BACKWARD,
-                MyControlsSpace.STRAFE_LEFT,
-                MyControlsSpace.STRAFE_RIGHT,
-                MyControlsSpace.ROLL_LEFT,
-                MyControlsSpace.ROLL_RIGHT,
-                MyControlsSpace.SPRINT,
-                MyControlsSpace.PRIMARY_TOOL_ACTION,
-                MyControlsSpace.SECONDARY_TOOL_ACTION,
-                MyControlsSpace.JUMP,
-                MyControlsSpace.CROUCH,
-                MyControlsSpace.SWITCH_WALK,
-                MyControlsSpace.USE,
-                MyControlsSpace.PICK_UP,
-                MyControlsSpace.TERMINAL,
-                MyControlsSpace.HELP_SCREEN,
-                MyControlsSpace.CONTROL_MENU,
-                MyControlsSpace.FACTIONS_MENU,
-                MyControlsSpace.ROTATION_LEFT,
-                MyControlsSpace.ROTATION_RIGHT,
-                MyControlsSpace.ROTATION_UP,
-                MyControlsSpace.ROTATION_DOWN,
-                MyControlsSpace.HEADLIGHTS,
-                MyControlsSpace.SCREENSHOT,
-                MyControlsSpace.LOOKAROUND,
-                MyControlsSpace.TOGGLE_SIGNALS,
-                MyControlsSpace.SWITCH_LEFT,
-                MyControlsSpace.SWITCH_RIGHT,
-                MyControlsSpace.CUBE_COLOR_CHANGE,
-                MyControlsSpace.TOGGLE_REACTORS,
-                MyControlsSpace.WHEEL_JUMP,
-                MyControlsSpace.BUILD_SCREEN,
-                MyControlsSpace.CUBE_ROTATE_VERTICAL_POSITIVE,
-                MyControlsSpace.CUBE_ROTATE_VERTICAL_NEGATIVE,
-                MyControlsSpace.CUBE_ROTATE_HORISONTAL_POSITIVE,
-                MyControlsSpace.CUBE_ROTATE_HORISONTAL_NEGATIVE,
-                MyControlsSpace.CUBE_ROTATE_ROLL_POSITIVE,
-                MyControlsSpace.CUBE_ROTATE_ROLL_NEGATIVE,
-                MyControlsSpace.SYMMETRY_SWITCH,
-                MyControlsSpace.USE_SYMMETRY,
-                MyControlsSpace.SWITCH_COMPOUND,
-                MyControlsSpace.SWITCH_BUILDING_MODE,
-                MyControlsSpace.VOXEL_HAND_SETTINGS,
-                MyControlsSpace.CUBE_BUILDER_CUBESIZE_MODE,
-                MyControlsSpace.CUBE_DEFAULT_MOUNTPOINT,
-                MyControlsSpace.SLOT1,
-                MyControlsSpace.SLOT2,
-                MyControlsSpace.SLOT3,
-                MyControlsSpace.SLOT4,
-                MyControlsSpace.SLOT5,
-                MyControlsSpace.SLOT6,
-                MyControlsSpace.SLOT7,
-                MyControlsSpace.SLOT8,
-                MyControlsSpace.SLOT9,
-                MyControlsSpace.SLOT0,
-                MyControlsSpace.TOOLBAR_UP,
-                MyControlsSpace.TOOLBAR_DOWN,
-                MyControlsSpace.TOOLBAR_NEXT_ITEM,
-                MyControlsSpace.TOOLBAR_PREV_ITEM,
-                MyControlsSpace.TOGGLE_HUD,
-                MyControlsSpace.DAMPING,
-                MyControlsSpace.THRUSTS,
-                MyControlsSpace.CAMERA_MODE,
-                MyControlsSpace.BROADCASTING,
-                MyControlsSpace.HELMET,
-                MyControlsSpace.CHAT_SCREEN,
-                MyControlsSpace.CONSOLE,
-                MyControlsSpace.SUICIDE,
-                MyControlsSpace.LANDING_GEAR,
-                MyControlsSpace.INVENTORY,
-                MyControlsSpace.PAUSE_GAME,
-                MyControlsSpace.SPECTATOR_NONE,
-                MyControlsSpace.SPECTATOR_DELTA,
-                MyControlsSpace.SPECTATOR_FREE,
-                MyControlsSpace.SPECTATOR_STATIC,
-                MyControlsSpace.FREE_ROTATION,
-                MyControlsSpace.VOICE_CHAT,
-                MyControlsSpace.VOXEL_PAINT,
-                MyControlsSpace.BUILD_MODE,
-                MyControlsSpace.NEXT_BLOCK_STAGE,
-                MyControlsSpace.PREV_BLOCK_STAGE,
-                MyControlsSpace.MOVE_CLOSER,
-                MyControlsSpace.MOVE_FURTHER,
-                MyControlsSpace.COPY_PASTE_ACTION
+                MyControlsSpace.FORWARD, // named 'Forward' defaults to: W
+                MyControlsSpace.BACKWARD, // named 'Backward' defaults to: S
+                MyControlsSpace.STRAFE_LEFT, // named 'Strafe left' defaults to: A
+                MyControlsSpace.STRAFE_RIGHT, // named 'Strafe right' defaults to: D
+                MyControlsSpace.ROTATION_LEFT, // named 'Rotate left' defaults to: Left
+                MyControlsSpace.ROTATION_RIGHT, // named 'Rotate right' defaults to: Right
+                MyControlsSpace.ROTATION_UP, // named 'Rotate up' defaults to: Up
+                MyControlsSpace.ROTATION_DOWN, // named 'Rotate down' defaults to: Down
+                MyControlsSpace.ROLL_LEFT, // named 'Roll left (ship / jetpack)' defaults to: Q
+                MyControlsSpace.ROLL_RIGHT, // named 'Roll right (ship / jetpack)' defaults to: E
+                MyControlsSpace.SPRINT, // named 'Hold to sprint' defaults to: Shift
+                MyControlsSpace.SWITCH_WALK, // named 'Toggle walk' defaults to: Caps Lock
+                MyControlsSpace.JUMP, // named 'Up / Jump' defaults to: Space
+                MyControlsSpace.CROUCH, // named 'Down / Crouch' defaults to: C
+                MyControlsSpace.PRIMARY_TOOL_ACTION, // named 'Use tool / Fire weapon' defaults to: LMB
+                MyControlsSpace.SECONDARY_TOOL_ACTION, // named 'Secondary mode' defaults to: RMB
+                MyControlsSpace.RELOAD, // named 'Reload' defaults to: R
+                MyControlsSpace.USE, // named 'Use / Interact' defaults to: F
+                MyControlsSpace.HELMET, // named 'Helmet' defaults to: J
+                MyControlsSpace.THRUSTS, // named 'Jetpack on / off' defaults to: X
+                MyControlsSpace.DAMPING, // named 'Inertia dampeners on / off' defaults to: Z
+                MyControlsSpace.DAMPING_RELATIVE, // named 'Toggle Relative dampeners' defaults to: Ctrl+Z
+                MyControlsSpace.BROADCASTING, // named 'Broadcasting' defaults to: O
+                MyControlsSpace.HEADLIGHTS, // named 'Lights on / off' defaults to: L
+                MyControlsSpace.TERMINAL, // named 'Terminal / Inventory' defaults to: K
+                MyControlsSpace.REMOTE_ACCESS_MENU, // named 'Remote Access' defaults to: Shift+K
+                MyControlsSpace.INVENTORY, // named 'Inventory' defaults to: I
+                MyControlsSpace.SUICIDE, // named 'Respawn' defaults to: Backsp.
+                MyControlsSpace.BUILD_SCREEN, // named 'Toolbar config' defaults to: G
+                MyControlsSpace.CUBE_ROTATE_VERTICAL_POSITIVE, // named 'Rotate block vertical +' defaults to: PgDown, Ctrl+D
+                MyControlsSpace.CUBE_ROTATE_VERTICAL_NEGATIVE, // named 'Rotate block vertical -' defaults to: Delete, Ctrl+A
+                MyControlsSpace.CUBE_ROTATE_HORISONTAL_POSITIVE, // named 'Rotate block horizontal +' defaults to: Home, Ctrl+W
+                MyControlsSpace.CUBE_ROTATE_HORISONTAL_NEGATIVE, // named 'Rotate block horizontal -' defaults to: End, Ctrl+S
+                MyControlsSpace.CUBE_ROTATE_ROLL_POSITIVE, // named 'Rotate block roll +' defaults to: Insert, Ctrl+E
+                MyControlsSpace.CUBE_ROTATE_ROLL_NEGATIVE, // named 'Rotate block roll -' defaults to: PgUp, Ctrl+Q
+                MyControlsSpace.CUBE_COLOR_CHANGE, // named 'Repaint block' defaults to: MMB
+                MyControlsSpace.CUBE_DEFAULT_MOUNTPOINT, // named 'Reset orientation' defaults to: T
+                MyControlsSpace.USE_SYMMETRY, // named 'Toggle symmetry' defaults to: N
+                MyControlsSpace.SYMMETRY_SWITCH, // named 'Symmetry setup' defaults to: M
+                MyControlsSpace.FREE_ROTATION, // named 'Cycle placement modes' defaults to: B
+                MyControlsSpace.BUILD_PLANNER, // named 'Build Planner' defaults to: MMB
+                MyControlsSpace.CUBE_BUILDER_CUBESIZE_MODE, // named 'Cube size toggle button' defaults to: R
+                MyControlsSpace.CREATE_BLUEPRINT, // named 'Create/manage blueprints' defaults to: Ctrl+B
+                MyControlsSpace.CREATE_BLUEPRINT_DETACHED, // named 'Create blueprint detached' defaults to: Ctrl+Shift+B
+                MyControlsSpace.CREATE_BLUEPRINT_MAGNETIC_LOCKS, // named 'Blueprint with locks' defaults to: Ctrl+Alt+B
+                MyControlsSpace.COPY_OBJECT, // named 'Copy object' defaults to: Ctrl+C
+                MyControlsSpace.COPY_OBJECT_DETACHED, // named 'Copy object detached' defaults to: Ctrl+Shift+C
+                MyControlsSpace.COPY_OBJECT_MAGNETIC_LOCKS, // named 'Copy with locks' defaults to: Ctrl+Alt+C
+                MyControlsSpace.PASTE_OBJECT, // named 'Paste object' defaults to: Ctrl+V
+                MyControlsSpace.CUT_OBJECT, // named 'Cut object' defaults to: Ctrl+X
+                MyControlsSpace.CUT_OBJECT_DETACHED, // named 'Cut object detached' defaults to: Ctrl+Shift+X
+                MyControlsSpace.CUT_OBJECT_MAGNETIC_LOCKS, // named 'Cut with locks' defaults to: Ctrl+Alt+X
+                MyControlsSpace.DELETE_OBJECT, // named 'Delete object' defaults to: Ctrl+Delete
+                MyControlsSpace.DELETE_OBJECT_DETACHED, // named 'Delete object detached' defaults to: Ctrl+Shift+Delete
+                MyControlsSpace.DELETE_OBJECT_MAGNETIC_LOCKS, // named 'Delete with locks' defaults to: Ctrl+Shift+Alt+Delete
+                MyControlsSpace.TOOLBAR_NEXT_ITEM, // named 'Next toolbar item' defaults to: NA
+                MyControlsSpace.TOOLBAR_PREV_ITEM, // named 'Previous toolbar item' defaults to: NA
+                MyControlsSpace.SLOT1, // named 'Equip item from slot 1' defaults to: 1
+                MyControlsSpace.SLOT2, // named 'Equip item from slot 2' defaults to: 2
+                MyControlsSpace.SLOT3, // named 'Equip item from slot 3' defaults to: 3
+                MyControlsSpace.SLOT4, // named 'Equip item from slot 4' defaults to: 4
+                MyControlsSpace.SLOT5, // named 'Equip item from slot 5' defaults to: 5
+                MyControlsSpace.SLOT6, // named 'Equip item from slot 6' defaults to: 6
+                MyControlsSpace.SLOT7, // named 'Equip item from slot 7' defaults to: 7
+                MyControlsSpace.SLOT8, // named 'Equip item from slot 8' defaults to: 8
+                MyControlsSpace.SLOT9, // named 'Equip item from slot 9' defaults to: 9
+                MyControlsSpace.SLOT0, // named 'Unequip' defaults to: 0, ~
+                MyControlsSpace.TOOLBAR_UP, // named 'Next toolbar' defaults to: Period
+                MyControlsSpace.TOOLBAR_DOWN, // named 'Previous toolbar' defaults to: Comma
+                MyControlsSpace.PAGE1, // named 'Switch to page 1' defaults to: Ctrl+1
+                MyControlsSpace.PAGE2, // named 'Switch to page 2' defaults to: Ctrl+2
+                MyControlsSpace.PAGE3, // named 'Switch to page 3' defaults to: Ctrl+3
+                MyControlsSpace.PAGE4, // named 'Switch to page 4' defaults to: Ctrl+4
+                MyControlsSpace.PAGE5, // named 'Switch to page 5' defaults to: Ctrl+5
+                MyControlsSpace.PAGE6, // named 'Switch to page 6' defaults to: Ctrl+6
+                MyControlsSpace.PAGE7, // named 'Switch to page 7' defaults to: Ctrl+7
+                MyControlsSpace.PAGE8, // named 'Switch to page 8' defaults to: Ctrl+8
+                MyControlsSpace.PAGE9, // named 'Switch to page 9' defaults to: Ctrl+9
+                MyControlsSpace.PAGE0, // named 'Switch to page 0' defaults to: Ctrl+0
+                MyControlsSpace.SWITCH_LEFT, // named 'Prev. color or camera' defaults to: [
+                MyControlsSpace.SWITCH_RIGHT, // named 'Next color or camera' defaults to: ]
+                MyControlsSpace.LANDING_GEAR, // named 'Park' defaults to: P
+                MyControlsSpace.TOGGLE_REACTORS, // named 'Local power switch on / off' defaults to: Y
+                MyControlsSpace.TOGGLE_REACTORS_ALL, // named 'Power switch on / off' defaults to: Ctrl+Y
+                MyControlsSpace.COLOR_PICKER, // named 'Color picker' defaults to: P
+                MyControlsSpace.QUICK_PICK_COLOR, // named 'Quick Pick Color' defaults to: Shift+P
+                MyControlsSpace.VOXEL_HAND_SETTINGS, // named 'Open voxel hand settings' defaults to: K
+                MyControlsSpace.VOICE_CHAT, // named 'Voice chat' defaults to: U
+                MyControlsSpace.EXPORT_MODEL, // named 'Export model' defaults to: Ctrl+Alt+E
+                MyControlsSpace.QUICK_LOAD_RECONNECT, // named 'Quick Load' defaults to: F5
+                MyControlsSpace.QUICK_SAVE, // named 'Quick Save' defaults to: Shift+F5
+                MyControlsSpace.PAUSE_GAME, // named 'Pause game' defaults to: Pause
+                MyControlsSpace.HELP_SCREEN, // named 'Help' defaults to: F1
+                MyControlsSpace.WARNING_SCREEN, // named 'Open Warning screen' defaults to: Shift+F1
+                MyControlsSpace.PLAYERS_SCREEN, // named 'Open Players Screen' defaults to: F3
+                MyControlsSpace.BLUEPRINTS_MENU, // named 'Blueprints Screen' defaults to: F10
+                MyControlsSpace.ADMIN_MENU, // named 'Open Admin Menu' defaults to: Alt+F10
+                MyControlsSpace.SPAWN_MENU, // named 'Open Spawn Menu' defaults to: Shift+F10
+                MyControlsSpace.CONTROL_MENU, // named 'Open control menu' defaults to: Minus
+                MyControlsSpace.ACTIVE_CONTRACT_SCREEN, // named 'Open Contract screen' defaults to: Colon
+                MyControlsSpace.CHAT_SCREEN, // named 'Chat screen' defaults to: Enter
+                MyControlsSpace.CONSOLE, // named 'Console' defaults to: ~
+                MyControlsSpace.SPECTATOR_NONE, // named 'Player control' defaults to: F6
+                MyControlsSpace.SPECTATOR_DELTA, // named 'Delta spectator' defaults to: F7
+                MyControlsSpace.SPECTATOR_FREE, // named 'Free spectator' defaults to: F8
+                MyControlsSpace.SPECTATOR_STATIC, // named 'Static spectator' defaults to: F9
+                MyControlsSpace.CAMERA_MODE, // named 'First-person / Third-person' defaults to: V
+                MyControlsSpace.LOOKAROUND, // named 'Hold to look around' defaults to: Alt
+                MyControlsSpace.SCREENSHOT, // named 'Screenshot' defaults to: F4
+                MyControlsSpace.TOGGLE_HUD, // named 'HUD on / off' defaults to: Tab
+                MyControlsSpace.TOGGLE_SIGNALS, // named 'Toggle signal mode' defaults to: H
+                MyControlsSpace.SPECTATOR_LOCK, // named 'Lock/unlock to entity' defaults to: Num *
+                MyControlsSpace.SPECTATOR_SWITCHMODE, // named 'Next camera mode' defaults to: Num /
+                MyControlsSpace.SPECTATOR_NEXTPLAYER, // named 'Next player' defaults to: Num +
+                MyControlsSpace.SPECTATOR_PREVPLAYER, // named 'Previous player' defaults to: Num −
             };
 
             Dictionary<string, List<MyStringId>> binds = new Dictionary<string, List<MyStringId>>();

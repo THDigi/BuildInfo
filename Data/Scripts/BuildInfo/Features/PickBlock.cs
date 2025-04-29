@@ -1,5 +1,6 @@
 ﻿using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
+using Digi.Input;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.ModAPI;
@@ -120,7 +121,7 @@ namespace Digi.BuildInfo.Features
                     return;
                 }
 
-                if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.SLOT0))
+                if(InputWrapper.IsControlJustPressed(ControlIds.SLOT0))
                 {
                     AskToPick(null);
                     ShowText("Block picking cancelled.", 2000, FontsHandler.WhiteSh);

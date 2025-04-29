@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
+using Digi.Input;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game;
@@ -494,15 +495,15 @@ namespace Digi.BuildInfo.Systems
                 if(MyAPIGateway.Input.IsAnyKeyPress() || MyAPIGateway.Input.IsAnyNewMousePressed())
                 {
                     // special case, unequipped tool
-                    if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.SLOT0))
+                    if(InputWrapper.IsControlJustPressed(ControlIds.SLOT0))
                     {
                         SetTool(null);
                         SetBlock(null);
                         return;
                     }
 
-                    if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOOLBAR_NEXT_ITEM)
-                    || MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOOLBAR_PREV_ITEM))
+                    if(InputWrapper.IsControlJustPressed(ControlIds.TOOLBAR_NEXT_ITEM)
+                    || InputWrapper.IsControlJustPressed(ControlIds.TOOLBAR_PREV_ITEM))
                     {
                         if(!MyAPIGateway.Input.IsAnyCtrlKeyPressed()) // ignore toolbar layer changes
                         {
@@ -518,7 +519,7 @@ namespace Digi.BuildInfo.Systems
                         // intentionally skipping last (slot0)
                         for(int i = 0; i < controlSlots.Length - 1; ++i)
                         {
-                            if(MyAPIGateway.Input.IsNewGameControlPressed(controlSlots[i]))
+                            if(InputWrapper.IsControlJustPressed(controlSlots[i]))
                             {
                                 check = true;
                                 isInput = true;

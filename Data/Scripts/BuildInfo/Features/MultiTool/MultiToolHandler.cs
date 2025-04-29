@@ -106,12 +106,12 @@ namespace Digi.BuildInfo.Features.MultiTool
             if(MultiToolPair == null || MultiToolPair.Any == null)
                 return;
 
-            ControlPrimary = InputLib.GetInput(ControlContext.CHARACTER, MyControlsSpace.PRIMARY_TOOL_ACTION);
-            ControlSecondary = InputLib.GetInput(ControlContext.CHARACTER, MyControlsSpace.SECONDARY_TOOL_ACTION);
-            ControlReload = InputLib.GetInput(ControlContext.CHARACTER, MyControlsSpace.RELOAD);
-            ControlSymmetry = InputLib.GetInput(ControlContext.CHARACTER, MyControlsSpace.USE_SYMMETRY);
-            ControlSymmetrySwitch = InputLib.GetInput(ControlContext.CHARACTER, MyControlsSpace.SYMMETRY_SWITCH);
-            ControlAlignDefault = InputLib.GetInput(ControlContext.CHARACTER, MyControlsSpace.CUBE_DEFAULT_MOUNTPOINT);
+            ControlPrimary = InputLib.GetInput(ControlContext.CHARACTER, ControlIds.PRIMARY_TOOL_ACTION);
+            ControlSecondary = InputLib.GetInput(ControlContext.CHARACTER, ControlIds.SECONDARY_TOOL_ACTION);
+            ControlReload = InputLib.GetInput(ControlContext.CHARACTER, ControlIds.RELOAD);
+            ControlSymmetry = InputLib.GetInput(ControlContext.CHARACTER, ControlIds.USE_SYMMETRY);
+            ControlSymmetrySwitch = InputLib.GetInput(ControlContext.CHARACTER, ControlIds.SYMMETRY_SWITCH);
+            ControlAlignDefault = InputLib.GetInput(ControlContext.CHARACTER, ControlIds.CUBE_DEFAULT_MOUNTPOINT);
 
             Main.TextAPI.Detected += CreateUI;
             Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;

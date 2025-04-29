@@ -1114,7 +1114,10 @@ namespace Digi.BuildInfo.Features
             if(Main.TextAPI.IsEnabled)
                 AddLine();
 
-            AddLine(FontsHandler.SkyBlueSh).Color(COLOR_INFO).Append("Navigation: Up/down = ").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_POSITIVE.GetAssignedInputName()).Append("/").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_NEGATIVE.GetAssignedInputName()).Append(", change = ").Append(MyControlsSpace.CUBE_ROTATE_VERTICAL_POSITIVE.GetAssignedInputName()).ResetFormatting().Append(' ', 10);
+            AddLine(FontsHandler.SkyBlueSh).Color(COLOR_INFO).Append("Navigation: Up/down = ")
+                .Append(ControlIds.CUBE_ROTATE_HORISONTAL_POSITIVE.GetAssignedInputName()).Append("/")
+                .Append(ControlIds.CUBE_ROTATE_HORISONTAL_NEGATIVE.GetAssignedInputName()).Append(", change = ")
+                .Append(ControlIds.CUBE_ROTATE_VERTICAL_POSITIVE.GetAssignedInputName()).ResetFormatting().Append(' ', 10);
 
             EndAddedLines();
         }

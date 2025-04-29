@@ -183,8 +183,8 @@ namespace Digi.BuildInfo.Features.Config
         {
             if(MenuBind.Value.CombinationString.Equals("c.VoxelHandSettings", StringComparison.OrdinalIgnoreCase))
             {
-                MyKeys voxelHandSettingsKey = MyAPIGateway.Input.GetGameControl(MyControlsSpace.VOXEL_HAND_SETTINGS).GetKeyboardControl();
-                MyKeys terminalInventoryKey = MyAPIGateway.Input.GetGameControl(MyControlsSpace.TERMINAL).GetKeyboardControl();
+                MyKeys voxelHandSettingsKey = MyAPIGateway.Input.GetGameControl(ControlIds.VOXEL_HAND_SETTINGS).GetKeyboardControl();
+                MyKeys terminalInventoryKey = MyAPIGateway.Input.GetGameControl(ControlIds.TERMINAL).GetKeyboardControl();
 
                 if(voxelHandSettingsKey != MyKeys.None && voxelHandSettingsKey == terminalInventoryKey)
                 {
@@ -207,8 +207,8 @@ namespace Digi.BuildInfo.Features.Config
             {
                 // check if existing mod users have the VoxelHandSettings key not colliding and keep using that
 
-                IMyControl voxelHandSettingsControl = MyAPIGateway.Input.GetGameControl(MyControlsSpace.VOXEL_HAND_SETTINGS);
-                IMyControl terminalInventoryControl = MyAPIGateway.Input.GetGameControl(MyControlsSpace.TERMINAL);
+                IMyControl voxelHandSettingsControl = MyAPIGateway.Input.GetGameControl(ControlIds.VOXEL_HAND_SETTINGS);
+                IMyControl terminalInventoryControl = MyAPIGateway.Input.GetGameControl(ControlIds.TERMINAL);
 
                 // if VoxelHandSettings isn't colliding, then set the defaults like the user is used to
                 if(voxelHandSettingsControl.GetKeyboardControl() != MyKeys.None && terminalInventoryControl.GetKeyboardControl() != voxelHandSettingsControl.GetKeyboardControl())
@@ -648,7 +648,7 @@ namespace Digi.BuildInfo.Features.Config
                 "Pick what labels can be shown for overlays.",
                 "Not yet fully expanded to include detailed settings, just axes and eveything else for now.");
 
-            IMyControl lookaroundControl = MyAPIGateway.Input.GetGameControl(MyControlsSpace.LOOKAROUND);
+            IMyControl lookaroundControl = MyAPIGateway.Input.GetGameControl(ControlIds.LOOKAROUND);
             string lookaroundBind = "(unbound)";
             if(lookaroundControl.GetKeyboardControl() != MyKeys.None)
                 lookaroundBind = MyAPIGateway.Input.GetKeyName(lookaroundControl.GetKeyboardControl());

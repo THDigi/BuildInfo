@@ -1,5 +1,6 @@
 ﻿using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
+using Digi.Input;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
@@ -7,7 +8,9 @@ using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.Definitions.SessionComponents;
 using VRage.Game.ModAPI;
+using VRage.Input;
 using VRageMath;
+using InternalControllableEntity = Sandbox.Game.Entities.IMyControllableEntity;
 
 namespace Digi.BuildInfo.Features
 {
@@ -188,10 +191,15 @@ namespace Digi.BuildInfo.Features
 
             if(move == 0)
             {
-                if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.MOVE_FURTHER))
-                    move = 1;
-                else if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.MOVE_CLOSER))
-                    move = -1;
+                // used by gamepad, has to be read this way
+                var ctrl = MyAPIGateway.Session.ControlledObject as InternalControllableEntity;
+                if(ctrl != null)
+                {
+                    if(MyAPIGateway.Input.IsControl(ctrl.ControlContext, GamepadControlIds.MOVE_FURTHER, MyControlStateType.PRESSED))
+                        move = 1;
+                    else if(MyAPIGateway.Input.IsControl(ctrl.ControlContext, GamepadControlIds.MOVE_CLOSER, MyControlStateType.PRESSED))
+                        move = -1;
+                }
             }
 
             if(move != 0)

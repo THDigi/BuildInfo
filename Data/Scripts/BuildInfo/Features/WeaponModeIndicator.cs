@@ -3,6 +3,7 @@ using System.Text;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
+using Digi.Input;
 using Draygo.API;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
@@ -281,7 +282,7 @@ namespace Digi.BuildInfo.Features
 
                 StringBuilder sb = UI_Bind.Message.Clear();
 
-                IMyControl control = MyAPIGateway.Input.GetGameControl(MyControlsSpace.CUBE_COLOR_CHANGE);
+                IMyControl control = MyAPIGateway.Input.GetGameControl(ControlIds.CUBE_COLOR_CHANGE);
 
                 string bindKb = control.GetControlButtonName(MyGuiInputDeviceEnum.Keyboard);
                 if(string.IsNullOrEmpty(bindKb))

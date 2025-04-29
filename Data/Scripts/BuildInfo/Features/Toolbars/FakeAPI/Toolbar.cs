@@ -1,6 +1,7 @@
 ﻿using System;
 using Digi.BuildInfo.Features.Toolbars.FakeAPI.Items;
 using Digi.BuildInfo.Utilities;
+using Digi.Input;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game;
 using Sandbox.ModAPI;
@@ -127,13 +128,13 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
             //if(!inToolbarConfig && MySpectator.Static.SpectatorCameraMovement != MySpectatorCameraMovementEnum.ConstantDelta)
             if(!Main.GUIMonitor.InAnyDialogBox && MySpectator.Static.SpectatorCameraMovement != MySpectatorCameraMovementEnum.ConstantDelta)
             {
-                if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOOLBAR_UP))
+                if(InputWrapper.IsControlJustPressed(ControlIds.TOOLBAR_UP))
                 {
                     AdjustToolbarPage(1);
                     changes = true;
                 }
                 // no 'else' because that's how the game handles it, meaning pressing both controls in same tick would do both actions.
-                if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOOLBAR_DOWN))
+                if(InputWrapper.IsControlJustPressed(ControlIds.TOOLBAR_DOWN))
                 {
                     AdjustToolbarPage(-1);
                     changes = true;
