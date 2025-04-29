@@ -160,6 +160,20 @@ namespace Digi.BuildInfo
             MyControlsSpace.SLOT0,
         };
 
+        public readonly MyStringId[] ToolbarPageControlIds = new MyStringId[]
+        {
+            MyControlsSpace.PAGE1, // do not edit order
+            MyControlsSpace.PAGE2,
+            MyControlsSpace.PAGE3,
+            MyControlsSpace.PAGE4,
+            MyControlsSpace.PAGE5,
+            MyControlsSpace.PAGE6,
+            MyControlsSpace.PAGE7,
+            MyControlsSpace.PAGE8,
+            MyControlsSpace.PAGE9,
+            MyControlsSpace.PAGE0,
+        };
+
         public readonly MyJoystickButtonsEnum[] DPadValues = new MyJoystickButtonsEnum[]
         {
             MyJoystickButtonsEnum.JDUp, // do not edit order

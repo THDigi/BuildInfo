@@ -135,7 +135,7 @@ namespace Digi.BuildInfo.Features
                 {
                     MyStringId controlId = controlSlots[i];
 
-                    if(MyAPIGateway.Input.IsNewGameControlPressed(controlId))
+                    if(InputWrapper.IsControlJustPressed(controlId))
                     {
                         slot = i + 1;
                         break;

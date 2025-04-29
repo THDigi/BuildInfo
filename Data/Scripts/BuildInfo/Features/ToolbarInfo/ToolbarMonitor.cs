@@ -343,22 +343,21 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 return;
 
             MyStringId[] controlSlots = Main.Constants.ToolbarSlotControlIds;
+            MyStringId[] controlPages = Main.Constants.ToolbarPageControlIds;
 
-            // intentinoally skipping last (slot0)
-            for(int i = 0; i < controlSlots.Length - 1; ++i)
+            // 10 total, 1-9 and 0 last
+            for(int i = 0; i < controlSlots.Length; ++i)
             {
-                if(MyAPIGateway.Input.IsNewGameControlPressed(controlSlots[i]))
+                if(InputWrapper.IsControlJustPressed(controlPages[i]))
                 {
-                    if(MyAPIGateway.Input.IsAnyCtrlKeyPressed())
-                    {
-                        SetToolbarPage(ControlledBlock, i);
-                    }
-                    else if(i <= 9)
-                    {
-                        TriggeredIndex = (ToolbarPage * SlotsPerPage) + i;
-                        TriggeredAtTick = Main.Tick + 1; // refresh soon after, not exactly same tick
-                        ToolbarSlotTriggered?.Invoke(TriggeredIndex);
-                    }
+                    SetToolbarPage(ControlledBlock, i);
+                }
+
+                if(i < 9 && InputWrapper.IsControlJustPressed(controlSlots[i]))
+                {
+                    TriggeredIndex = (ToolbarPage * SlotsPerPage) + i;
+                    TriggeredAtTick = Main.Tick + 1; // refresh soon after, not exactly same tick
+                    ToolbarSlotTriggered?.Invoke(TriggeredIndex);
                 }
             }
 
@@ -368,12 +367,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             //if(!inToolbarConfig && MySpectator.Static.SpectatorCameraMovement != MySpectatorCameraMovementEnum.ConstantDelta)
             if(!Main.GUIMonitor.InAnyDialogBox && MySpectator.Static.SpectatorCameraMovement != MySpectatorCameraMovementEnum.ConstantDelta)
             {
-                if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOOLBAR_UP))
+                if(InputWrapper.IsControlJustPressed(MyControlsSpace.TOOLBAR_UP))
                 {
                     AdjustToolbarPage(ControlledBlock, 1);
                 }
                 // no 'else' because that's how the game handles it, meaning pressing both controls in same tick would do both actions.
-                if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOOLBAR_DOWN))
+                if(InputWrapper.IsControlJustPressed(MyControlsSpace.TOOLBAR_DOWN))
                 {
                     AdjustToolbarPage(ControlledBlock, -1);
                 }
@@ -425,13 +424,14 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             ToolbarPage = page;
             ToolbarPageChanged?.Invoke();
 
+            // FIXME: temporarily disabled until I can figure out the issues
             // HACK: ensure the toolbar page is what the code expects, avoids toolbar page desync
             // HACK: needs to be delayed otherwise it jumps more than one page
-            int copyPage = page;
-            MyAPIGateway.Utilities.InvokeOnGameThread(() =>
-            {
-                MyVisualScriptLogicProvider.SetToolbarPageLocal(copyPage);
-            });
+            //int copyPage = page;
+            //MyAPIGateway.Utilities.InvokeOnGameThread(() =>
+            //{
+            //    MyVisualScriptLogicProvider.SetToolbarPageLocal(copyPage);
+            //});
         }
 
         void SetToolbarPage(IMyShipController shipController, int page)

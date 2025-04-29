@@ -104,22 +104,21 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
             bool changes = false;
 
             MyStringId[] controlSlots = Main.Constants.ToolbarSlotControlIds;
+            MyStringId[] controlPages = Main.Constants.ToolbarPageControlIds;
 
             // 10 total, 1-9 and 0 last
             for(int i = 0; i < controlSlots.Length; ++i)
             {
-                if(MyAPIGateway.Input.IsNewGameControlPressed(controlSlots[i]))
+                if(InputWrapper.IsControlJustPressed(controlPages[i]))
                 {
-                    if(!MyAPIGateway.Input.IsAnyCtrlKeyPressed())
-                    {
-                        // slot activated depending on GUI type
-                    }
-                    else if(i < PageCount)
-                    {
-                        SetToolbarPage(i);
-                        changes = true;
-                    }
+                    SetToolbarPage(i);
+                    changes = true;
                 }
+
+                //if(i < 9 && InputWrapper.IsControlJustPressed(controlSlots[i]))
+                //{
+                //    // slot activated depending on GUI type
+                //}
             }
 
             // HACK next/prev toolbar hotkeys don't work in the menu unless you click on the icons list... but I'm forcing toolbar to cycle regardless.
@@ -167,13 +166,14 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
 
             PageChanged?.Invoke(CurrentPageIndex);
 
+            // FIXME: temporarily disabled until I can figure out the issues
             // HACK: ensure the toolbar page is what the code expects, avoids toolbar page desync
             // HACK: needs to be delayed otherwise it jumps more than one page
-            int copyPage = CurrentPageIndex;
-            MyAPIGateway.Utilities.InvokeOnGameThread(() =>
-            {
-                MyVisualScriptLogicProvider.SetToolbarPageLocal(copyPage);
-            });
+            //int copyPage = CurrentPageIndex;
+            //MyAPIGateway.Utilities.InvokeOnGameThread(() =>
+            //{
+            //    MyVisualScriptLogicProvider.SetToolbarPageLocal(copyPage);
+            //});
         }
 
         void Clear()
