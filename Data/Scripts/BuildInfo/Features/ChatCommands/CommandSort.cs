@@ -447,6 +447,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 }
             }
 
+            // TODO: but what about mod scripts that might be changing block stats? maybe include mod count but exclude this, textAPI and leak finder...
             tempSB.Append("Modded blocks: ").Append(totalModdedBlocks).Append('\n');
             tempSB.Append('\n');
             tempSB.Append(title);

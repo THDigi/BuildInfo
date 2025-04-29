@@ -841,8 +841,9 @@ namespace Digi.BuildInfo.Features.GUI
             // unsure what remote does but currently it's identical regardless
             ExperimentalReason reasons = MyAPIGateway.Session.SessionSettings.GetExperimentalReason(remote: false);
 
-            if(MyAPIGateway.Session.Mods.Count > 0)
-                reasons |= ExperimentalReason.Mods;
+            // no longer a thing since 206
+            //if(MyAPIGateway.Session.Mods.Count > 0)
+            //    reasons |= ExperimentalReason.Mods;
 
             foreach(ExperimentalReason reason in MyEnum<ExperimentalReason>.Values)
             {
@@ -876,6 +877,9 @@ namespace Digi.BuildInfo.Features.GUI
                     case ExperimentalReason.EnableSubgridDamage: name = "Sub-Grid Physical Damage ON"; break;
                     case ExperimentalReason.EnableSpectator: name = "Everyone Spectator Camera ON"; break;
                     case ExperimentalReason.StationVoxelSupport: name = "Maintain static on split ON (StationVoxelSupport)"; break;
+                    case ExperimentalReason.ShareInertiaTensor: name = "Allow 'Share Inertia Tensor' setting is ON"; break;
+                    case ExperimentalReason.UnsafePistonImpulses: name = "Allow Unsafe Piston Impulses setting is ON"; break;
+                    case ExperimentalReason.UnsafeRotorTorques: name = "Allow Unsafe Rotor Torques setting is ON"; break;
                     //case ExperimentalReason.SyncDistance: name = "SyncDistance not 3000"; break;
                     default: name = MyEnum<ExperimentalReason>.GetName(reason); break;
                 }
@@ -961,7 +965,7 @@ namespace Digi.BuildInfo.Features.GUI
                 sb.Color(ValueColorDefault).Append("(").Append(DefaultFrom).Append("'s default)\n");
                 sb.Color(ValueColorChanged).Append("(Different)\n");
                 sb.Color(ValueColorDisabled).Append("(Requires something else)\n");
-                sb.Color(NewSettingColor).Append("*<reset> new settings in SE v205\n");
+                sb.Color(NewSettingColor).Append("*<reset> new settings in SE v1.206\n"); // find all 'NewSettingTag +' and remove, then add to the new ones if any
                 //sb.Append("\n<reset>");
                 sb.Color(Color.Yellow).Append("Search<reset> by opening chat.\n");
             }
@@ -1006,7 +1010,7 @@ namespace Digi.BuildInfo.Features.GUI
             //Header(sb, "Chat");
 
             PrintSetting(sb, nameof(settings.MaxHudChatMessageCount), settings.MaxHudChatMessageCount, DefaultSettings.MaxHudChatMessageCount, false,
-                NewSettingTag + "Max messages in HUD chat", "Maximum number of messages displayed in HUD chat");
+                "Max messages in HUD chat", "Maximum number of messages displayed in HUD chat");
             PrintSetting(sb, nameof(settings.OffensiveWordsFiltering), settings.OffensiveWordsFiltering, DefaultSettings.OffensiveWordsFiltering, false,
                 "Offensive Words Filtering", "Filter offensive words from all input methods.");
             //PrintDSSetting(sb, dsConfig?.ChatAntiSpamEnabled, dsConfigDefault.ChatAntiSpamEnabled,
@@ -1096,9 +1100,9 @@ namespace Digi.BuildInfo.Features.GUI
                     "Smallgrid max rotation speed", " deg/s", "Max speed that smallgrid ships can rotate at.");
             }
 
-            PrintSetting(sb, nameof(settings.EnableResearch), settings.EnableResearch, DefaultSettings.EnableResearch, false,
+            PrintSetting(sb, nameof(settings.EnableResearch), settings.EnableResearch, DefaultSettings.EnableResearch, true,
                 "Progression", "If enabled, blocks must be unlocked by building other blocks.\nSee progression tab in toolbar config menu.");
-            PrintSetting(sb, nameof(settings.EnableTurretsFriendlyFire), settings.EnableTurretsFriendlyFire, DefaultSettings.EnableTurretsFriendlyFire, false,
+            PrintSetting(sb, nameof(settings.EnableTurretsFriendlyFire), settings.EnableTurretsFriendlyFire, DefaultSettings.EnableTurretsFriendlyFire, true,
                 "Rocket self-damage", "Whether rockets can damage the ship they're fired from (attached grids included).");
             PrintSetting(sb, nameof(settings.DestructibleBlocks), settings.DestructibleBlocks, DefaultSettings.DestructibleBlocks, true,
                 "Destructible blocks", "Allows blocks to be destroyed.");
@@ -1127,6 +1131,12 @@ namespace Digi.BuildInfo.Features.GUI
                 "Supergridding", "Allows supergridding exploit to be used (placing block on wrong size grid, e.g. jumpdrive on smallgrid).");
             PrintSetting(sb, nameof(settings.EnableOrca), settings.EnableOrca, DefaultSettings.EnableOrca, false,
                 "Advanced ORCA algorithm", "Enable advanced Optimal Reciprocal Collision Avoidance algorithm.");
+            PrintSetting(sb, nameof(settings.EnableShareInertiaTensor), settings.EnableShareInertiaTensor, DefaultSettings.EnableShareInertiaTensor, true,
+                 NewSettingTag + "Allow 'Share Inertia Tensor'", "Allows the use of 'Share Inertia Tensor' on mechanical connection blocks.\nIf turned off it will force the setting off on all existing blocks too.");
+            PrintSetting(sb, nameof(settings.EnableUnsafePistonImpulses), settings.EnableUnsafePistonImpulses, DefaultSettings.EnableUnsafePistonImpulses, true,
+                 NewSettingTag + "Allow Unsafe Piston Impulses", "Allows pistons to use forces past the safe amount.\nIf turned off it will cap on all existing blocks too.");
+            PrintSetting(sb, nameof(settings.EnableUnsafeRotorTorques), settings.EnableUnsafeRotorTorques, DefaultSettings.EnableUnsafeRotorTorques, true,
+                 NewSettingTag + "Allow Unsafe Rotor Torques", "Allows rotors/hinges to use torques past the safe amount.\nIf turned off it will cap on all existing blocks too.");
             #endregion Ships & blocks
 
 
@@ -1173,7 +1183,7 @@ namespace Digi.BuildInfo.Features.GUI
             #region Multipliers
             Header(sb, "Multipliers");
 
-            PrintFormattedNumber(sb, nameof(settings.BlocksInventorySizeMultiplier), settings.BlocksInventorySizeMultiplier, DefaultSettings.BlocksInventorySizeMultiplier, false,
+            PrintFormattedNumber(sb, nameof(settings.BlocksInventorySizeMultiplier), settings.BlocksInventorySizeMultiplier, DefaultSettings.BlocksInventorySizeMultiplier, true,
                 "Block Inventory", "x", "Multiplier for block inventory sizes.\nNOTE: Cargo mass gets inversely multiplied meaning a full ship is roughly the same mass regardless of this multiplier.");
             PrintFormattedNumber(sb, nameof(settings.InventorySizeMultiplier), settings.InventorySizeMultiplier, DefaultSettings.InventorySizeMultiplier, true,
                 "Character Inventory", "x", "Multiplier for character inventory size.");
@@ -1258,7 +1268,7 @@ namespace Digi.BuildInfo.Features.GUI
 
             bool economyOn = settings.EnableEconomy;
 
-            PrintSetting(sb, nameof(settings.EnableEconomy), settings.EnableEconomy, DefaultSettings.EnableEconomy, false,
+            PrintSetting(sb, nameof(settings.EnableEconomy), settings.EnableEconomy, DefaultSettings.EnableEconomy, true,
                 "Economy", "Enables economy features:" +
                            "\n- Generated NPC factions that need to be discovered." +
                            "\n- Generated space and planet-bound trade stations (with safe zones)." +
@@ -1310,11 +1320,11 @@ namespace Digi.BuildInfo.Features.GUI
                 "Encounters", "Enables random encounters in the world.");
 
             PrintSetting(sb, nameof(settings.EncounterDensity), settings.EncounterDensity, DefaultSettings.EncounterDensity, false,
-                NewSettingTag + "Encounter Density", "", // TODO description?
+                "Encounter Density", "Defines density of the procedurally generated encounters (does not affect Global Encounters, Planetary Encounters, Cargo Ships or Faction Stations).",
                 GrayIfFalse(encountersOn));
 
             PrintSetting(sb, nameof(settings.EncounterGeneratorVersion), settings.EncounterGeneratorVersion, DefaultSettings.EncounterGeneratorVersion, false,
-                NewSettingTag + "Encounter Generator version", "Encounter generator determines how the encounters are generated for a given seed number." +
+                "Encounter Generator version", "Encounter generator determines how the encounters are generated for a given seed number." +
                                            GeneratorVersioning,
                 GrayIfFalse(encountersOn));
 
@@ -1336,7 +1346,7 @@ namespace Digi.BuildInfo.Features.GUI
                 //    GrayIfFalse(settings.EnableDrones && settings.MaxDrones > 0));
             }
 
-            PrintSetting(sb, nameof(settings.EnableContainerDrops), settings.EnableContainerDrops, DefaultSettings.EnableContainerDrops, false,
+            PrintSetting(sb, nameof(settings.EnableContainerDrops), settings.EnableContainerDrops, DefaultSettings.EnableContainerDrops, true,
                 "Drop Containers", "Allows drop containers (unknown signal) to spawn in space and on planets." +
                                    "\nThese are very small pods that contain some resources and a button to claim a random character/tool skin item." +
                                    "\nStrong signals are visible to everyone, the green ones only you can see the marker but other players can find them the old fashioned way too.");
@@ -1355,11 +1365,11 @@ namespace Digi.BuildInfo.Features.GUI
                 "Claim time for NPC grids", " min", "NPC grids despawn if not claimed within this amount of time since their spawn.");
 
             PrintFormattedNumber(sb, nameof(settings.GlobalEncounterCap), settings.GlobalEncounterCap, DefaultSettings.GlobalEncounterCap, false,
-                NewSettingTag + "Global Encounter Cap", "", "Maximum of active Global Encounters (unidentified signal) at the same time. Turned off when 0.",
+                "Global Encounter Cap", "", "Maximum of active Global Encounters (unidentified signal) at the same time. Turned off when 0.",
                 GrayIfFalse(globalEncountersOn), valueForZero: FalseValue);
 
             PrintFormattedNumber(sb, nameof(settings.GlobalEncounterTimer), settings.GlobalEncounterTimer, DefaultSettings.GlobalEncounterTimer, false,
-                NewSettingTag + "GE Spawn Timer", " min", "Global Encounters will try to spawn every this many minutes. The cap and global-encounter-specific PCU apply.",
+                "GE Spawn Timer", " min", "Global Encounters will try to spawn every this many minutes. The cap and global-encounter-specific PCU apply.",
                 GrayIfFalse(globalEncountersOn));
 
 
@@ -1376,7 +1386,7 @@ namespace Digi.BuildInfo.Features.GUI
                 KnownFields.Add(nameof(settings.GlobalEncounterMinRemovalTimer));
                 KnownFields.Add(nameof(settings.GlobalEncounterMaxRemovalTimer));
 
-                const string label = NewSettingTag + "GE Removal Timer";
+                const string label = "GE Removal Timer";
                 string description = $"This combines 3 settings: {nameof(settings.GlobalEncounterMinRemovalTimer)}, {nameof(settings.GlobalEncounterMinRemovalTimer)} and {nameof(settings.GlobalEncounterMaxRemovalTimer)}" +
                                      "\nThey all control the same thing so it can be narrowed down to either off or a range between 2 values." +
                                      "\nThe time range means it will pick a random number between those values, and that will decide how long until the encounter vanishes." +
@@ -1390,18 +1400,18 @@ namespace Digi.BuildInfo.Features.GUI
                 PrintSetting(sb, null, val, defVal, false, label, description, GrayIfFalse(globalEncountersOn));
 
                 //PrintSetting(sb, nameof(settings.GlobalEncounterEnableRemovalTimer), settings.GlobalEncounterEnableRemovalTimer, DefaultSettings.GlobalEncounterEnableRemovalTimer, false,
-                //    NewSettingTag + "Global Encounter Removal Timer", "Auto-removal of Global Encounters after their timer runs out.",
+                //    "Global Encounter Removal Timer", "Auto-removal of Global Encounters after their timer runs out.",
                 //    GrayIfFalse(globalEncountersOn));
                 //PrintFormattedNumber(sb, nameof(settings.GlobalEncounterMinRemovalTimer), settings.GlobalEncounterMinRemovalTimer, DefaultSettings.GlobalEncounterMinRemovalTimer, false,
-                //    NewSettingTag + "Removal Timer Minimum", " min", "Minimum removal timer for Global Encounters.",
+                //    "Removal Timer Minimum", " min", "Minimum removal timer for Global Encounters.",
                 //    GrayIfFalse(globalEncountersOn));
                 //PrintFormattedNumber(sb, nameof(settings.GlobalEncounterMaxRemovalTimer), settings.GlobalEncounterMaxRemovalTimer, DefaultSettings.GlobalEncounterMaxRemovalTimer, false,
-                //    NewSettingTag + "Removal Timer Maximum", " min", "Maximum removal timer for Global Encounters.",
+                //    "Removal Timer Maximum", " min", "Maximum removal timer for Global Encounters.",
                 //    GrayIfFalse(globalEncountersOn));
             }
 
             PrintFormattedNumber(sb, nameof(settings.GlobalEncounterRemovalTimeClock), settings.GlobalEncounterRemovalTimeClock, DefaultSettings.GlobalEncounterRemovalTimeClock, false,
-                NewSettingTag + "GE Display Timer", " min",
+                "GE Display Timer", " min",
                 "Show global encounter's remaining time on its GPS marker if it's under this many minutes.",
                 GrayIfFalse(globalEncountersOn && settings.GlobalEncounterEnableRemovalTimer));
 
@@ -1410,8 +1420,8 @@ namespace Digi.BuildInfo.Features.GUI
 
             const string TrackedPENote = "\nNOTE: Only affects <i>tracked<reset> planetary encounters. An encounter is no longer tracked if it gets damaged or claimed.";
 
-            PrintSetting(sb, nameof(settings.EnablePlanetaryEncounters), settings.EnablePlanetaryEncounters, DefaultSettings.EnablePlanetaryEncounters, false,
-                NewSettingTag + "Planetary Encounters",
+            PrintSetting(sb, nameof(settings.EnablePlanetaryEncounters), settings.EnablePlanetaryEncounters, DefaultSettings.EnablePlanetaryEncounters, true,
+                "Planetary Encounters",
                 "Whether planetary installations/stations (no safezone) are allowed to spawn.");
 
             {
@@ -1424,50 +1434,54 @@ namespace Digi.BuildInfo.Features.GUI
                 PrintRangeSetting(sb, nameof(settings.PlanetaryEncounterTimerMin), nameof(settings.PlanetaryEncounterTimerMax),
                                       min, max,
                                       defMin, defMax, false,
-                                      NewSettingTag + "PE Spawn Timer Range", " min",
+                                      "PE Spawn Timer Range", " min",
                                       "Random number within this range is chosen for the next planetary encounter spawn.",
                                       GrayIfFalse(planetaryEncountersOn));
 
                 //PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterTimerMin), settings.PlanetaryEncounterTimerMin, DefaultSettings.PlanetaryEncounterTimerMin, false,
-                //    NewSettingTag + "Installations Timer Min", " min", "Minimum [minutes] for Planetary Encounter spawn timer.",
+                //    "Installations Timer Min", " min", "Minimum [minutes] for Planetary Encounter spawn timer.",
                 //    GrayIfFalse(planetaryEncountersOn));
                 //PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterTimerMax), settings.PlanetaryEncounterTimerMax, DefaultSettings.PlanetaryEncounterTimerMax, false,
-                //    NewSettingTag + "Installations Timer Max", " min", "Maximum [minutes] for Planetary Encounter spawn timer.",
+                //    "Installations Timer Max", " min", "Maximum [minutes] for Planetary Encounter spawn timer.",
                 //    GrayIfFalse(planetaryEncountersOn));
             }
 
+            PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterTimerFirst), settings.PlanetaryEncounterTimerFirst, DefaultSettings.PlanetaryEncounterTimerFirst, false,
+                NewSettingTag + "PE Timer First", " min", "The first player on world load will get a PE spawed after this many minutes.",
+                GrayIfFalse(planetaryEncountersOn));
+
             PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterDesiredSpawnRange), settings.PlanetaryEncounterDesiredSpawnRange, DefaultSettings.PlanetaryEncounterDesiredSpawnRange, false,
-                NewSettingTag + "PE Spawn Distance To Players", "m",
+                "PE Spawn Distance To Players", "m",
                 "Planetary encounters spawn in randomly chosen position within this range of every online player's controlled entity." +
                 "\nThis number is also the height they must be from the surface to be eligible for spawning planetary encounters.",
                 GrayIfFalse(planetaryEncountersOn));
 
             PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterAreaLockdownRange), settings.PlanetaryEncounterAreaLockdownRange, DefaultSettings.PlanetaryEncounterAreaLockdownRange, false,
-                NewSettingTag + "PE Denial Area", "m",
+                "PE Denial Area", "m",
                 "Planetary encounters will mark this radius around them where no planetary encounters can spawn." +
                 TrackedPENote,
                 GrayIfFalse(planetaryEncountersOn));
 
             PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterExistingStructuresRange), settings.PlanetaryEncounterExistingStructuresRange, DefaultSettings.PlanetaryEncounterExistingStructuresRange, false,
-                NewSettingTag + "Static Grids Denial Area", "m",
+                "Static Grids Denial Area", "m",
                 "Static grids (that are not tracked planetary encounters) will mark this radius around them where no planetary encounters can spawn.",
                 GrayIfFalse(planetaryEncountersOn));
 
             PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterPresenceRange), settings.PlanetaryEncounterPresenceRange, DefaultSettings.PlanetaryEncounterPresenceRange, false,
-                NewSettingTag + "PE Spawn Presence", "m",
+                "PE Spawn Presence", "m",
                 "Tracked planetary encounters despawn as soon as no players are within this range." +
                 "\nHowever, they're still remembered and will respawn if a player comes back within range before \"PE Despawn Timer\" removes it permanently." +
                 TrackedPENote,
                 GrayIfFalse(planetaryEncountersOn));
 
             PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterDespawnTimeout), settings.PlanetaryEncounterDespawnTimeout, DefaultSettings.PlanetaryEncounterDespawnTimeout, false,
-                NewSettingTag + "PE No-presence Removal Timer", " min",
+                "PE No-presence Removal Timer", " min",
                 "This timer only starts once no players are within the above \"PE Spawn Presence\" range, and will reset if any player comes into range before it runs out." +
                 "\nWhen this timer runs out, the planetary encounter is deleted and won't respawn in the same place." +
                 TrackedPENote,
                 GrayIfFalse(planetaryEncountersOn));
 
-            PrintPlanetsHavingEncounters(sb, NewSettingTag + "PE on Planets", planetaryEncountersOn);
+            PrintPlanetsHavingEncounters(sb, "PE on Planets", planetaryEncountersOn);
             #endregion Encounters
 
 
@@ -1540,7 +1554,7 @@ namespace Digi.BuildInfo.Features.GUI
                 GrayIfFalse(blocksAreLimited));
 
             //PrintSetting(sb, nameof(settings.LimitBlocksBy), settings.LimitBlocksBy, DefaultSettings.LimitBlocksBy, false,
-            //    NewSettingTag + "Limit Blocks by", "Which block attribute is used for defining the block limits." +
+            //    "Limit Blocks by", "Which block attribute is used for defining the block limits." +
             //                                       $"\nOptions can be: {string.Join(", ", MyEnum<MyObjectBuilder_SessionSettings.LimitBlocksByOption>.Values)}",
             //    GrayIfFalse(blocksAreLimited));
 
@@ -1548,7 +1562,7 @@ namespace Digi.BuildInfo.Features.GUI
 
             PrintBlockLimits(sb, nameof(settings.BlockTypeLimits), settings.BlockTypeLimits, DefaultSettings.BlockTypeLimits,
                                  nameof(settings.LimitBlocksBy), settings.LimitBlocksBy, DefaultSettings.LimitBlocksBy, true,
-                NewSettingTag + "Block limits", "Additional limits for specific blocks, respects Limit mode." +
+                "Block limits", "Additional limits for specific blocks, respects Limit mode." +
                                                 $"\nThis world is using block's {settings.LimitBlocksBy} for the limits (as set by {nameof(settings.LimitBlocksBy)} setting)",
                 GrayIfFalse(blocksAreLimited));
 
@@ -1575,11 +1589,11 @@ namespace Digi.BuildInfo.Features.GUI
                                      "\nIn vanilla blocks, all armor blocks have 2 PCU with this enabled instead of 1." +
                                      "\nAny mod can choose to have a console-specific PCU, however it's not practical to identify because only the final PCU is stored.");
 
-            PrintSetting(sb, nameof(settings.PiratePCU), settings.PiratePCU, DefaultSettings.PiratePCU, false,
+            PrintSetting(sb, nameof(settings.PiratePCU), settings.PiratePCU, DefaultSettings.PiratePCU, true,
                 "PCU for NPCs", "Number of Performance Cost Units allocated for NPCs ships, except Global Encounters.");
 
-            PrintSetting(sb, nameof(settings.GlobalEncounterPCU), settings.GlobalEncounterPCU, DefaultSettings.GlobalEncounterPCU, false,
-                NewSettingTag + "Global Encounters PCU", "Number of Performance Cost Units allocated for Global Encounters.",
+            PrintSetting(sb, nameof(settings.GlobalEncounterPCU), settings.GlobalEncounterPCU, DefaultSettings.GlobalEncounterPCU, true,
+                "Global Encounters PCU", "Number of Performance Cost Units allocated for Global Encounters.",
                 GrayIfFalse(globalEncountersOn));
             #endregion Limits
 
@@ -1744,7 +1758,7 @@ namespace Digi.BuildInfo.Features.GUI
             #region Bots
             Header(sb, "Bots");
 
-            PrintSetting(sb, nameof(settings.TotalBotLimit), settings.TotalBotLimit, DefaultSettings.TotalBotLimit, false,
+            PrintSetting(sb, nameof(settings.TotalBotLimit), settings.TotalBotLimit, DefaultSettings.TotalBotLimit, true,
                 "Animal NPC Limit", "Maximum number of organic bots in the world");
             PrintSetting(sb, nameof(settings.EnableSpiders), settings.EnableSpiders, DefaultSettings.EnableSpiders, true,
                 "Spiders", "Enables spawning of spiders in the world.");
