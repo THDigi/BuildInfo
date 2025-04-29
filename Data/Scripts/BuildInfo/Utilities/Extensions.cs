@@ -61,6 +61,11 @@ namespace Digi.BuildInfo.Utilities
             return name;
         }
 
+        public static string ToShortString(this MyDefinitionId defId)
+        {
+            return defId.ToString().Substring("MyObjectBuilder_".Length);
+        }
+
         /// <summary>
         /// Primarily used to tell if block has mass, because if this returns false it will contribute no mass to the grid (definition's Mass is non-0 but ignored)
         /// </summary>

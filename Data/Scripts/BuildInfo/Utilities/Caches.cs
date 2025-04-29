@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Digi.BuildInfo.Features.Toolbars.FakeAPI.Items;
 using Digi.ComponentLib;
@@ -104,26 +105,53 @@ namespace Digi.BuildInfo.Utilities
                     var blockDef = def as MyCubeBlockDefinition;
                     if(blockDef != null)
                     {
-                        if(!blockDef.Public || ((!blockDef.HasPhysics || blockDef.PhysicsOption == MyPhysicsOption.None)
+                        if((!blockDef.HasPhysics || blockDef.PhysicsOption == MyPhysicsOption.None)
                         && !blockDef.IsStandAlone
                         && blockDef.MountPoints.Length == 1
                         && blockDef.MountPoints[0].Enabled == false
                         //&& blockDef.Id.TypeId == cubeBlockType
                         && blockDef.VoxelPlacement.HasValue
                         && blockDef.VoxelPlacement.Value.StaticMode.PlacementMode == VoxelPlacementMode.None
-                        && blockDef.VoxelPlacement.Value.DynamicMode.PlacementMode == VoxelPlacementMode.None))
+                        && blockDef.VoxelPlacement.Value.DynamicMode.PlacementMode == VoxelPlacementMode.None)
                         {
                             UnplaceableBlocks.Add(blockDef.Id);
-                            Log.Info($"Found and marked unplaceable block: {def.Id.ToString().Substring("MyObjectBuilder_".Length)} (from {def.Context.GetNameAndId()})");
+                            Log.Info($"Found and marked unplaceable block '{def.Id.ToShortString()}' from {def.Context.GetNameAndId()}");
                         }
                         else
                         {
                             BlockDefs.Add(blockDef);
+
+                            //var mechBase = def as MyMechanicalConnectionBlockBaseDefinition;
+                            //if(mechBase != null)
+                            //{
+                            //}
+
+                            //if(blockDef.MirroringBlock)
                         }
                         continue;
                     }
                 }
             }
+
+            // TODO: finish removing Public=false blocks from the list but only if they're not referenced by a suspension OR by another block's mirroring block
+            //for(int i = 0; i < BlockDefs.Count; i++)
+            //{
+            //    MyCubeBlockDefinition blockDef = BlockDefs[i];
+            //    if(!blockDef.Public)
+            //    {
+
+
+            //        Log.Info($"Skipping non-public block '{blockDef.Id.ToShortString()}' from {blockDef.Context.GetNameAndId()}");
+
+            //        //blockDef.Public = true;
+            //        //var icons = blockDef.Icons?.ToList() ?? new List<string>();
+            //        //icons.Add(@"Textures\GUI\Icons\Lock.png");
+            //        //blockDef.Icons = icons.ToArray();
+
+            //        BlockDefs.RemoveAtFast(i);
+            //        continue;
+            //    }
+            //}
         }
 
         void CacheTargetGroups()
