@@ -32,6 +32,7 @@
     </CategoryClasses>
     -->
     
+    <!--
     <BlockVariantGroups>
         <BlockVariantGroup>
             <Id Type="MyObjectBuilder_BlockVariantGroup" Subtype="MultiTool" />
@@ -43,46 +44,9 @@
             </Blocks>
         </BlockVariantGroup>
     </BlockVariantGroups>
+    -->
     
     <CubeBlocks>
-        <Definition>
-            <Id>
-                <TypeId>CubeBlock</TypeId>
-                <SubtypeId>BuildInfo_MultiTool_Small</SubtypeId>
-            </Id>
-            <PCU>1</PCU> <!-- must NOT be high PCU because construction will still be allowed with 1 PCU then goes to this because it's considered built -->
-            <BlockPairName>MultiTool</BlockPairName>
-            <DisplayName>Multi Tool</DisplayName>
-            <Icon>Textures\HUD\MultiTool.dds</Icon>
-            <Description>ERROR: BuildInfo mod did not compile to replace this description!</Description>
-            <Model>Models\Debug\Sphere_low.mwm</Model>
-            <CubeSize>Small</CubeSize>
-            <BlockTopology>TriangleMesh</BlockTopology>
-            <Size x="1" y="1" z="1" />
-            <ModelOffset x="0" y="0" z="0" />
-            <Components>
-                <Component Subtype="SabiroidPlushie" Count="1"> <!-- reduce the chance of being accidentally placed? -->
-                    <DeconstructId Type="Ore" Subtype="Scrap" />
-                </Component>
-            </Components>
-            <CriticalComponent Subtype="SabiroidPlushie" Index="0" />
-            <MountPoints>
-                <!-- empty mountpoints get filled automatically so have to work around it -->
-                <MountPoint Enabled="false" Side="Front" StartX="0" StartY="0" EndX="0" EndY="0" />
-            </MountPoints>
-            <VoxelPlacement> <!-- don't allow placement even if script broke -->
-                <StaticMode>
-                    <PlacementMode>None</PlacementMode>
-                </StaticMode>
-                <DynamicMode>
-                    <PlacementMode>None</PlacementMode>
-                </DynamicMode>
-            </VoxelPlacement>
-            <BuildTimeSeconds>99999</BuildTimeSeconds>
-            <IsAirTight>false</IsAirTight>
-            <IsStandAlone>false</IsStandAlone>
-            <HasPhysics>false</HasPhysics>
-        </Definition>
         <Definition>
             <Id>
                 <TypeId>CubeBlock</TypeId>
@@ -91,6 +55,7 @@
             <PCU>1</PCU> <!-- must NOT be high PCU because construction will still be allowed with 1 PCU then goes to this because it's considered built -->
             <BlockPairName>MultiTool</BlockPairName>
             <DisplayName>Multi Tool</DisplayName>
+            <GuiVisible>false</GuiVisible> <!-- hide from "All blocks"; gets overwritten by BlockVariantGroups if in one. -->
             <Icon>Textures\HUD\MultiTool.dds</Icon>
             <Description>ERROR: BuildInfo mod did not compile to replace this description!</Description>
             <Model>Models\Debug\Sphere_low.mwm</Model>

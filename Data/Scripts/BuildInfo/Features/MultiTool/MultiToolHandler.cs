@@ -237,10 +237,10 @@ namespace Digi.BuildInfo.Features.MultiTool
             if(catDef == null)
                 return;
 
-            if(MultiToolPair?.AnyPublic != null)
+            if(MultiToolPair?.Large != null)
             {
                 catDef.SearchBlocks = true;
-                catDef.ItemIds.Add(MultiToolPair.AnyPublic.Id.ToString());
+                catDef.ItemIds.Add("CubeBlock/" + MultiToolPair.Large.Id.SubtypeName);
             }
         }
 
