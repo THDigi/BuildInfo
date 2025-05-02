@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Digi.BuildInfo.Features.MultiTool;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
@@ -17,7 +16,14 @@ namespace Digi.BuildInfo.Features.LiveData
     /// </summary>
     public class LiveDataHandler : ModComponent
     {
+        /// <summary>
+        /// Use <see cref="Get{T}(MyCubeBlockDefinition, Cache)"/> to get or spawn (which will be returning null and have the data for next time).
+        /// </summary>
         public readonly Dictionary<MyDefinitionId, BData_Base> BlockData = new Dictionary<MyDefinitionId, BData_Base>(MyDefinitionId.Comparer);
+
+        /// <summary>
+        /// Computed as block types spawn, regardless of build stage or <see cref="Get{T}(MyCubeBlockDefinition, Cache)"/> being called.
+        /// </summary>
         public readonly Dictionary<MyObjectBuilderType, bool> ConveyorSupportTypes = new Dictionary<MyObjectBuilderType, bool>(MyObjectBuilderType.Comparer);
 
         public event Action<MyDefinitionId, BData_Base> DataGenerated;
@@ -184,7 +190,9 @@ namespace Digi.BuildInfo.Features.LiveData
                 }
 
                 if(success)
+                {
                     DataGenerated?.Invoke(defId, data);
+                }
             }
 
             if(success && Main.TextGeneration != null)

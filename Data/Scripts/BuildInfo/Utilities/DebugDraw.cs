@@ -16,6 +16,9 @@ namespace Digi.BuildInfo.Utilities
     {
         static readonly MyStringId MaterialSquare = Constants.Mat_Square;
 
+        public static void Draw3DText(string text, Vector3D pos, double scale = 0.05, bool alwaysOnTop = false, bool constantSize = false, int liveTime = 0)
+            => Draw3DText(new StringBuilder(text), pos, scale, alwaysOnTop, constantSize, liveTime);
+
         public static void Draw3DText(StringBuilder text, Vector3D pos, double scale = 0.05, bool alwaysOnTop = false, bool constantSize = false, int liveTime = 0)
         {
             if(!BuildInfoMod.Instance.TextAPI.WasDetected)
@@ -46,6 +49,9 @@ namespace Digi.BuildInfo.Utilities
             new HudAPIv2.SpaceMessage(text, pos, cm.Up, cm.Left, scale, TimeToLive: 2 + liveTime, Blend: BlendTypeEnum.PostPP);
         }
 
+        public static void DrawHudText3DPos(string text, Vector3D pos, double scale = 0.5)
+            => DrawHudText3DPos(new StringBuilder(text), pos, scale);
+
         public static void DrawHudText3DPos(StringBuilder text, Vector3D pos, double scale = 0.5)
         {
             if(!BuildInfoMod.Instance.TextAPI.WasDetected)
@@ -60,6 +66,9 @@ namespace Digi.BuildInfo.Utilities
 
             new HudAPIv2.HUDMessage(text, new Vector2D(transformed.X, transformed.Y), Scale: scale, HideHud: false, TimeToLive: 2, Blend: BlendTypeEnum.PostPP);
         }
+
+        public static void DrawHudText(string text, Vector2D pos, double scale = 0.5)
+            => DrawHudText(new StringBuilder(text), pos, scale);
 
         public static void DrawHudText(StringBuilder text, Vector2D pos, double scale = 0.5)
         {

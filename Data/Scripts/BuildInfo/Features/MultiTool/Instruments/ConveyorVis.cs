@@ -1,9 +1,6 @@
-﻿using System.Collections.Generic;
-using Digi.BuildInfo.Utilities;
+﻿using Digi.BuildInfo.Utilities;
 using Sandbox.ModAPI;
-using VRage.Game.Entity;
 using VRage.Game.ModAPI;
-using VRageMath;
 
 namespace Digi.BuildInfo.Features.MultiTool.Instruments
 {
