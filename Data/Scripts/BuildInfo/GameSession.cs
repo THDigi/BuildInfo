@@ -219,14 +219,16 @@ namespace Digi.ComponentLib
             CheckModsForDuplicates();
         }
 
-        static void CheckModsForDuplicates()
+        void CheckModsForDuplicates()
         {
+            List<string> dupeMods = null;
+
             try
             {
-                bool isDS = MyAPIGateway.Utilities.IsDedicated;
+                if(MyAPIGateway.Session == null) throw new Exception("Session  is null");
+                if(MyAPIGateway.Session.Mods == null) throw new Exception("Session.Mods is null");
 
-                HashSet<string> uniqueMods = new HashSet<string>();
-                int dupe = 0;
+                HashSet<string> uniqueMods = new HashSet<string>(MyAPIGateway.Session.Mods.Count);
 
                 foreach(MyObjectBuilder_Checkpoint.ModItem mod in MyAPIGateway.Session.Mods)
                 {
@@ -234,29 +236,30 @@ namespace Digi.ComponentLib
 
                     if(!uniqueMods.Add(id))
                     {
-                        dupe++;
-
                         var modContext = (MyModContext)mod.GetModContext();
                         modContext.CurrentFile = "(all of it)";
 
-                        string text = $"  WARNING: Mod {mod.GetNameAndId()} is added more than once in the mods list!";
-                        MyLog.Default.WriteLineAndConsole(text);
-                    }
-                }
+                        string name = mod.GetNameAndId();
+                        MyLog.Default.WriteLineAndConsole($"  ERROR: Mod {name} is added more than once in the mods list!");
 
-                if(dupe > 0 && !isDS && MyAPIGateway.Session.PromoteLevel >= MyPromoteLevel.Moderator)
-                {
-                    MyLog.Default.WriteLineAndConsole($"{BuildInfoMod.ModName} mod: Checking mods list for duplicates... found {dupe} duplicated!");
-                    MyAPIGateway.Utilities.ShowMessage(BuildInfoMod.ModName, $"World has {dupe} duplicated mods!");
-                }
-                else
-                {
-                    MyLog.Default.WriteLineAndConsole($"{BuildInfoMod.ModName} mod: Checking mods list for duplicates... found none!");
+                        if(dupeMods == null)
+                            dupeMods = new List<string>();
+
+                        dupeMods.Add(name);
+                    }
                 }
             }
             catch(Exception e)
             {
                 Log.Error(e);
+            }
+
+            if(dupeMods != null && dupeMods.Count > 0)
+            {
+                MyAPIGateway.Utilities.InvokeOnGameThread(() =>
+                {
+                    throw new ModCrashedException(new Exception($"{dupeMods.Count} mods added multiple times:\n    " + string.Join("\n    ", dupeMods)), ModContext);
+                });
             }
         }
     }
