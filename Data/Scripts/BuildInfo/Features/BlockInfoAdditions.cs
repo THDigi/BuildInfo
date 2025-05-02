@@ -196,6 +196,17 @@ namespace Digi.BuildInfo.Features
             }
             #endregion
 
+            #region Show construction PCU
+            hud.PCUCost = blockDef.PCU;
+
+            if(hud.BlockIntegrity < hud.CriticalIntegrity
+            && Main.EquipmentMonitor.AimedBlock != null
+            && Main.EquipmentMonitor.AimedProjectedBy == null)
+            {
+                hud.PCUCost = MyCubeBlockDefinition.PCU_CONSTRUCTION_STAGE_COST;
+            }
+            #endregion
+
             if(MyCubeBuilder.Static.IsActivated)
             {
                 // TODO: find a nicer way of showing this:
