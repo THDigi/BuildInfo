@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using BuildInfo.Utilities;
 using Digi.BuildInfo;
 using Digi.BuildInfo.Features;
 using Digi.BuildInfo.Features.Config;
@@ -8,6 +9,7 @@ using Digi.BuildInfo.Utilities;
 using Digi.ConfigLib;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Utils;
@@ -256,10 +258,8 @@ namespace Digi.ComponentLib
 
             if(dupeMods != null && dupeMods.Count > 0)
             {
-                MyAPIGateway.Utilities.InvokeOnGameThread(() =>
-                {
-                    throw new ModCrashedException(new Exception($"{dupeMods.Count} mods added multiple times:\n    " + string.Join("\n    ", dupeMods)), ModContext);
-                });
+                ModCrash.Throw(new Exception($"{dupeMods.Count} mods added multiple times:\n    " + string.Join("\n    ", dupeMods)),
+                    schedule: true);
             }
         }
     }
