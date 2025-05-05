@@ -10,7 +10,6 @@
       <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
       <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
       <AlphaMistingEnable>false</AlphaMistingEnable>
-      <AlphaSaturation>1</AlphaSaturation>
       <Reflectivity>0</Reflectivity>
     </TransparentMaterial>
     <TransparentMaterial>
@@ -22,7 +21,6 @@
       <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
       <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
       <AlphaMistingEnable>false</AlphaMistingEnable>
-      <AlphaSaturation>1</AlphaSaturation>
       <Reflectivity>0</Reflectivity>
     </TransparentMaterial>
     <TransparentMaterial>
@@ -34,7 +32,6 @@
       <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
       <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
       <AlphaMistingEnable>false</AlphaMistingEnable>
-      <AlphaSaturation>1</AlphaSaturation>
       <Reflectivity>0</Reflectivity>
     </TransparentMaterial>
   </TransparentMaterials>
