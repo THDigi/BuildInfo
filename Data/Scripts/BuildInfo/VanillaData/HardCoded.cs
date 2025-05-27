@@ -743,9 +743,6 @@ namespace Digi.BuildInfo.VanillaData
         // from MySmallMissileLauncher.Init() & from MySmallGatlingGun.Init()
         public const float ShipGun_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_GUN; // 0.0002f
 
-        // from MyEntityCapacitorComponent.StorePower()
-        public const float CapacitorChargeMultiplier = 0.8f;
-
         // from MyProjectile.Start()
         public const float Projectile_RandomRangeMin = 0.8f;
         public const float Projectile_RandomRangeMax = 1f;

@@ -1407,6 +1407,8 @@ namespace Digi.BuildInfo.Features
                     }
                     else
                     {
+                        // TODO: check if NPC faction and show faction relation instead of relation to leader (which is probably always enemy?)
+
                         Color ownershipColor = COLOR_NORMAL;
                         if(relation == MyRelationsBetweenPlayerAndBlock.Enemies || relation == MyRelationsBetweenPlayerAndBlock.Neutral)
                             ownershipColor = COLOR_BAD;
@@ -4787,13 +4789,15 @@ namespace Digi.BuildInfo.Features
                         if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                             sb.ResetFormatting().Separator().ResourcePriority(weaponDef.ResourceSinkGroup);
 
-                        float capacitorChargeMultiplier = Hardcoded.CapacitorChargeMultiplier;
-                        if(capacitorChargeMultiplier <= 1f)
-                            sb.Separator().Color(capacitorChargeMultiplier < 1 ? COLOR_BAD : COLOR_GOOD).Label("Loss").ProportionToPercent(1f - capacitorChargeMultiplier);
+                        float chargeMultiplier = capacitorDef.ChargeMultiplier;
+                        if(chargeMultiplier == 1f)
+                            sb.Separator().Color(COLOR_GOOD).Label("Loss").Append("None");
+                        else if(chargeMultiplier <= 1f)
+                            sb.Separator().Color(chargeMultiplier < 1 ? COLOR_BAD : COLOR_GOOD).Label("Loss").ProportionToPercent(1f - chargeMultiplier);
                         else
-                            sb.Separator().Color(COLOR_GOOD).Label("Multiplier").MultiplierToPercent(capacitorChargeMultiplier);
+                            sb.Separator().Color(COLOR_GOOD).Label("Multiplier").MultiplierToPercent(chargeMultiplier);
 
-                        float chargeTime = (capacitorDef.Capacity * 60 * 60) / (capacitorDef.RechargeDraw * capacitorChargeMultiplier);
+                        float chargeTime = (capacitorDef.Capacity * 60 * 60) / (capacitorDef.RechargeDraw * chargeMultiplier);
 
                         AddLine().Label("Power Capacity").PowerStorageFormat(capacitorDef.Capacity).Separator().Color(COLOR_WARNING).Label("Recharge time").Append("around ").TimeFormat(chargeTime);
                         SimpleTooltip("The recharge time varies greatly (-2s to +9s) because of how it's implemented.");

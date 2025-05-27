@@ -49,6 +49,8 @@ namespace Digi.BuildInfo.Features
             //SetupGroup("ArmorLightSlopedCorners", featherIcon, addIcon);
             //SetupGroup("ArmorLightTransitionBlocks", featherIcon, addIcon);
             //SetupGroup("LightArmorPanelsGroup", featherIcon, addIcon);
+
+            // TODO: icon for non-public and for not researched (when research gets a way to check)
         }
 
         readonly List<string> _TempIcons = new List<string>(4);
