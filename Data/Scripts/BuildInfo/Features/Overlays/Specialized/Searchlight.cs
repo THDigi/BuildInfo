@@ -72,7 +72,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 else
                     world = pitchMatrix;
 
-                // HACK: interface properties return 0 after world reload until touched
+                // HACK: interface's Radius returns 0 after world reload until touched (because it's not given a local value)
                 var searchlight = block?.FatBlock as IMySearchlight;
                 float range = searchlight?.GetProperty("Radius").AsFloat().GetValue(searchlight) ?? data.LightLogicData.LightRadius.Default;
                 float offset = searchlight?.GetProperty("Offset").AsFloat().GetValue(searchlight) ?? data.LightLogicData.LightOffset.Default;
@@ -87,16 +87,9 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 MatrixD view;
                 Matrix? local = (isRealBlock ? data.Camera.RelativeSubpart : data.Camera.RelativePreview);
                 if(local != null)
-                {
                     view = local.Value * pitchMatrix;
-                }
                 else
-                {
-                    // MySearchLight.GetViewMatrix()
                     view = pitchMatrix;
-                    view.Translation += view.Forward * lightDef.ForwardCameraOffset;
-                    view.Translation += view.Up * lightDef.UpCameraOffset;
-                }
 
                 MyTransparentGeometry.AddLineBillboard(MaterialGradient, ColorCamera, view.Translation, (Vector3)view.Forward, 3, 0.01f, BlendType);
                 MyTransparentGeometry.AddPointBillboard(MaterialDot, ColorCamera, view.Translation, 0.04f, 0, blendType: BlendType);

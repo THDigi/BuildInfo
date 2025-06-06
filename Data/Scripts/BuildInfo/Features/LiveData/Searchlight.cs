@@ -54,10 +54,10 @@ namespace Digi.BuildInfo.Features.LiveData
                 TurretInfo.AssignData(internalBlock, subpartBase1, subpartBase2);
 
                 Camera = new TurretAttachmentInfo();
-                Camera.AssignData(subpartBase2, internalBlock, "camera");
+                Camera.AssignData(internalBlock, subpartBase2, "camera", lightDef.ForwardCameraOffset, lightDef.UpCameraOffset);
 
                 LightSubpart = new TurretAttachmentInfo();
-                LightSubpart.AssignData(subpartBase2, internalBlock, lightDef.LightDummyName);
+                LightSubpart.AssignData(internalBlock, subpartBase2, lightDef.LightDummyName);
 
                 valid = true;
             }

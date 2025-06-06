@@ -341,16 +341,9 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 MatrixD view;
                 Matrix? local = (isRealBlock ? dataTurret.Camera.RelativeSubpart : dataTurret.Camera.RelativePreview);
                 if(local != null)
-                {
                     view = local.Value * matrixBase2;
-                }
                 else
-                {
-                    // MyLargeTurretBase.GetViewMatrix()
                     view = matrixBase2;
-                    view.Translation += view.Forward * turretDef.ForwardCameraOffset;
-                    view.Translation += view.Up * turretDef.UpCameraOffset;
-                }
 
                 // TODO: use turretDef.MaxFov to show view frustum pyramid instead of a line - already done for raycast in camera overlay
                 MyTransparentGeometry.AddLineBillboard(MaterialGradient, ColorCamera, view.Translation, (Vector3)view.Forward, 3, 0.025f, BlendType);

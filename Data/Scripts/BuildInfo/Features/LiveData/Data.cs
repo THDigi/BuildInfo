@@ -40,18 +40,32 @@ namespace Digi.BuildInfo.Features.LiveData
         public Matrix? RelativeSubpart;
         public Matrix? RelativePreview;
 
-        public void AssignData(MyEntity subpart, MyCubeBlock block, string dummyName)
+        /// <summary>
+        /// </summary>
+        /// <param name="block">for preview transforms</param>
+        /// <param name="subpart">the subpart where to look for the dummy (usually elevation subpart)</param>
+        /// <param name="dummyName">dummy to search for in the given subpart</param>
+        /// <param name="offsetForward">Only used if the dummy is not found</param>
+        /// <param name="offsetUp">Only used if the dummy is not found</param>
+        public void AssignData(MyCubeBlock block, MyEntity subpart, string dummyName, float offsetForward = 0, float offsetUp = 0)
         {
             if(subpart?.Model != null)
             {
+                Matrix local;
                 IMyModelDummy cameraDummy = subpart.Model.GetDummies().GetValueOrDefault(dummyName, null);
                 if(cameraDummy != null)
                 {
-                    RelativeSubpart = Matrix.Normalize(cameraDummy.Matrix);
-
-                    MatrixD worldspace = RelativeSubpart.Value * subpart.WorldMatrix;
-                    RelativePreview = worldspace * block.PositionComp.WorldMatrixInvScaled; // to block-local
+                    local = Matrix.Normalize(cameraDummy.Matrix);
                 }
+                else
+                {
+                    // offsets are only used if no camera dummy is found, like in MyLargeTurretBase.GetViewMatrix()/MySearchLight.GetViewMatrix()
+                    local = Matrix.CreateTranslation(0, offsetUp, -offsetForward);
+                }
+
+                MatrixD world = local * subpart.WorldMatrix;
+                RelativeSubpart = local;
+                RelativePreview = world * block.PositionComp.WorldMatrixInvScaled; // to block-local
             }
         }
     }

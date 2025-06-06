@@ -44,7 +44,7 @@ namespace Digi.BuildInfo.Features.LiveData
             TurretInfo.AssignData(block, subpartBase1, subpartBase2);
 
             Camera = new TurretAttachmentInfo();
-            Camera.AssignData(subpartBase2, block, turretDef.CameraDummyName);
+            Camera.AssignData(block, subpartBase2, turretDef.CameraDummyName, turretDef.ForwardCameraOffset, turretDef.UpCameraOffset);
 
             return true;
         }
