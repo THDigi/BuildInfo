@@ -77,7 +77,8 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
                 if(CheckEverything || (IsF11MenuAccessible && localMods.Count > 0))
                 {
-                    CheckMods();
+                    CheckModDefinitions();
+                    CheckModFiles();
 
                     F11MenuShownOnLoad = MyDefinitionErrors.ShouldShowModErrors;
                 }
@@ -648,6 +649,38 @@ namespace Digi.BuildInfo.Features.ModderHelp
             }
         }
 
+        /// <summary>
+        /// Find .sbc files that are not lower case ".sbc", making the game not load them.
+        /// </summary>
+        void CheckModFiles()
+        {
+            foreach(MyObjectBuilder_Checkpoint.ModItem modItem in MyAPIGateway.Session.Mods)
+            {
+                if(modItem.PublishedFileId != 0)
+                    continue; // skip published mods because PathUtils.GetFilesRecursively doesn't work with those.
+
+                if(modItem.Name == Main.Session.ModContext.ModName)
+                    continue;
+
+                MyModContext modContext = (MyModContext)modItem.GetModContext();
+                string dataPath = modContext.ModPathData;
+
+                // NOTE: this only allows to read in game folder and local mods folder, therefore it cannot work on published mods.
+                string[] files = PathUtils.GetFilesRecursively(dataPath, "*");
+
+                foreach(string filePath in files)
+                {
+                    string ext = Path.GetExtension(filePath);
+
+                    if(ext != ".sbc" && ext.Equals(".sbc", StringComparison.OrdinalIgnoreCase))
+                    {
+                        modContext.CurrentFile = filePath;
+                        ModProblem(modContext, $"This sbc file won't be loaded! Must be all lower case '.sbc' extension to get picked up.");
+                    }
+                }
+            }
+        }
+
         class ModHintData
         {
             public readonly MyModContext ModContext;
@@ -666,7 +699,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
             }
         }
 
-        void CheckMods()
+        void CheckModDefinitions()
         {
             Dictionary<string, ModHintData> modHints = new Dictionary<string, ModHintData>();
             HashSet<string> voxelPlacementAlerted = new HashSet<string>();
@@ -1136,6 +1169,15 @@ namespace Digi.BuildInfo.Features.ModderHelp
         {
             string message = $"Problem with '{GetDefId(def)}': {text}";
             MyDefinitionErrors.Add(def.Context, $"{Signature}{message}", TErrorSeverity.Error, writeToLog: false);
+            MyLog.Default.WriteLine($"BuildInfo ModderHelp: {message}");
+            Log.Info($"[ModderHelp] {message}");
+            ModProblems++;
+        }
+
+        public void ModProblem(MyModContext context, string text)
+        {
+            string message = $"Problem: {text}";
+            MyDefinitionErrors.Add(context, $"{Signature}{message}", TErrorSeverity.Error, writeToLog: false);
             MyLog.Default.WriteLine($"BuildInfo ModderHelp: {message}");
             Log.Info($"[ModderHelp] {message}");
             ModProblems++;
