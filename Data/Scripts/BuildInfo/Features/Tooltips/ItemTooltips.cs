@@ -644,11 +644,20 @@ namespace Digi.BuildInfo.Features.Tooltips
                 if(detailed)
                 {
                     string nameNoTooltip = bp.DisplayNameText;
-                    int newlineIdx = nameNoTooltip.IndexOf('\n');
-                    if(newlineIdx != -1)
-                        nameNoTooltip = nameNoTooltip.Substring(0, newlineIdx);
+                    if(nameNoTooltip == null && bp.Results != null && bp.Results.Length > 0)
+                    {
+                        var resultItemDef = MyDefinitionManager.Static.TryGetPhysicalItemDefinition(bp.Results[0].Id);
+                        nameNoTooltip = resultItemDef?.DisplayNameText;
+                    }
 
-                    TmpStringSet.Add(nameNoTooltip);
+                    if(nameNoTooltip != null)
+                    {
+                        int newlineIdx = nameNoTooltip.IndexOf('\n');
+                        if(newlineIdx != -1)
+                            nameNoTooltip = nameNoTooltip.Substring(0, newlineIdx);
+
+                        TmpStringSet.Add(nameNoTooltip);
+                    }
                 }
             }
 

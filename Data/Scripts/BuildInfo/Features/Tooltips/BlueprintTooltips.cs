@@ -96,7 +96,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 }
                 catch(Exception e)
                 {
-                    string msg = $"Error setting up tooltips for blueprint: {bpBaseDef?.Id.ToString()}";
+                    string msg = $"Error setting up tooltips for blueprint '{bpBaseDef?.Id.ToString()}' from mod {bpBaseDef?.Context?.GetNameAndId()}";
                     Log.Error($"{msg}\n{e}", msg);
                 }
             }
