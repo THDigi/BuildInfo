@@ -72,6 +72,8 @@ namespace Digi.BuildInfo.Features
 
         private void CustomTerminal(IMyTerminalBlock block, List<IMyTerminalControl> controls)
         {
+            int line = 75;
+
             try
             {
                 if(block == null || controls == null || ProjectorBpInfoButton == null)
@@ -81,9 +83,13 @@ namespace Digi.BuildInfo.Features
 
                 if(projector != null)
                 {
+                    line = 86;
+
                     if(projector.ProjectedGrid != null)
                     {
                         int bpButtonIndex = controls.Count;
+
+                        line = 92;
 
                         #region Find button index
                         for(int i = 0; i < controls.Count; i++)
@@ -97,6 +103,8 @@ namespace Digi.BuildInfo.Features
                         }
                         #endregion
 
+                        line = 106;
+
                         #region Projection info (listbox)
                         // maintain an OB cache of the viewed projector block, to access its projected grids as OBs (because of limited modAPI)
                         if(ProjectorOB == null || ProjectorOB.EntityId != projector.EntityId)
@@ -104,58 +112,101 @@ namespace Digi.BuildInfo.Features
                             ProjectorOB = (MyObjectBuilder_Projector)projector.GetObjectBuilderCubeBlock(copy: false);
                         }
 
+                        line = 115;
+
                         int projections = 0;
                         int projectedPCU = 0;
                         int builtPCU = 0;
                         int unknownBlocks = 0;
+                        string error = null;
 
-                        foreach(MyObjectBuilder_CubeGrid gridOB in ProjectorOB.ProjectedGrids) // no need to check ProjectedGrid because this OB is generated, the deeper ones are not.
+                        if(ProjectorOB.ProjectedGrids == null)
                         {
-                            projectedPCU += gridOB.CubeBlocks.Count;
+                            error = "ERROR: Projector OB doesn't have ProjectedGrids?!";
+                        }
+                        else
+                        {
+                            line = 129;
 
-                            foreach(MyObjectBuilder_CubeBlock blockOB in gridOB.CubeBlocks)
+                            foreach(MyObjectBuilder_CubeGrid gridOB in ProjectorOB.ProjectedGrids) // no need to check ProjectedGrid because this OB is generated, the deeper ones are not.
                             {
-                                MyCubeBlockDefinition def;
-                                if(!MyDefinitionManager.Static.TryGetCubeBlockDefinition(blockOB.GetId(), out def))
+                                if(gridOB == null)
                                 {
-                                    unknownBlocks++;
-                                    continue;
+                                    error = "ERROR: A null projected grid?!";
+                                    break;
                                 }
 
-                                builtPCU += def.PCU;
-
-                                // any projector that is going to be built is going to project its own stuff which also add PCU, but no deeper than this!
-                                MyObjectBuilder_Projector projectorOB = blockOB as MyObjectBuilder_Projector;
-                                if(projectorOB != null)
+                                if(gridOB.CubeBlocks == null)
                                 {
-                                    if(projectorOB.ProjectedGrids != null)
+                                    error = "ERROR: A projected grid has null CubeBlocks?!";
+                                    break;
+                                }
+
+                                projectedPCU += gridOB.CubeBlocks.Count;
+
+                                line = 147;
+
+                                foreach(MyObjectBuilder_CubeBlock blockOB in gridOB.CubeBlocks)
+                                {
+                                    MyCubeBlockDefinition def;
+                                    if(!MyDefinitionManager.Static.TryGetCubeBlockDefinition(blockOB.GetId(), out def))
                                     {
-                                        foreach(MyObjectBuilder_CubeGrid deeperGridOB in projectorOB.ProjectedGrids)
+                                        unknownBlocks++;
+                                        continue;
+                                    }
+
+                                    line = 158;
+
+                                    builtPCU += def.PCU;
+
+                                    // any projector that is going to be built is going to project its own stuff which also add PCU, but no deeper than this!
+                                    MyObjectBuilder_Projector projectorOB = blockOB as MyObjectBuilder_Projector;
+                                    if(projectorOB != null)
+                                    {
+                                        if(projectorOB.ProjectedGrids != null)
                                         {
-                                            builtPCU += deeperGridOB.CubeBlocks.Count;
+                                            foreach(MyObjectBuilder_CubeGrid deeperGridOB in projectorOB.ProjectedGrids)
+                                            {
+                                                builtPCU += deeperGridOB.CubeBlocks.Count;
+                                            }
+                                        }
+                                        else if(projectorOB.ProjectedGrid != null)
+                                        {
+                                            builtPCU += projectorOB.ProjectedGrid.CubeBlocks.Count;
                                         }
                                     }
-                                    else if(projectorOB.ProjectedGrid != null)
-                                    {
-                                        builtPCU += projectorOB.ProjectedGrid.CubeBlocks.Count;
-                                    }
-                                }
-                            }
 
-                            FindProjections(gridOB, ref projections);
+                                    line = 179;
+                                }
+
+                                line = 182;
+                                FindProjections(gridOB, ref projections);
+                                line = 184;
+                            }
                         }
+
+                        line = 188;
 
                         using(InfoLines info = new InfoLines(ProjectorInfoLines, InfoContents))
                         {
-                            info.Add($"Projection PCU: {projectedPCU}");
-                            info.Add($"Fully built PCU: {builtPCU}");
+                            if(error != null)
+                            {
+                                info.Add(error);
+                            }
+                            else
+                            {
+                                info.Add($"Projection PCU: {projectedPCU}");
+                                info.Add($"Fully built PCU: {builtPCU}");
 
-                            if(unknownBlocks > 0)
-                                info.Add($"WARNING: {unknownBlocks} unknown blocks");
+                                if(unknownBlocks > 0)
+                                    info.Add($"WARNING: {unknownBlocks} unknown blocks");
 
-                            if(projections >= 2)
-                                info.Add($"WARNING: {projections} layers of projectors!");
+                                if(projections >= 2)
+                                    info.Add($"WARNING: {projections} layers of projectors!");
+                            }
                         }
+
+                        line = 209;
 
                         if(ProjectorInfoLines.VisibleRowsCount > 0)
                         {
@@ -174,7 +225,7 @@ namespace Digi.BuildInfo.Features
             }
             catch(Exception e)
             {
-                Log.Error(e);
+                Log.Error($"Error at line #{line}\n{e}");
             }
         }
 

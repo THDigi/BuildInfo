@@ -47,6 +47,7 @@ namespace Digi.BuildInfo.Systems
 
         void ResetCallback()
         {
+            Log.Info("RichHUD reset called.");
         }
     }
 }
