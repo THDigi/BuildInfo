@@ -40,7 +40,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             Combination value = Getter();
             string titleColored = (Item.Interactable ? Title : Utils.ColorTag(ConfigMenuHandler.LabelColorDisabled, Title));
             string valueColor = (Item.Interactable ? Utils.ColorTag((value.CombinationString == DefaultValue.CombinationString ? ConfigMenuHandler.ValueColorDefault : ConfigMenuHandler.ValueColorChanged)) : "");
-            Item.Text = $"{titleColored}: {valueColor}{value.ToString()} {Utils.ColorTag(ConfigMenuHandler.DefaultValueTooltipColor)}[default:{DefaultValue.ToString()}]";
+            Item.Text = $"{titleColored}: {valueColor}{value.GetBinds()} {Utils.ColorTag(ConfigMenuHandler.DefaultValueTooltipColor)}[default:{DefaultValue.GetBinds()}]";
         }
 
         void OnSubmit(MyKeys key, bool shift, bool ctrl, bool alt)
