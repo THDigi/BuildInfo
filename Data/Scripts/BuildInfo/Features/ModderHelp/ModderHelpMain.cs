@@ -491,6 +491,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     // MyDefinitionManager.MakeBlueprintFromComponentStack()
                     if(error.Message.StartsWith("Could not find component blueprint for"))
                     {
+                        error.ErrorFile = null; // file is misleading in this one
                         error.Message += $"\n{Signature}All components must have a blueprint otherwise game crashes when using tools on the block using the component."
                                        + LineSignature + "You can have a blueprint without it being used though, just don't add it to a BlueprintClass."
                                        + LineSignature + "See ZoneChip's blueprint as an example.";
