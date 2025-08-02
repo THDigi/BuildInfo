@@ -354,6 +354,8 @@ namespace Digi.BuildInfo.Features.GUI
             Main.MenuHandler.RemoveCursorRequest(GetType().Name);
             Main.MenuHandler.SetUpdateMenu(this, false);
 
+            SearchBarClosed();
+
             if(WindowBG == null)
                 return;
 
@@ -373,14 +375,15 @@ namespace Digi.BuildInfo.Features.GUI
             }
 
             HideHighlighters();
-            SearchBarClosed();
         }
 
         public override void UpdateDraw()
         {
             Vector2D mousePos = MenuHandler.GetMousePositionGUI();
-
             CloseButton.Update(mousePos);
+
+            if(!Visible)
+                return;
 
             bool scrolled = false;
 
@@ -440,16 +443,21 @@ namespace Digi.BuildInfo.Features.GUI
                     if(c == '\r')
                         continue;
 
-                    if(c == 1) // ctrl+A
+                    if(c == 1 || c == 127) // ctrl+a or ctrl+backspace
                     {
                         TextInput.Clear();
                         break;
                     }
 
-                    if(c == '\b')
+                    if(c == '\b') // backspace
                     {
                         if(TextInput.Count > 0)
                             TextInput.RemoveAt(TextInput.Count - 1);
+                    }
+
+                    if(c == 22) // ctrl+v
+                    {
+                        // cannot read clipboard, would be a security problem.
                     }
 
                     continue;
