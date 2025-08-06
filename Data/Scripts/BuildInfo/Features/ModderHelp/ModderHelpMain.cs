@@ -189,7 +189,8 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
             cloudLayerInfo[pathKey] = new CloudLayerInfo()
             {
-                AppendMessage = "You can ignore this game error if the planet looks fine.\nIf you're the planet's author you can ask on Keen discord how to get rid the fake cloudlayer error.",
+                AppendMessage = $"\n{AppendMsg}You can ignore this game error if the planet looks fine." +
+                                $"\n{LineSignature}If you're the planet's author you can ask on Keen discord how to get rid the fake cloudlayer error.",
                 SetSeverity = TErrorSeverity.Warning,
             };
 
@@ -343,19 +344,10 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
                 bool isLocal = CheckEverything || localMods.Contains(error.ModName);
 
-                if(isLocal)
+                // chat message when LOCAL mods have definition errors
+                if(isLocal && error.Severity >= TErrorSeverity.Error)
                 {
-                    // chat message when LOCAL mods have definition errors
-                    if(error.Severity >= TErrorSeverity.Error)
-                        DefinitionErrors = true;
-
-                    // HACK: MyCubeBlockDefinition.InitMountPoints() has double standards on undefined mountpoints
-                    if(error.Message.StartsWith("Obsolete default definition of mount points in"))
-                    {
-                        // does not modify it in the log file, because it writes it to log immediately as it's added
-                        error.Severity = TErrorSeverity.Error; // escalate it because it's pretty bad
-                        error.Message += $"\n{AppendMsg}This means game will generate mountpoints for this block! Add a disabled mountpoint to have no mountpoints on this block.";
-                    }
+                    DefinitionErrors = true;
                 }
 
                 if(!CompileErrors)
@@ -409,6 +401,13 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
                 if(f11MenuAccessible)
                 {
+                    // MyCubeBlockDefinition.InitMountPoints() has double standards on undefined mountpoints
+                    if(error.Message.StartsWith("Obsolete default definition of mount points in"))
+                    {
+                        error.Severity = TErrorSeverity.Error; // escalate it because it's pretty bad
+                        error.Message += $"\n{AppendMsg}This means game will generate mountpoints for this block! Add a disabled mountpoint to have no mountpoints on this block.";
+                    }
+
                     // MyDefinitionManager.ProcessContentFilePath() + cloudlayer stuff from above
                     const string resourceNotFoundPrefix = "Resource not found, setting to null. Resource path: ";
                     if(error.Message.StartsWith(resourceNotFoundPrefix))
@@ -425,7 +424,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
                         if(cloudLayerInfo.TryGetValue(filePath, out info))
                         {
                             if(!string.IsNullOrEmpty(info.AppendMessage))
-                                error.Message += $"\n{AppendMsg}{info.AppendMessage}";
+                                error.Message += info.AppendMessage;
 
                             if(info.SetSeverity.HasValue)
                                 error.Severity = info.SetSeverity.Value;
@@ -906,13 +905,14 @@ namespace Digi.BuildInfo.Features.ModderHelp
                                 modHints[modId] = hintData;
                             }
 
+                            string file = blockDef?.Context?.CurrentFile ?? "(UnknownFile)";
                             if(airTightFaces == 0)
                             {
-                                hintData.RecommendIsAirTightFalse.GetValueOrNew(blockDef.Context.CurrentFile).Add(blockDef);
+                                hintData.RecommendIsAirTightFalse.GetValueOrNew(file).Add(blockDef);
                             }
                             else if(airTightFaces == totalFaces)
                             {
-                                hintData.RecommendIsAirTightTrue.GetValueOrNew(blockDef.Context.CurrentFile).Add(blockDef);
+                                hintData.RecommendIsAirTightTrue.GetValueOrNew(file).Add(blockDef);
                             }
                         }
                     }
