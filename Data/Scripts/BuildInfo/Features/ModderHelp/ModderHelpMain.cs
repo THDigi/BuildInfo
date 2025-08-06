@@ -477,8 +477,8 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     // MyDefinitionManager.PostprocessBlueprints()
                     if(error.Message.StartsWith("Following blueprints could not be post-processed"))
                     {
-                        error.Message += $"\n{Signature}Usually means a result item was not found."
-                                      + LineSignature + "Also the file here is likely to be wrong so ignore it, focus on the blueprint ID instead.";
+                        error.ErrorFile = null; // file is misleading in this one
+                        error.Message += $"\n{Signature}Usually means a result item was not found.";
                         continue;
                     }
 

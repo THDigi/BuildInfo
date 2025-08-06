@@ -10,6 +10,8 @@ using VRage.Game.ModAPI;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo
 {
+    // TODO FIX: thruster's set override action does not show up AT ALL?!
+
     public class ActionWrapper
     {
         public readonly IMyTerminalAction Action;
@@ -20,7 +22,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         public Action<IMyTerminalBlock, StringBuilder> OriginalWriter { get; private set; }
 
-        private readonly Action<IMyTerminalBlock, StringBuilder> CustomWriter;
+        readonly Action<IMyTerminalBlock, StringBuilder> CustomWriter;
 
         public ActionWrapper(IMyTerminalAction action, string debugSource = null)
         {
@@ -327,7 +329,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             //    case "AutoDeploy": return "Toggle Auto-Deploy";
 
-            //    case "UseConveyor": return "Toggle Use Conveyor";
+            //    case "UseConveyor": return "Toggle Auto Push/Pull";
 
             //    case "RunWithDefaultArgument": return "Run (no args)";
             //}

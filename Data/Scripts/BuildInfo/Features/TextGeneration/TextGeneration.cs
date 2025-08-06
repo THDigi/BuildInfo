@@ -2197,7 +2197,7 @@ namespace Digi.BuildInfo.Features
                     if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings))
                     {
                         if(hasConveyorPorts && def.CubeSize == MyCubeSize.Small && def.Id.TypeId == typeof(MyObjectBuilder_SmallMissileLauncher))
-                            AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Append("UseConveyors is default off!");
+                            AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Append("Auto Push/Pull is default off!");
                     }
 
                     //if(hasCustomLogic)

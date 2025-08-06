@@ -16,7 +16,8 @@ namespace Digi.BuildInfo.Features.HUD
             if(chr == null)
                 return;
 
-            MyCharacterStatComponent statComp = chr.Components.Get<MyEntityStatComponent>() as MyCharacterStatComponent;
+            MyCharacterStatComponent statComp = chr.Components.Get<MyCharacterStatComponent>()
+                                             ?? chr.Components.Get<MyEntityStatComponent>() as MyCharacterStatComponent;
             if(statComp == null)
                 return;
 
