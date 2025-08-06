@@ -31,6 +31,8 @@ namespace Digi.BuildInfo.Features.LiveData
             DeleteGrid = deleteGridOnSpawn;
             Callback = callback;
 
+            Log.Info($"Temp block spawned for {def.Id}");
+
             MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
             Vector3D spawnPos = camMatrix.Translation + camMatrix.Backward * 100;
 
@@ -86,6 +88,7 @@ namespace Digi.BuildInfo.Features.LiveData
                 if(DeleteGrid && grid != null)
                 {
                     grid.Close();
+                    MyEntities.UnregisterForDraw(grid); // HACK for "Entity ... is closed." spam from MyEntities.Draw() -> IsAnyRenderObjectVisible()
                 }
             }
         }
