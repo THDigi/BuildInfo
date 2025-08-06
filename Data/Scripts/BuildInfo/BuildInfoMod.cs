@@ -122,6 +122,7 @@ namespace Digi.BuildInfo
         public readonly DebugLog DebugLog;
         public readonly ModderHelpMain ModderHelpMain;
         public readonly CheckRestartRequired CheckRestartRequired;
+        public readonly CheckEntitiesList CheckEntitiesList;
         public readonly ProfilerDisplay ProfilerDisplay;
 
         public static bool IsDevMod { get; private set; } = false;
@@ -224,6 +225,7 @@ namespace Digi.BuildInfo
             DebugLog = new DebugLog(this);
             ModderHelpMain = new ModderHelpMain(this);
             CheckRestartRequired = new CheckRestartRequired(this);
+            CheckEntitiesList = new CheckEntitiesList(this);
             ProfilerDisplay = new ProfilerDisplay(this);
         }
     }
