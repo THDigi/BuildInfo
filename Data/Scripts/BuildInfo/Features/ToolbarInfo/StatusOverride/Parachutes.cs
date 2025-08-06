@@ -37,17 +37,15 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             Processor.AppendSingleStats(sb, item.Block);
 
-            if(!Processor.AnimFlip && !hasAmmo && parachute.Status != DoorStatus.Open)
+            if(!Processor.AnimFlip && !hasAmmo)
                 sb.Append("Empty!\n");
 
-            switch(parachute.Status)
-            {
-                case DoorStatus.Opening: sb.Append("Opening"); break;
-                case DoorStatus.Closing: sb.Append("Closing"); break;
-                case DoorStatus.Open: sb.Append("Deployed"); break;
-                case DoorStatus.Closed: sb.Append("Ready"); break;
-                default: return false;
-            }
+            if(parachute.Status == DoorStatus.Open)
+                sb.Append("Deployed");
+            else
+                sb.Append("Closed");
+
+            // Opening and Closing status are not used
 
             return true;
         }
