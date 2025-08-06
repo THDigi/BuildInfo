@@ -36,7 +36,8 @@ namespace Digi.BuildInfo.Features.ModderHelp
         HudAPIv2.BillBoardHUDMessage ErrorsMenuBackdrop;
 
         const string ErrorsGUITypeName = "MyGuiScreenDebugErrors";
-        const string Signature = "> [BuildInfo] ";
+        const string AppendMsg = "> [BuildInfo extra explanation] "; // messages added to existing errors/warnings
+        const string CustomMsg = "> [Added by BuildInfo] "; // errors/warnings added by this mod
         const string LineSignature = "\n> ";
 
         public bool IsF11MenuAccessible => MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE;
@@ -54,7 +55,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
             if(MyAPIGateway.Session.Config == null)
             {
                 Log.Info("WARNING: `MyAPIGateway.Session.Config` is null.");
-                MyLog.Default.WriteLine($"{Signature}WARNING: `MyAPIGateway.Session.Config` is null.");
+                MyLog.Default.WriteLine($"{CustomMsg}WARNING: `MyAPIGateway.Session.Config` is null.");
             }
         }
 
@@ -146,8 +147,10 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
             if(hackLayer.Textures.Count > 1)
             {
-                MyDefinitionErrors.Add(def.Context, $"{Signature}Planet '{def.Id.SubtypeName}' at CloudLayer #{layerNum}: "
-                    + "More than 1 texture, game only uses the first Texture tag! (and gives it _cm and _alphamask suffix to read 2 textures)", TErrorSeverity.Warning);
+                MyDefinitionErrors.Add(def.Context,
+                    $"{CustomMsg}Planet '{def.Id.SubtypeName}' at CloudLayer #{layerNum}: "
+                    + "More than 1 texture, game only uses the first Texture tag! (and gives it _cm and _alphamask suffix to read 2 textures)",
+                    TErrorSeverity.Warning);
             }
 
             string filePath = hackLayer.Textures[0];
@@ -168,7 +171,8 @@ namespace Digi.BuildInfo.Features.ModderHelp
             catch(Exception)
             {
                 // game is not gonna add an error for this file path so I gotta add one myself
-                MyDefinitionErrors.Add(def.Context, $"{Signature}Planet '{def.Id.SubtypeName}' at CloudLayer #{layerNum}: Invalid path: '{filePath}'"
+                MyDefinitionErrors.Add(def.Context,
+                    $"{CustomMsg}Planet '{def.Id.SubtypeName}' at CloudLayer #{layerNum}: Invalid path: '{filePath}'"
                     + LineSignature + "If the mod path is added twice then the problem is that the texture exists AND using a new planet generator definition style (compare EarthLike and Pertram start/end tags)."
                     + LineSignature + "Either modify definition to use the old style (recommended) or make it so the <Texture> tag doesn't point to an existing file while also having _cm and _alphamask prefixed ones with same name nearby.",
                     TErrorSeverity.Error);
@@ -350,7 +354,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     {
                         // does not modify it in the log file, because it writes it to log immediately as it's added
                         error.Severity = TErrorSeverity.Error; // escalate it because it's pretty bad
-                        error.Message += $"\n{Signature}This means game will generate mountpoints for this block! Add a disabled mountpoint to have no mountpoints on this block.";
+                        error.Message += $"\n{AppendMsg}This means game will generate mountpoints for this block! Add a disabled mountpoint to have no mountpoints on this block.";
                     }
                 }
 
@@ -388,7 +392,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
                                 if(strippedMessage.StartsWith("MusConcert_"))
                                 {
                                     error.Severity = TErrorSeverity.Notice;
-                                    error.Message += $"\n{Signature}This just a side effect of the Signal DLC not being installed.";
+                                    error.Message += $"\n{AppendMsg}This just a side effect of the Signal DLC not being installed.";
                                 }
                             }
 
@@ -397,7 +401,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
                         if(isMod && f11MenuAccessible)
                         {
-                            error.Message += $"\n{Signature}If you intend on referencing game sounds, you can only do with .wav files by using original relative path and removing the .wav extension.";
+                            error.Message += $"\n{AppendMsg}If you intend on referencing game sounds, you can only do with .wav files by using original relative path and removing the .wav extension.";
                             continue;
                         }
                     }
@@ -413,7 +417,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
                         if(filePath.EndsWith(".xwm", StringComparison.OrdinalIgnoreCase) || filePath.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
                         {
-                            error.Message += $"\n{Signature}Path to sounds in mods start from the mod root folder.";
+                            error.Message += $"\n{AppendMsg}Path to sounds in mods start from the mod root folder.";
                             continue;
                         }
 
@@ -421,7 +425,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
                         if(cloudLayerInfo.TryGetValue(filePath, out info))
                         {
                             if(!string.IsNullOrEmpty(info.AppendMessage))
-                                error.Message += $"\n{Signature}{info.AppendMessage}";
+                                error.Message += $"\n{AppendMsg}{info.AppendMessage}";
 
                             if(info.SetSeverity.HasValue)
                                 error.Severity = info.SetSeverity.Value;
@@ -439,7 +443,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
                         if(filePath.StartsWith("Audio", StringComparison.OrdinalIgnoreCase))
                         {
                             error.Severity = TErrorSeverity.Notice; // reduce severity
-                            error.Message += $"\n{Signature}Ignore this particular one, modder wants to use sound from the game folder and omitting extension is the only way to do that.";
+                            error.Message += $"\n{AppendMsg}Ignore this particular one, modder wants to use sound from the game folder and omitting extension is the only way to do that.";
                         }
 
                         continue;
@@ -467,7 +471,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
                             if(anyUpperCase)
                             {
-                                error.Message += $"\n{Signature}Game expects all lower-case extensions, try {extension.ToLower()}.";
+                                error.Message += $"\n{AppendMsg}Game expects all lower-case extensions, try {extension.ToLower()}.";
                             }
                         }
 
@@ -478,14 +482,14 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     if(error.Message.StartsWith("Following blueprints could not be post-processed"))
                     {
                         error.ErrorFile = null; // file is misleading in this one
-                        error.Message += $"\n{Signature}Usually means a result item was not found.";
+                        error.Message += $"\n{AppendMsg}Usually means a result item was not found.";
                         continue;
                     }
 
                     // MyDefinitionManager.InitSpawnGroups()
                     if(error.Message.StartsWith("Error loading spawn group"))
                     {
-                        error.Message += $"\n{Signature}Means the spawn group has no prefabs or 0 spawn radius or 0 frequency.";
+                        error.Message += $"\n{AppendMsg}Means the spawn group has no prefabs or 0 spawn radius or 0 frequency.";
                         continue;
                     }
 
@@ -493,7 +497,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     if(error.Message.StartsWith("Could not find component blueprint for"))
                     {
                         error.ErrorFile = null; // file is misleading in this one
-                        error.Message += $"\n{Signature}All components must have a blueprint otherwise game crashes when using tools on the block using the component."
+                        error.Message += $"\n{AppendMsg}All components must have a blueprint otherwise game crashes when using tools on the block using the component."
                                        + LineSignature + "You can have a blueprint without it being used though, just don't add it to a BlueprintClass."
                                        + LineSignature + "See ZoneChip's blueprint as an example.";
                         continue;
@@ -502,21 +506,21 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     // MyDefinitionManager.DefinitionDictionary<V>
                     if(error.Message == "Invalid definition id")
                     {
-                        error.Message += $"\n{Signature}Very vague one indeed, it means you have a <TypeId> that is made up, you have to use an existing one.";
+                        error.Message += $"\n{AppendMsg}Very vague one indeed, it means you have a <TypeId> that is made up, you have to use an existing one.";
                         continue;
                     }
 
                     // MyDefinitionManager.FailModLoading() without any stacktrace most likely means an XML syntax error.
                     if(error.Message == "MOD SKIPPED, Cannot load definition file")
                     {
-                        error.Message += $"\n{Signature}Most likely an XML syntax error. Look in the SpaceEngineers.log file for 'Exception during objectbuilder'";
+                        error.Message += $"\n{AppendMsg}Most likely an XML syntax error. Look in the SpaceEngineers.log file for 'Exception during objectbuilder'";
                         continue;
                     }
 
                     // MyDefinitionManager.FailModLoading() + a NRE stacktrace
                     if(error.Message.StartsWith(phase6error))
                     {
-                        error.Message += $"\n{Signature}This error is caused by various issues, attempting to identify the issue...";
+                        error.Message += $"\n{AppendMsg}This error is caused by various issues, attempting to identify the issue...";
 
                         MyObjectBuilder_Checkpoint.ModItem? mod = GetModItemFromName(error.ModName);
 
@@ -565,7 +569,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
                     if(error.Message.Contains(blockInitError))
                     {
-                        error.Message += $"\n{Signature}Issue is in the common tags on block definition, possible causes:"
+                        error.Message += $"\n{AppendMsg}Issue is in the common tags on block definition, possible causes:"
                                       + LineSignature + " - missing the <CriticalComponent tag"
                                       + LineSignature + " - one or more components don't exist (if component is in another mod, ensure that mod loads first, lower in the mods window)";
                         continue;
@@ -574,7 +578,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     // MyDefinitionManager.InitCharacters()
                     if(error.Message.StartsWith("Invalid character Id found in mod"))
                     {
-                        error.Message += $"\n{Signature}Invalid TypeId in particular, it does not exist.";
+                        error.Message += $"\n{AppendMsg}Invalid TypeId in particular, it does not exist.";
                         continue;
                     }
                 }
@@ -632,13 +636,13 @@ namespace Digi.BuildInfo.Features.ModderHelp
                 if(error.Severity == TErrorSeverity.Error && error.Message == "There was error during loading of model, please check log file.")
                 {
                     error.Severity = TErrorSeverity.Notice; // reduce its severity
-                    error.Message += $"\n{Signature}This is a meaningless error that always happens in a certain context, ignore it.";
+                    error.Message += $"\n{AppendMsg}This is a meaningless error that always happens in a certain context, ignore it.";
                 }
 
                 // from MyScriptManager.TryAddEntityScripts()
                 if(error.Message == "Possible entity type script logic collision")
                 {
-                    error.Message += $"\n{Signature}This just means multiple mods have GameLogic components on the same blocks, it's not very useful nor does it mean they collide."
+                    error.Message += $"\n{AppendMsg}This just means multiple mods have GameLogic components on the same blocks, it's not very useful nor does it mean they collide."
                                     + LineSignature + "Ignore this and test the mod functions themselves if you are worried they're colliding.";
                 }
 
@@ -991,7 +995,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     // game does not alert if this is the case, you only find out when you try to use it and it infinitely streams.
                     if(respawnShipDef.Prefab == null)
                     {
-                        MyDefinitionErrors.Add(def.Context, $"{Signature}RespawnShip '{def.Id.SubtypeName}' does not point to a valid prefab!"
+                        MyDefinitionErrors.Add(def.Context, $"{CustomMsg}RespawnShip '{def.Id.SubtypeName}' does not point to a valid prefab!"
                                                            + "\nMake sure to input the SubtypeId from inside the prefab file. Like all SBCs, the file name does not matter!", TErrorSeverity.Error);
                     }
 
@@ -1168,7 +1172,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
         public void ModProblem(MyDefinitionBase def, string text)
         {
             string message = $"Problem with '{GetDefId(def)}': {text}";
-            MyDefinitionErrors.Add(def.Context, $"{Signature}{message}", TErrorSeverity.Error, writeToLog: false);
+            MyDefinitionErrors.Add(def.Context, $"{CustomMsg}{message}", TErrorSeverity.Error, writeToLog: false);
             MyLog.Default.WriteLine($"BuildInfo ModderHelp: {message}");
             Log.Info($"[ModderHelp] {message}");
             ModProblems++;
@@ -1177,7 +1181,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
         public void ModProblem(MyModContext context, string text)
         {
             string message = $"Problem: {text}";
-            MyDefinitionErrors.Add(context, $"{Signature}{message}", TErrorSeverity.Error, writeToLog: false);
+            MyDefinitionErrors.Add(context, $"{CustomMsg}{message}", TErrorSeverity.Error, writeToLog: false);
             MyLog.Default.WriteLine($"BuildInfo ModderHelp: {message}");
             Log.Info($"[ModderHelp] {message}");
             ModProblems++;
@@ -1186,7 +1190,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
         public void ModHint(MyDefinitionBase def, string text)
         {
             string message = $"Hint for '{GetDefId(def)}': {text}";
-            MyDefinitionErrors.Add(def.Context, $"{Signature}{message}", TErrorSeverity.Notice, writeToLog: false);
+            MyDefinitionErrors.Add(def.Context, $"{CustomMsg}{message}", TErrorSeverity.Notice, writeToLog: false);
             MyLog.Default.WriteLine($"BuildInfo ModderHelp: {message}");
             Log.Info($"[ModderHelp] {message}");
             ModHints++;
@@ -1195,7 +1199,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
         public void ModHint(MyModContext context, string text)
         {
             string message = $"Hint: {text}";
-            MyDefinitionErrors.Add(context, $"{Signature}{message}", TErrorSeverity.Notice, writeToLog: false);
+            MyDefinitionErrors.Add(context, $"{CustomMsg}{message}", TErrorSeverity.Notice, writeToLog: false);
             MyLog.Default.WriteLine($"BuildInfo ModderHelp: {message}");
             Log.Info($"[ModderHelp] {message}");
             ModHints++;
