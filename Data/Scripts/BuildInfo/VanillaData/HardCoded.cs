@@ -166,6 +166,9 @@ namespace Digi.BuildInfo.VanillaData
         // from MyPhysics.CreateWorldCInfo()
         public const int SolverIterationsMin = 8;
 
+        public const int MaxVoxelMaterialsVisual = 128; // Shaders\Common.hlsli does #define MAX_VOXEL_MATERIALS 128 and other places inherently limit it to this too
+        public const int MaxVoxelMaterialsAbsolute = 256; // would crash the game from MyDefinitionManager.InitVoxelMaterials()
+
         // from MyGridEmissiveSystem.Init()
         public const float EmissiveBlocks_PowerReqPerGrid = 1e-06f;
         public const string EmissiveBlocks_PowerGroup = null;

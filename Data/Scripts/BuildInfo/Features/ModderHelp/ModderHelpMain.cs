@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Xml.Serialization;
 using Digi.BuildInfo.Utilities;
@@ -83,6 +84,8 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
                     F11MenuShownOnLoad = MyDefinitionErrors.ShouldShowModErrors;
                 }
+
+                MyAPIGateway.Utilities.InvokeOnGameThread(CheckVoxelMaterials, $"{Log.ModName}:{nameof(CheckVoxelMaterials)}", StartAt: Constants.TicksPerSecond * 2);
             }
 
             // alert player in chat if applicable
@@ -1054,6 +1057,153 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     CombineIsAirTightHints(sb, modData, true);
                     CombineIsAirTightHints(sb, modData, false);
                 }
+            }
+        }
+
+        void CheckVoxelMaterials()
+        {
+            int voxelMats = MyDefinitionManager.Static.VoxelMaterialCount;
+
+            if(voxelMats > Hardcoded.MaxVoxelMaterialsVisual)
+            {
+                ModProblem((MyModContext)null,
+                    $"There's {voxelMats} voxel materials, which is more than the visual limit of {Hardcoded.MaxVoxelMaterialsVisual}!" +
+                    $"{LineSignature} Dumped voxel material list to SE log along with uses.");
+
+                try
+                {
+                    int voxelGeneratorVersion = MyAPIGateway.Session.SessionSettings.VoxelGeneratorVersion;
+
+                    // TODO: move in a more centralized location once it's needed elsewhere
+                    #region Map voxel materials to planets
+                    Dictionary<string, HashSet<string>> materialToPlanet = new Dictionary<string, HashSet<string>>();
+
+                    foreach(var planetDef in MyDefinitionManager.Static.GetPlanetsGeneratorsDefinitions())
+                    {
+                        string planetId = planetDef.Id.SubtypeName;
+
+                        foreach(var mat in planetDef.SurfaceMaterialTable)
+                        {
+                            if(mat.Material != null)
+                                materialToPlanet.GetValueOrNew(mat.Material).Add(planetId);
+
+                            if(mat.HasLayers)
+                            {
+                                foreach(var layer in mat.Layers)
+                                {
+                                    if(layer.Material != null)
+                                        materialToPlanet.GetValueOrNew(layer.Material).Add(planetId);
+                                }
+                            }
+                        }
+
+                        foreach(var mat in planetDef.MaterialGroups)
+                        {
+                            if(mat.MaterialRules != null)
+                            {
+                                foreach(var rule in mat.MaterialRules)
+                                {
+                                    if(rule.Material != null)
+                                        materialToPlanet.GetValueOrNew(rule.Material).Add(planetId);
+
+                                    if(rule.HasLayers)
+                                    {
+                                        foreach(var layer in rule.Layers)
+                                        {
+                                            if(layer.Material != null)
+                                                materialToPlanet.GetValueOrNew(layer.Material).Add(planetId);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    #endregion
+
+                    HashSet<string> presentPlanets = new HashSet<string>(Main.PlanetMonitor.Planets.Count);
+                    foreach(var planet in Main.PlanetMonitor.Planets)
+                    {
+                        if(planet.Generator == null)
+                            continue;
+
+                        presentPlanets.Add(planet.Generator.Id.SubtypeName);
+                    }
+
+                    StringBuilder sb = new StringBuilder(1024 * 32);
+                    sb.Append("List of all voxel materials:");
+
+                    foreach(MyVoxelMaterialDefinition def in MyDefinitionManager.Static.GetVoxelMaterialDefinitions().OrderBy(d => d.Index))
+                    {
+                        if(def.Index == Hardcoded.MaxVoxelMaterialsVisual)
+                        {
+                            sb.Append("\n--- It's possible the materials past this line are the ones that are not shown properly ---");
+                        }
+
+                        sb.Append("\n  #").Append(def.Index).Append(" '").Append(def.Id.SubtypeName).Append("' - from: ").Append(def.Context.GetNameAndId());
+
+                        sb.Append(", used in: ");
+                        int sbLen = sb.Length;
+
+                        //sb.Append("manually spawned, ");
+
+                        if(def.MinVersion <= voxelGeneratorVersion && def.MaxVersion >= voxelGeneratorVersion)
+                        {
+                            if(def.SpawnsInAsteroids && def.AsteroidGeneratorSpawnProbabilityMultiplier > 0)
+                                sb.Append("asteroids, ");
+
+                            if(def.SpawnsFromMeteorites)
+                                sb.Append("meteorites, ");
+                        }
+
+                        bool planetsPrefix = false;
+
+                        HashSet<string> planets;
+                        if(materialToPlanet.TryGetValue(def.Id.SubtypeName, out planets))
+                        {
+                            foreach(var planetDefId in planets)
+                            {
+                                //sb.Append("planet '")
+                                //  .Append(planetDefId)
+                                //  .Append("' (in world: ")
+                                //  .Append(presentPlanets.Contains(planetDefId) ? "yes" : "no")
+                                //  .Append("), ");
+
+                                if(presentPlanets.Contains(planetDefId))
+                                {
+                                    if(!planetsPrefix)
+                                    {
+                                        planetsPrefix = true;
+                                        sb.Append("present planets: ");
+                                    }
+
+                                    sb.Append(planetDefId).Append(", ");
+                                }
+                            }
+                        }
+
+                        if(sb.Length > sbLen)
+                        {
+                            sb.Length -= 2; // remove last comma+space
+                            sb.Append('.');
+                        }
+                        else
+                        {
+                            sb.Append("(nothing in this world)");
+                        }
+                    }
+
+                    string writeToLog = sb.ToString();
+                    MyLog.Default.WriteLine(writeToLog);
+                    Log.Info(writeToLog);
+                }
+                catch(Exception e)
+                {
+                    Log.Error(e);
+                }
+            }
+            else
+            {
+                Log.Info($"[ModderHelp] Total voxel materials: {voxelMats}");
             }
         }
 
