@@ -9,7 +9,6 @@ using Digi.BuildInfo.Utilities;
 using Digi.ConfigLib;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
-using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Utils;
@@ -238,11 +237,11 @@ namespace Digi.ComponentLib
 
                     if(!uniqueMods.Add(id))
                     {
-                        var modContext = (MyModContext)mod.GetModContext();
-                        modContext.CurrentFile = "(all of it)";
+                        //var modContext = (MyModContext)mod.GetModContext();
+                        //modContext.CurrentFile = "(all of it)";
 
                         string name = mod.GetNameAndId();
-                        MyLog.Default.WriteLineAndConsole($"  ERROR: Mod {name} is added more than once in the mods list!");
+                        MyLog.Default.WriteLineAndConsole($"  ERROR: The mod {name} is added more than once in the mods list!");
 
                         if(dupeMods == null)
                             dupeMods = new List<string>();
@@ -258,8 +257,17 @@ namespace Digi.ComponentLib
 
             if(dupeMods != null && dupeMods.Count > 0)
             {
-                ModCrash.Throw(new Exception($"{dupeMods.Count} mods added multiple times:\n    " + string.Join("\n    ", dupeMods)),
-                    schedule: true);
+                string errorLog = $"Some mods are present multiple times each! Please check mods list for these mods:\n    {string.Join("\n    ", dupeMods)}\n\nThe duplicated mods might also be forced upon the client by a server plugin!";
+                string errorChat = $"Mods are present multiple times: {string.Join(", ", dupeMods)}.";
+
+                //ModCrash.Throw(new Exception(errorLog), schedule: true);
+
+                MyAPIGateway.Utilities.InvokeOnGameThread(() =>
+                {
+                    MyLog.Default.WriteLineAndConsole(errorLog);
+                    if(MyAPIGateway.Session.Player != null)
+                        MyAPIGateway.Utilities.ShowMessage("ERROR", errorChat);
+                }, StartAt: 60 * 5);
             }
         }
     }
