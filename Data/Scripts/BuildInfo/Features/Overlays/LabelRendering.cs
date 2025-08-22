@@ -41,6 +41,7 @@ namespace Digi.BuildInfo.Features.Overlays
         ThrustOther,
         MagnetizedArea,
         CollectionArea,
+        CollectionLaser,
         TerrainClearance,
         SideClearance,
         OptimalClearance,

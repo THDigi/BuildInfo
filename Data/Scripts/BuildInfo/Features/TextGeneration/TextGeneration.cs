@@ -2944,6 +2944,14 @@ namespace Digi.BuildInfo.Features
             }
 
             InventoryStats(def, alternateVolume: cargo.InventorySize.Volume);
+
+#if !(VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 || VERSION_206) // HACK: backwards compatible
+            if(def.Id.TypeId == typeof(MyObjectBuilder_Collector))
+            {
+                AddLine().LabelHardcoded("Picks up from Farm Plots").Append("Yes");
+                AddLine().LabelHardcoded("Picks up harvestable").Append("Yes");
+            }
+#endif
         }
 
         void Format_ConveyorSorter(MyCubeBlockDefinition def)

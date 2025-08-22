@@ -10,6 +10,7 @@ namespace Digi.BuildInfo.Features.LiveData
     public class BData_Collector : BData_Base
     {
         public Matrix BoxLocalMatrix;
+        public Vector3 DummyForward;
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
@@ -44,6 +45,8 @@ namespace Digi.BuildInfo.Features.LiveData
                     Vector3 size = Vector3.Abs(dummyMatrix.Scale);
                     BoxLocalMatrix = Matrix.CreateTranslation(dummyMatrix.Translation);
                     Matrix.Rescale(ref BoxLocalMatrix, ref size);
+
+                    DummyForward = Vector3.Normalize(dummyMatrix.Forward);
                     break;
                 }
             }

@@ -563,6 +563,7 @@ namespace Digi.BuildInfo.Features.LiveData
                      || detectorType.EqualsIgnoreCase("collector")
                      || detectorType.EqualsIgnoreCase("ejector")
                      || detectorType.EqualsIgnoreCase("ladder")
+                     || detectorType.EqualsIgnoreCase("farmplot")
                      || detectorPtr.StartsWithCaseInsensitive("panel_button")
                      || detectorPtr.StartsWithCaseInsensitive("textpanel") // does not match the useobject but it's used in emotioncontroller and does nothing, just ignoring it here
                      || detectorPtr.StartsWithCaseInsensitive("maintenance"))
