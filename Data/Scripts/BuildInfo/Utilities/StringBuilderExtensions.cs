@@ -1071,7 +1071,7 @@ namespace Digi.BuildInfo.Utilities
             if(span.Minutes > 0)
             {
                 s.Append(span.Minutes).Append('m');
-                s.Append(' ').RoundedNumber(totalSeconds % 60, 0).Append('s');
+                s.Append(' ').Append(span.Seconds).Append('s');
                 return s;
             }
 
