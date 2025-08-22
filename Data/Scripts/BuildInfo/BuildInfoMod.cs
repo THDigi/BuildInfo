@@ -96,6 +96,7 @@ namespace Digi.BuildInfo
         public readonly RelativeDampenerInfo RelativeDampenerInfo;
         public readonly ShipToolInventoryBar ShipToolInventoryBar;
         public readonly BlockInfoScrollComponents BlockInfoScrollComponents;
+        public readonly InventoryHints InventoryHints;
         public readonly WhatsNew WhatsNew;
         public readonly TooltipHandler TooltipHandler;
         public readonly BlueprintTooltips BlueprintTooltips;
@@ -200,6 +201,7 @@ namespace Digi.BuildInfo
             TurretHUD = new TurretHUD(this);
             WeaponModeIndicator = new WeaponModeIndicator(this);
             WhatsNew = new WhatsNew(this);
+            InventoryHints = new InventoryHints(this);
             TooltipHandler = new TooltipHandler(this);
             BlueprintTooltips = new BlueprintTooltips(this);
             BlockDescriptions = new BlockDescriptions(this);
