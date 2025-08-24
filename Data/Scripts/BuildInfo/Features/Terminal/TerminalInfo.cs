@@ -1736,7 +1736,11 @@ namespace Digi.BuildInfo.Features.Terminal
                 info.DetailInfo_OutputGasList(source);
             }
 
+#if (VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 || VERSION_206) // HACK: backwards compatible
             if(inv != null)
+#else
+            if(inv != null && def.CanRefillBottles)
+#endif
             {
                 int bottlesFull = 0;
                 int bottlesToFill = 0;
