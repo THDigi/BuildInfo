@@ -2610,6 +2610,7 @@ namespace Digi.BuildInfo.Features.GUI
             static readonly Color BgColor = new Color(60, 76, 82);
             static readonly Color BarColor = new Color(86, 93, 104) * 1.4f;
             static readonly Color BarHighlight = Color.LightGray;
+            static readonly Color BgHighlight = BgColor * 1.25f;
             static readonly Color BarDragged = Color.White;
 
             public ScrollableSection(int displayLines)
@@ -2700,12 +2701,13 @@ namespace Digi.BuildInfo.Features.GUI
 
                 if(FirstUpdate)
                 {
-                    Vector2D pxSize = HudAPIv2.APIinfo.ScreenPositionOnePX;
+                    Vector2 pxSize = (Vector2)HudAPIv2.APIinfo.ScreenPositionOnePX;
 
                     const float ScrollbarWidth = 10; // px
                     const float ScrollbarPadding = 4; // px
+                    const float ScrollbarMinHeight = 14; // px
                     ScrollbarBgRender.Visible = true;
-                    ScrollbarBgRender.Width = (float)pxSize.X * ScrollbarWidth;
+                    ScrollbarBgRender.Width = pxSize.X * ScrollbarWidth;
                     ScrollbarBgRender.Height = LineHeight * DisplayLines;
 
                     Vector2D columnPos = Column.Render.Text.Offset + Column.Render.Text.Origin;
@@ -2714,14 +2716,14 @@ namespace Digi.BuildInfo.Features.GUI
                     ScrollbarBgRender.Origin = new Vector2D(columnPos.X + ColumnSize.X + ScrollbarBgRender.Width / 2,
                                                             columnPos.Y - (LineHeight * StartLine) - (ScrollbarBgRender.Height / 2));
 
-                    ScrollbarRender.Width = (float)pxSize.X * (ScrollbarWidth - ScrollbarPadding);
-                    ScrollbarRender.Height = ScrollbarBgRender.Height / (Lines.Count / (float)DisplayLines);
+                    ScrollbarRender.Width = pxSize.X * (ScrollbarWidth - ScrollbarPadding);
+                    ScrollbarRender.Height = Math.Max(ScrollbarBgRender.Height / (Lines.Count / (float)DisplayLines), pxSize.Y * ScrollbarMinHeight);
 
                     double centerAtTop = ScrollbarBgRender.Height / 2;
                     float halfHeight = ScrollbarRender.Height / 2;
                     ScrollbarRender.Offset = ScrollbarBgRender.Origin + new Vector2D(0, centerAtTop - halfHeight);
 
-                    float heightPadding = (float)pxSize.Y * ScrollbarPadding;
+                    float heightPadding = pxSize.Y * ScrollbarPadding;
                     ScrollbarRender.Height -= heightPadding;
 
                     ScrollableHeight = ScrollbarBgRender.Height - ScrollbarRender.Height - heightPadding;
@@ -2755,11 +2757,18 @@ namespace Digi.BuildInfo.Features.GUI
 
                     if(MouseDragFrom == null)
                     {
-                        Vector2D centerPos = ScrollbarRender.Origin + ScrollbarRender.Offset;
-                        Vector2D halfSize = new Vector2D(ScrollbarBgRender.Width, ScrollbarRender.Height) / 2;
-                        BoundingBox2D scrollbarBB = new BoundingBox2D(centerPos - halfSize, centerPos + halfSize);
+                        Vector2D grabbyCenter = ScrollbarRender.Origin + ScrollbarRender.Offset;
+                        Vector2D grabbyHalfExt = new Vector2D(ScrollbarBgRender.Width, ScrollbarRender.Height) / 2;
+                        BoundingBox2D grabbyBB = new BoundingBox2D(grabbyCenter - grabbyHalfExt, grabbyCenter + grabbyHalfExt);
 
-                        if(scrollbarBB.Contains(mousePos) == ContainmentType.Contains)
+                        Vector2D barCenter = ScrollbarBgRender.Origin + ScrollbarBgRender.Offset;
+                        Vector2D barHalfExt = new Vector2D(ScrollbarBgRender.Width, ScrollbarBgRender.Height) / 2;
+                        BoundingBox2D barBB = new BoundingBox2D(barCenter - barHalfExt, barCenter + barHalfExt);
+
+                        ScrollbarRender.BillBoardColor = BarColor;
+                        ScrollbarBgRender.BillBoardColor = BgColor;
+
+                        if(grabbyBB.Contains(mousePos) == ContainmentType.Contains)
                         {
                             ScrollbarRender.BillBoardColor = BarHighlight;
 
@@ -2770,9 +2779,18 @@ namespace Digi.BuildInfo.Features.GUI
                                 ScrollAtDrag = Scroll;
                             }
                         }
-                        else
+                        else if(barBB.Contains(mousePos) == ContainmentType.Contains)
                         {
-                            ScrollbarRender.BillBoardColor = BarColor;
+                            if(MyAPIGateway.Input.IsLeftMousePressed())
+                            {
+                                ScrollbarRender.BillBoardColor = BarDragged;
+                                MouseDragFrom = grabbyCenter; // results in bar being teleported at the cursor in the next code
+                                ScrollAtDrag = Scroll;
+                            }
+                            else
+                            {
+                                ScrollbarBgRender.BillBoardColor = BgHighlight;
+                            }
                         }
                     }
 
