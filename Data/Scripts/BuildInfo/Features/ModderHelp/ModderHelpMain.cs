@@ -16,6 +16,7 @@ using Sandbox.ModAPI;
 using SpaceEngineers.Game.Definitions.SafeZone;
 using VRage.Collections;
 using VRage.Game;
+using VRage.Game.Definitions;
 using VRage.Game.ObjectBuilders.Definitions.SessionComponents;
 using VRage.Input;
 using VRage.Library.Utils;
@@ -709,6 +710,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
         {
             Dictionary<string, ModHintData> modHints = new Dictionary<string, ModHintData>();
             HashSet<string> voxelPlacementAlerted = new HashSet<string>();
+            Dictionary<int, List<MySafeZoneTexturesDefinition>> szSkinHashClash = new Dictionary<int, List<MySafeZoneTexturesDefinition>>();
 
             foreach(MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
             {
@@ -1045,6 +1047,131 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     }
 
                     // spawnGroup.FactionSubEncounters does not call TryGetOwnerId() as they're same owner as the primary encounter
+
+                    continue;
+                }
+            }
+
+            foreach(var def in MyDefinitionManager.Static.GetAllDefinitions<MyDefinitionBase>())
+            {
+                if(def == null)
+                    continue;
+
+                var szSkin = def as MySafeZoneTexturesDefinition;
+                if(szSkin != null)
+                {
+                    // because MySafeZoneBlock.GetTexturesList() / OnTextureSelected() uses hash for selection and can collide
+                    szSkinHashClash.GetValueOrNew((int)szSkin.DisplayTextId).Add(szSkin);
+                    continue;
+                }
+
+                if(def.Context == null)
+                {
+                    // HACK: the generated LCD texture defs by the game have null Context
+                    // HACK: the game definition triggers this as it generates a "Default" one for any definition that is set to <Default>true</Default>
+                    if(!(def is MyLCDTextureDefinition) && !(def is MyGameDefinition))
+                        ModHint(def.Context, $"'{GetDefId(def)}' has null Context, a script probably set it like this?");
+
+                    continue;
+                }
+
+                if(!CheckEverything)
+                {
+                    // ignore untouched definitions
+                    if(def.Context.IsBaseGame)
+                        continue;
+
+                    // ignore workshop mods
+                    if(def.Context.ModItem.PublishedFileId != 0)
+                        continue;
+                }
+
+                if(def.Id.SubtypeId == MyStringHash.NullOrEmpty)
+                {
+                    ModHint(def, "has empty subtype, is this intended?");
+                }
+
+                var treeDef = def as MyTreeDefinition;
+                if(treeDef != null)
+                {
+                    // as per MyBreakableEnvironmentProxy.CreateDebris() - where the broken model is not actually optional.
+
+                    string brokenModel = treeDef.Model.Insert(treeDef.Model.Length - 4, "_broken");
+
+                    bool isPathInMod = brokenModel.StartsWith(def.Context.ModPath);
+                    bool brokenModelExists;
+
+                    if(isPathInMod)
+                        brokenModelExists = MyAPIGateway.Utilities.FileExistsInModLocation(brokenModel, def.Context.ModItem);
+                    else
+                        brokenModelExists = MyAPIGateway.Utilities.FileExistsInGameContent(brokenModel);
+
+                    if(!brokenModelExists)
+                    {
+                        string relativePath = (isPathInMod ? brokenModel.Substring(def.Context.ModPath.Length + 1) : brokenModel);
+                        ModProblem(def, $"Does not have a \"_broken\" version of the model in the folder, which means when this tree is destroyed it will spawn a 1m gray cube.\nTo fix, copy/create a _broken-suffixed model, for example on this specific definition it would be: {relativePath}");
+                    }
+
+                    continue;
+                }
+            }
+
+            foreach(var bpDef in MyDefinitionManager.Static.GetBlueprintDefinitions())
+            {
+                if(bpDef == null)
+                    continue;
+
+                if(bpDef.Context == null)
+                {
+                    // HACK: the generated LCD texture defs by the game have null Context
+                    if(!(bpDef is MyLCDTextureDefinition))
+                        ModHint(bpDef.Context, $"'{GetDefId(bpDef)}' has null Context, a script probably set it like this?");
+
+                    continue;
+                }
+
+                if(!CheckEverything)
+                {
+                    // ignore untouched definitions
+                    if(bpDef.Context.IsBaseGame)
+                        continue;
+
+                    // ignore workshop mods
+                    if(bpDef.Context.ModItem.PublishedFileId != 0)
+                        continue;
+                }
+
+                if(bpDef.Id.SubtypeId == MyStringHash.NullOrEmpty)
+                {
+                    ModHint(bpDef, "has empty subtype, is this intended?");
+                }
+
+                foreach(var req in bpDef.Prerequisites)
+                {
+                    bool inResults = false;
+
+                    foreach(var result in bpDef.Results)
+                    {
+                        if(req.Id == result.Id)
+                        {
+                            inResults = true;
+                            break;
+                        }
+                    }
+
+                    if(inResults)
+                    {
+                        MyPhysicalItemDefinition physDef;
+                        if(MyDefinitionManager.Static.TryGetPhysicalItemDefinition(req.Id, out physDef))
+                        {
+                            if(physDef.MinimalPricePerUnit == -1)
+                            {
+                                ModProblem(bpDef, $"Blueprint and item combo can cause game to freeze!" +
+                                    $"\n{LineSignature}This blueprint requires and results the same item, but because the item '{physDef.Id.ToShortString()}' has <MinimalPricePerUnit> set to -1, it will use the blueprint to calculate the price, causing infinite recursion.");
+                            }
+                        }
+                        break;
+                    }
                 }
             }
 
@@ -1056,6 +1183,27 @@ namespace Digi.BuildInfo.Features.ModderHelp
                 {
                     CombineIsAirTightHints(sb, modData, true);
                     CombineIsAirTightHints(sb, modData, false);
+                }
+            }
+
+            foreach(var kv in szSkinHashClash)
+            {
+                if(kv.Value.Count > 1)
+                {
+                    StringBuilder sb = new StringBuilder(1024);
+
+                    sb.Append("SafeZone skin hash collision, the following SafeZoneTextures definitions have the same hash on their DisplayTextId:");
+                    sb.AppendLine();
+
+                    foreach(var def in kv.Value)
+                    {
+                        sb.Append("   DisplayTextId: '").Append(def.DisplayTextId).Append("'; subtypeId: '").Append(def.Id.SubtypeName).Append("'; from mod: ").Append(def.Context?.GetNameAndId());
+                        sb.AppendLine();
+                    }
+
+                    sb.Append("This is a problem because only one of them can be selected from SafeZone block's skin selection menu.");
+
+                    ModProblem((MyModContext)null, sb.ToString());
                 }
             }
         }
