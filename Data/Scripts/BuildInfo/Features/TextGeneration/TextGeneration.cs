@@ -3429,6 +3429,11 @@ namespace Digi.BuildInfo.Features
             }
         }
 
+        // HACK: MyLightsRendering.UpdateSettings() and .SPOTLIGHTS_MAX; MyShadows.PrepareSpotlights() for the shadow cast limit
+        const string LightTypesTooltip = "Light type determines how computationally expensive it is to render and also under what render limits it falls.\n" +
+                                         "Point lights are generally cheap and cannot cast shadows; the Light Quality setting puts them at 256, 512, 2048, 4096 for each respective setting.\n" +
+                                         "Projected lights are expensive and can cast shadows too; these lights are hard-capped to 32 and 4 for shadow-casting ones (dynamically picks closest to cast shadows)";
+
         void Format_Light(MyCubeBlockDefinition def)
         {
             MyLightingBlockDefinition light = (MyLightingBlockDefinition)def;
@@ -3448,6 +3453,9 @@ namespace Digi.BuildInfo.Features
                 AddLine().Append("Radius: ").DistanceFormat(radius.Min).Append(" to ").DistanceFormat(radius.Max).Separator().Append("Default: ").DistanceFormat(radius.Default);
                 AddLine().Append("Intensity: ").RoundedNumber(light.LightIntensity.Min, 2).Append(" to ").RoundedNumber(light.LightIntensity.Max, 2).Separator().Append("Default: ").RoundedNumber(light.LightIntensity.Default, 2);
                 AddLine().Append("Falloff: ").RoundedNumber(light.LightFalloff.Min, 2).Append(" to ").RoundedNumber(light.LightFalloff.Max, 2).Separator().Append("Default: ").RoundedNumber(light.LightFalloff.Default, 2);
+                AddLine().LabelHardcoded("Light type").Append(isSpotlight ? "Projected" : "Point");
+                SimpleTooltip(LightTypesTooltip);
+
 
                 if(isSpotlight)
                 {
@@ -6080,6 +6088,9 @@ namespace Digi.BuildInfo.Features
                 AddLine().Append("Radius: ").DistanceFormat(searchlight.LightReflectorRadius.Min).Append(" to ").DistanceFormat(searchlight.LightReflectorRadius.Max).Separator().Append("Default: ").DistanceFormat(searchlight.LightReflectorRadius.Default);
                 AddLine().Append("Intensity: ").RoundedNumber(searchlight.LightIntensity.Min, 2).Append(" to ").RoundedNumber(searchlight.LightIntensity.Max, 2).Separator().Append("Default: ").RoundedNumber(searchlight.LightIntensity.Default, 2);
                 AddLine().Append("Falloff: ").RoundedNumber(searchlight.LightFalloff.Min, 2).Append(" to ").RoundedNumber(searchlight.LightFalloff.Max, 2).Separator().Append("Default: ").RoundedNumber(searchlight.LightFalloff.Default, 2);
+                AddLine().LabelHardcoded("Light type").Append("Projected");
+                SimpleTooltip(LightTypesTooltip);
+
 
                 // TODO: determine limits
                 int minPitch = searchlight.MinElevationDegrees;
@@ -6217,6 +6228,11 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(0, MyStringHash.NullOrEmpty, powerHardcoded: true, groupHardcoded: true);
 
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            {
+                AddLine().LabelHardcoded("Light type").Append("Point");
+                SimpleTooltip(LightTypesTooltip);
+            }
 
             // TODO: stats?
 
