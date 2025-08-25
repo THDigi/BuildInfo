@@ -356,11 +356,12 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
 
         /// <summary>
         /// Maps out conveyor using a recursive loop.
-        /// Do not call this inside itself, add to <see cref="MapNetwork_Params"/> instead.
         /// Returns true if it was a valid network, false if block had no connections.
         /// </summary>
         bool MapNetwork(MyCubeBlock startBlock, Conveyor startConveyor)
         {
+            // Do not call this inside itself, add to "MapNetwork_Params" instead.
+
             if(MapNetwork_Params.Count > 0)
                 throw new Exception("Unexpected! RecursiveParams has values!");
 

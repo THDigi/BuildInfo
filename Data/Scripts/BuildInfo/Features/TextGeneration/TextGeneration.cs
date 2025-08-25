@@ -3450,12 +3450,12 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                AddLine().Append("Radius: ").DistanceFormat(radius.Min).Append(" to ").DistanceFormat(radius.Max).Separator().Append("Default: ").DistanceFormat(radius.Default);
-                AddLine().Append("Intensity: ").RoundedNumber(light.LightIntensity.Min, 2).Append(" to ").RoundedNumber(light.LightIntensity.Max, 2).Separator().Append("Default: ").RoundedNumber(light.LightIntensity.Default, 2);
-                AddLine().Append("Falloff: ").RoundedNumber(light.LightFalloff.Min, 2).Append(" to ").RoundedNumber(light.LightFalloff.Max, 2).Separator().Append("Default: ").RoundedNumber(light.LightFalloff.Default, 2);
                 AddLine().LabelHardcoded("Light type").Append(isSpotlight ? "Projected" : "Point");
                 SimpleTooltip(LightTypesTooltip);
 
+                AddLine().Label("Radius").DistanceFormat(radius.Min).Append(" to ").DistanceFormat(radius.Max).Separator().Label("Default").DistanceFormat(radius.Default);
+                AddLine().Label("Intensity").RoundedNumber(light.LightIntensity.Min, 2).Append(" to ").RoundedNumber(light.LightIntensity.Max, 2).Separator().Label("Default").RoundedNumber(light.LightIntensity.Default, 2);
+                AddLine().Label("Falloff").RoundedNumber(light.LightFalloff.Min, 2).Append(" to ").RoundedNumber(light.LightFalloff.Max, 2).Separator().Label("Default").RoundedNumber(light.LightFalloff.Default, 2);
 
                 if(isSpotlight)
                 {
@@ -3465,7 +3465,7 @@ namespace Digi.BuildInfo.Features
                         float min = spotLight.RotationSpeedBounds.Min * Hardcoded.Spotlight_RadiansPerSecondMul;
                         float max = spotLight.RotationSpeedBounds.Max * Hardcoded.Spotlight_RadiansPerSecondMul;
                         float rotationDefault = spotLight.RotationSpeedBounds.Default * Hardcoded.Spotlight_RadiansPerSecondMul;
-                        AddLine().Append("Rotation speed: ").RotationSpeed(min, 0).Append(" to ").RotationSpeed(max, 0).Separator().Append("Default: ").RotationSpeed(rotationDefault, 0);
+                        AddLine().Label("Rotation speed").RotationSpeed(min, 0).Append(" to ").RotationSpeed(max, 0).Separator().Label("Default").RotationSpeed(rotationDefault, 0);
                     }
                 }
             }
@@ -3689,7 +3689,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
-                AddLine().Append("Power: ").PowerFormat(production.OperationalPowerConsumption).Separator().Append("Idle: ").PowerFormat(production.StandbyPowerConsumption);
+                AddLine().Label("Power").PowerFormat(production.OperationalPowerConsumption).Separator().Label("Idle").PowerFormat(production.StandbyPowerConsumption);
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     GetLine().Separator().ResourcePriority(production.ResourceSinkGroup);
@@ -3756,8 +3756,8 @@ namespace Digi.BuildInfo.Features
                     float mulSpeed = MyAPIGateway.Session.RefinerySpeedMultiplier;
                     float matEff = refinery.MaterialEfficiency;
 
-                    AddLine().Append("Refine speed: ").ProportionToPercent(refinery.RefineSpeed * mulSpeed).Color(COLOR_UNIMPORTANT).OptionalMultiplier(mulSpeed).ResetFormatting()
-                        .Separator().Append("Efficiency: ").ProportionToPercent(matEff);
+                    AddLine().Label("Refine speed").ProportionToPercent(refinery.RefineSpeed * mulSpeed).Color(COLOR_UNIMPORTANT).OptionalMultiplier(mulSpeed).ResetFormatting()
+                        .Separator().Label("Efficiency").ProportionToPercent(matEff);
 
                     SimpleTooltip($"Refinery speed is from the block multiplied by the world setting ({refinery.RefineSpeed:0.##} * {mulSpeed:0.##})."
                                 + $"\nRefinery efficiency is entirely per-block, but might also be modified by attached upgrade module blocks.");
@@ -3769,7 +3769,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
                 {
-                    AddLine().Append("Stores: ").Append(gasTank.StoredGasId.SubtypeName).Separator().Append("Capacity: ").VolumeFormat(gasTank.Capacity);
+                    AddLine().Label("Stores").Append(gasTank.StoredGasId.SubtypeName).Separator().Label("Capacity").VolumeFormat(gasTank.Capacity);
                 }
 
                 if(gasTank.LeakPercent != 0)
@@ -3862,11 +3862,11 @@ namespace Digi.BuildInfo.Features
 
                 if(refinery != null || assembler != null)
                 {
-                    AddLine().Append("In+out inventories: ").InventoryFormat(volume * 2, production.InputInventoryConstraint, production.OutputInventoryConstraint, invComp);
+                    AddLine().Label("In+out inventories").InventoryFormat(volume * 2, production.InputInventoryConstraint, production.OutputInventoryConstraint, invComp);
                 }
                 else
                 {
-                    AddLine().Append("Inventory: ").InventoryFormat(volume, production.InputInventoryConstraint, invComp);
+                    AddLine().Label("Inventory").InventoryFormat(volume, production.InputInventoryConstraint, invComp);
                 }
             }
 
@@ -4078,7 +4078,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
-                AddLine().Append("Power output: ").PowerFormat(powerProducer.MaxPowerOutput);
+                AddLine().Label("Power output").PowerFormat(powerProducer.MaxPowerOutput);
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     GetLine().Separator().ResourcePriority(powerProducer.ResourceSourceGroup, isSource: true);
@@ -4113,9 +4113,9 @@ namespace Digi.BuildInfo.Features
                         bool hasOneFuel = (reactor.FuelInfos.Length == 1);
 
                         if(hasOneFuel)
-                            AddLine().Append("Needs fuel: ");
+                            AddLine().Label("Needs fuel");
                         else
-                            AddLine().Color(COLOR_WARNING).Append("Needs combined fuels:").ResetFormatting();
+                            AddLine().Color(COLOR_WARNING).Label("Needs combined fuels").ResetFormatting();
 
                         foreach(MyReactorDefinition.FuelInfo fuel in reactor.FuelInfos)
                         {
@@ -4139,7 +4139,7 @@ namespace Digi.BuildInfo.Features
                 {
                     // battery.AdaptibleInput is not used anywhere, ignoring.
 
-                    StringBuilder sb = AddLine().Append("Power input: ").PowerFormat(battery.RequiredPowerInput).IsPowerAdaptable(battery.ResourceSinkGroup, showNotAdaptable: true);
+                    StringBuilder sb = AddLine().Label("Power input").PowerFormat(battery.RequiredPowerInput).IsPowerAdaptable(battery.ResourceSinkGroup, showNotAdaptable: true);
 
                     if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                         sb.Separator().ResourcePriority(battery.ResourceSinkGroup);
@@ -4147,7 +4147,7 @@ namespace Digi.BuildInfo.Features
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
                 {
-                    AddLine().Append("Power capacity: ").PowerStorageFormat(battery.MaxStoredPower).Separator().Append("Pre-charged: ").PowerStorageFormat(battery.MaxStoredPower * battery.InitialStoredPowerRatio).Append(" (").ProportionToPercent(battery.InitialStoredPowerRatio).Append(')');
+                    AddLine().Label("Power capacity").PowerStorageFormat(battery.MaxStoredPower).Separator().Label("Pre-charged").PowerStorageFormat(battery.MaxStoredPower * battery.InitialStoredPowerRatio).Append(" (").ProportionToPercent(battery.InitialStoredPowerRatio).Append(')');
                 }
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
@@ -4265,14 +4265,14 @@ namespace Digi.BuildInfo.Features
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine(laserAntenna.RequireLineOfSight ? FontsHandler.YellowSh : FontsHandler.GreenSh)
-                    .Color(laserAntenna.MaxRange < 0 ? COLOR_GOOD : COLOR_NORMAL).Append("Range: ");
+                    .Color(laserAntenna.MaxRange < 0 ? COLOR_GOOD : COLOR_NORMAL).Label("Range");
 
                 if(laserAntenna.MaxRange < 0)
                     GetLine().Append("Infinite");
                 else
                     GetLine().DistanceFormat(laserAntenna.MaxRange);
 
-                GetLine().ResetFormatting().Separator().Color(laserAntenna.RequireLineOfSight ? COLOR_WARNING : COLOR_GOOD).Append("Line-of-sight: ").Append(laserAntenna.RequireLineOfSight ? "Required" : "Not required");
+                GetLine().ResetFormatting().Separator().Color(laserAntenna.RequireLineOfSight ? COLOR_WARNING : COLOR_GOOD).Label("Line-of-sight").Append(laserAntenna.RequireLineOfSight ? "Required" : "Not required");
 
                 int minPitch = Math.Max(laserAntenna.MinElevationDegrees, -90);
                 int maxPitch = Math.Min(laserAntenna.MaxElevationDegrees, 90);
@@ -4283,16 +4283,16 @@ namespace Digi.BuildInfo.Features
                 AddLine().Append("Rotation - ");
 
                 if(minPitch == -90 && maxPitch >= 90)
-                    GetLine().Color(COLOR_GOOD).Append("Pitch: ").AngleFormatDeg(minPitch).Append(" to ").AngleFormatDeg(maxPitch);
+                    GetLine().Color(COLOR_GOOD).Label("Pitch").AngleFormatDeg(minPitch).Append(" to ").AngleFormatDeg(maxPitch);
                 else
-                    GetLine().Color(COLOR_WARNING).Append("Pitch: ").AngleFormatDeg(minPitch).Append(" to ").AngleFormatDeg(maxPitch);
+                    GetLine().Color(COLOR_WARNING).Label("Pitch").AngleFormatDeg(minPitch).Append(" to ").AngleFormatDeg(maxPitch);
 
                 GetLine().Separator();
 
                 if(minYaw <= -180 && maxYaw >= 180)
-                    GetLine().Color(COLOR_GOOD).Append("Yaw: ").AngleFormatDeg(360);
+                    GetLine().Color(COLOR_GOOD).Label("Yaw").AngleFormatDeg(360);
                 else
-                    GetLine().Color(COLOR_WARNING).Append("Yaw: ").AngleFormatDeg(minYaw).Append(" to ").AngleFormatDeg(maxYaw);
+                    GetLine().Color(COLOR_WARNING).Label("Yaw").AngleFormatDeg(minYaw).Append(" to ").AngleFormatDeg(maxYaw);
 
                 AddLine().Label("Rotation Speed").RotationSpeed(laserAntenna.RotationRate * Hardcoded.LaserAntenna_RotationSpeedMul);
             }
@@ -4831,7 +4831,7 @@ namespace Digi.BuildInfo.Features
 
                 if(turret.AiEnabled)
                 {
-                    sb.Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(turret.MaxRangeMeters);
+                    sb.Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Label("Max range").DistanceFormat(turret.MaxRangeMeters);
                 }
 
                 if(extraInfo)
@@ -4863,7 +4863,7 @@ namespace Digi.BuildInfo.Features
                 AddLine().Append("Whiplash Weapon Framework:");
 
                 float reloadTime = 60f / gunWWF.RateOfFireRPM;
-                AddLine().Label("| Fire rate").Number(gunWWF.RateOfFireRPM).Append(" RPM").Separator().Append("Reload: ").TimeFormat(reloadTime).Append(" at max power");
+                AddLine().Label("| Fire rate").Number(gunWWF.RateOfFireRPM).Append(" RPM").Separator().Label("Reload").TimeFormat(reloadTime).Append(" at max power");
 
                 if(extraInfo)
                 {
@@ -5729,16 +5729,16 @@ namespace Digi.BuildInfo.Features
             AddLine().Append("Rotation - ");
 
             if(minPitch == -90 && maxPitch >= 90)
-                GetLine().Color(COLOR_GOOD).Append("Pitch: ").AngleFormatDeg(minPitch).Append(" to ").AngleFormatDeg(maxPitch);
+                GetLine().Color(COLOR_GOOD).Label("Pitch").AngleFormatDeg(minPitch).Append(" to ").AngleFormatDeg(maxPitch);
             else
-                GetLine().Color(COLOR_WARNING).Append("Pitch: ").AngleFormatDeg(minPitch).Append(" to ").AngleFormatDeg(maxPitch);
+                GetLine().Color(COLOR_WARNING).Label("Pitch").AngleFormatDeg(minPitch).Append(" to ").AngleFormatDeg(maxPitch);
 
             GetLine().ResetFormatting().Append(" @ ").RotationSpeed(pitchSpeed).Separator();
 
             if(minYaw <= -180 && maxYaw >= 180)
-                GetLine().Color(COLOR_GOOD).Append("Yaw: ").AngleFormatDeg(360);
+                GetLine().Color(COLOR_GOOD).Label("Yaw").AngleFormatDeg(360);
             else
-                GetLine().Color(COLOR_WARNING).Append("Yaw: ").AngleFormatDeg(minYaw).Append(" to ").AngleFormatDeg(maxYaw);
+                GetLine().Color(COLOR_WARNING).Label("Yaw").AngleFormatDeg(minYaw).Append(" to ").AngleFormatDeg(maxYaw);
 
             GetLine().ResetFormatting().Append(" @ ").RotationSpeed(yawSpeed);
         }
@@ -6073,7 +6073,7 @@ namespace Digi.BuildInfo.Features
 
             if(searchlight.AiEnabled)
             {
-                sb.Append(searchlight.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(searchlight.MaxRangeMeters);
+                sb.Append(searchlight.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Label("Max range").DistanceFormat(searchlight.MaxRangeMeters);
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
@@ -6085,12 +6085,12 @@ namespace Digi.BuildInfo.Features
 
                 AddLine().Label("Camera field of view").AngleFormat(searchlight.MaxFov).Append(" to ").AngleFormat(searchlight.MinFov);
 
-                AddLine().Append("Radius: ").DistanceFormat(searchlight.LightReflectorRadius.Min).Append(" to ").DistanceFormat(searchlight.LightReflectorRadius.Max).Separator().Append("Default: ").DistanceFormat(searchlight.LightReflectorRadius.Default);
-                AddLine().Append("Intensity: ").RoundedNumber(searchlight.LightIntensity.Min, 2).Append(" to ").RoundedNumber(searchlight.LightIntensity.Max, 2).Separator().Append("Default: ").RoundedNumber(searchlight.LightIntensity.Default, 2);
-                AddLine().Append("Falloff: ").RoundedNumber(searchlight.LightFalloff.Min, 2).Append(" to ").RoundedNumber(searchlight.LightFalloff.Max, 2).Separator().Append("Default: ").RoundedNumber(searchlight.LightFalloff.Default, 2);
                 AddLine().LabelHardcoded("Light type").Append("Projected");
                 SimpleTooltip(LightTypesTooltip);
 
+                AddLine().Label("Radius").DistanceFormat(searchlight.LightReflectorRadius.Min).Append(" to ").DistanceFormat(searchlight.LightReflectorRadius.Max).Separator().Label("Default").DistanceFormat(searchlight.LightReflectorRadius.Default);
+                AddLine().Label("Intensity").RoundedNumber(searchlight.LightIntensity.Min, 2).Append(" to ").RoundedNumber(searchlight.LightIntensity.Max, 2).Separator().Label("Default").RoundedNumber(searchlight.LightIntensity.Default, 2);
+                AddLine().Label("Falloff").RoundedNumber(searchlight.LightFalloff.Min, 2).Append(" to ").RoundedNumber(searchlight.LightFalloff.Max, 2).Separator().Label("Default").RoundedNumber(searchlight.LightFalloff.Default, 2);
 
                 // TODO: determine limits
                 int minPitch = searchlight.MinElevationDegrees;
