@@ -56,6 +56,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             CommandLaserPower = new CommandLaserPower();
             new CommandLCDResolution();
             new CommandMeasureText();
+            new CommandScreenCoords();
             new CommandProfile();
             new CommandClearCache();
 

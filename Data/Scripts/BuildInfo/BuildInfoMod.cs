@@ -25,6 +25,7 @@ using VRage.Game.Components;
 using Whiplash.WeaponFramework;
 
 // TODO: compute jumpdrive obstacles and show them? ... code looks nasty xD
+// TODO: find all hidden vanilla controls and show them grayed out instead?
 
 namespace Digi.BuildInfo
 {
@@ -121,6 +122,7 @@ namespace Digi.BuildInfo
         public readonly InterModAPI InterModAPI;
         public readonly DebugEvents DebugEvents;
         public readonly DebugLog DebugLog;
+        public readonly ScreenCoords ScreenCoords;
         public readonly ModderHelpMain ModderHelpMain;
         public readonly CheckRestartRequired CheckRestartRequired;
         public readonly CheckEntitiesList CheckEntitiesList;
@@ -225,6 +227,7 @@ namespace Digi.BuildInfo
             InterModAPI = new InterModAPI(this);
             DebugEvents = new DebugEvents(this);
             DebugLog = new DebugLog(this);
+            ScreenCoords = new ScreenCoords(this);
             ModderHelpMain = new ModderHelpMain(this);
             CheckRestartRequired = new CheckRestartRequired(this);
             CheckEntitiesList = new CheckEntitiesList(this);

@@ -36,6 +36,10 @@ using VRage.Game.ObjectBuilders.Definitions.SessionComponents;
 using VRage.Voxels;
 using Sandbox.Game.Weapons;
 using VRage.Game.Definitions;
+using static Digi.BuildInfo.Systems.TextAPI;
+using Digi.BuildInfo.Features.GUI;
+using VRageRender;
+using Sandbox.Game.GUI;
 
 namespace Digi.BuildInfo.Features
 {
@@ -295,6 +299,38 @@ namespace Digi.BuildInfo.Features
             //EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
             //EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
+
+
+        //List<MyBillboard> Billboards = new List<MyBillboard>();
+
+        //public override void UpdateAfterSim(int tick)
+        //{
+        //    if(MyAPIGateway.Input.IsNewKeyPressed(MyKeys.N))
+        //    {
+        //        if(Billboards.Count == 0)
+        //        {
+        //            Vector3D pos = MyAPIGateway.Session.Camera.Position + MyAPIGateway.Session.Camera.WorldMatrix.Forward * 5;
+
+        //            for(int i = 0; i < (1024 * 32); i++)
+        //            {
+        //                MyTransparentGeometry.AddBillboardOriented(MyStringId.GetOrCompute("Square"), Color.Lime, pos, Vector3.Left, Vector3.Up, 1f, 1f, persistentBillboards: Billboards);
+
+        //                //Vector3 z = Vector3.Zero;
+        //                //Vector2 uv = Vector2.Zero;
+
+        //                //MyTransparentGeometry.AddTriangleBillboard(z, z, z, z, z, z, uv, uv, uv, MyStringId.GetOrCompute("Square"), uint.MaxValue, pos);
+        //            }
+
+        //            MyAPIGateway.Utilities.ShowNotification($"added billboards: {Billboards.Count}", 1000);
+        //        }
+        //        else
+        //        {
+        //            MyTransparentGeometry.RemovePersistentBillboards(Billboards);
+        //            Billboards.Clear();
+        //            MyAPIGateway.Utilities.ShowNotification($"cleared billboards!", 1000);
+        //        }
+        //    }
+        //}
 
         //public override void UpdateDraw()
         //{
