@@ -363,7 +363,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
             // Do not call this inside itself, add to "MapNetwork_Params" instead.
 
             if(MapNetwork_Params.Count > 0)
-                throw new Exception("Unexpected! RecursiveParams has values!");
+                throw new Exception($"Unexpected! {nameof(MapNetwork_Params)} has values!");
 
             MapNetwork_Params.Push(new Params()
             {

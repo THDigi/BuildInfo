@@ -536,7 +536,11 @@ namespace Digi.BuildInfo.Features
             {
                 ModId modId = new ModId(def.Context.ModItem.PublishedFileId, def.Context.ModServiceName, def.Context.GetName());
 
-                if(Main.VanillaDefinitions.Definitions.Contains(def.Id))
+                HashSet<MyDefinitionId> vanillaDefs = Main.VanillaDefinitions.Definitions;
+                if(vanillaDefs == null)
+                    Log.Error($"vanilla definitions didn't finish loading by the time player interacted with {GetType().Name}");
+
+                if(vanillaDefs != null && vanillaDefs.Contains(def.Id))
                 {
                     if(!Mods.ContainsKey(modId))
                     {

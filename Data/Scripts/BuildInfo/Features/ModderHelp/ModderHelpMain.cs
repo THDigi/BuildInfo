@@ -726,6 +726,22 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     continue;
                 }
 
+                MyCubeBlockDefinition blockDef = def as MyCubeBlockDefinition;
+
+                if(BuildInfoMod.IsDevMod && def.Context.IsBaseGame)
+                {
+                    if(blockDef?.MountPoints != null && blockDef.MountPoints.Length > 0)
+                    {
+                        foreach(MyCubeBlockDefinition.MountPoint mount in blockDef.MountPoints)
+                        {
+                            if(mount.ExclusionMask > 3 || mount.PropertiesMask > 3)
+                            {
+                                Log.Info($"[DEV] Vanilla block '{def.Id.ToString()}' has mountpoint with mask values larger than 3: exclusionMask={mount.ExclusionMask}; propertiesMask={mount.PropertiesMask}");
+                            }
+                        }
+                    }
+                }
+
                 if(!CheckEverything)
                 {
                     // ignore untouched definitions
@@ -742,7 +758,6 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     ModHint(def, "has empty subtype, is this intended?");
                 }
 
-                MyCubeBlockDefinition blockDef = def as MyCubeBlockDefinition;
                 if(blockDef != null)
                 {
                     if(blockDef.Size.X <= 0 || blockDef.Size.Y <= 0 || blockDef.Size.Z <= 0)

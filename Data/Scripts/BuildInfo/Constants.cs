@@ -70,8 +70,6 @@ namespace Digi.BuildInfo
 
         public const string WarnPlayerIsNull = "Local Player is null, silly bugs... try again in a few seconds.";
 
-        public static bool ForceExportVanillaDefinitions = false; // used for exporting vanilla block IDs for AnalyseShip's hardcoded list.
-
         public readonly HashSet<MyObjectBuilderType> DefaultItemsForMass = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer) // used in inventory formatting to compute min/max mass
         {
             typeof(MyObjectBuilder_Ore),
