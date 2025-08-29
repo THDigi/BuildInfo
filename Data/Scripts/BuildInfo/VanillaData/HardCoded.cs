@@ -86,7 +86,7 @@ namespace Digi.BuildInfo.VanillaData
 
         static void DefinePhysicsLayers()
         {
-            AddLayer("All", 0);
+            AddLayer("Unknown", 0);
             AddLayer("OpenableSubpartLayer", 4);
             AddLayer("StaticGridsSearchCollisionLayer", 5);
             AddLayer("TargetDummyLayer", 6);

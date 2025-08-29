@@ -300,6 +300,19 @@ namespace Digi.BuildInfo.Features
             //EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
 
+        //public override void UpdateAfterSim(int tick)
+        //{
+        //    var chr = MyAPIGateway.Session?.Player?.Character;
+        //    if(chr != null)
+        //    {
+        //        var reverbComp = chr.Components.Get<MyEntityReverbDetectorComponent>();
+        //        if(reverbComp != null)
+        //        {
+        //            MyAPIGateway.Utilities.ShowNotification($"ReverbComp :: grids={reverbComp.Grids}, voxels={reverbComp.Voxels}", 16);
+        //        }
+        //    }
+        //}
+
 
         //List<MyBillboard> Billboards = new List<MyBillboard>();
 
