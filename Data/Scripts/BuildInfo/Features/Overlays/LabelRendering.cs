@@ -101,7 +101,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         public void DrawLine(Vector3D start, Vector3D direction, Color color,
             float scale = 1f, float lineHeight = 0.5f, float lineThick = 0.005f,
-            bool autoAlign = true, bool alwaysOnTop = false)
+            bool alwaysOnTop = false)
         {
             scale *= LabelScale;
 

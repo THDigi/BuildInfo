@@ -167,7 +167,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 {
                     float textScale = 1f;
 
-                    MatrixD matrix = MatrixD.CreateScale(def.Size * (CellSize / textScale / 2f) + new Vector3D(0.5f));
+                    MatrixD matrix = MatrixD.CreateScale(def.Size * (CellSize / textScale / 2f) + Vector3D.Half);
                     matrix.Translation = Vector3D.Zero; // (def.Center - (def.Size * 0.5f));
                     matrix = matrix * drawMatrix;
 
@@ -175,34 +175,52 @@ namespace Digi.BuildInfo.Features.Overlays
 
                     if(Main.TextAPI.IsEnabled && mode != Overlays.ModeEnum.AirtightAndSpecialized)
                     {
-                        LabelRender.DrawLineLabel(LabelType.AxisX, matrix.Translation, matrix.Right, Color.Red, cacheMessage: "Right",
+                        LabelRender.DrawLineLabel(LabelType.AxisX, matrix.Translation, matrix.Right, Color.Red, cacheMessage: "Right\n+X",
                             lineHeight: 1f, scale: textScale, settingFlag: OverlayLabelsFlags.Axis, autoAlign: true, alwaysOnTop: alwaysOnTop);
 
-                        LabelRender.DrawLineLabel(LabelType.AxisY, matrix.Translation, matrix.Up, Color.Lime, cacheMessage: "Up",
+                        LabelRender.DrawLineLabel(LabelType.AxisY, matrix.Translation, matrix.Up, Color.Lime, cacheMessage: "Up\n+Y",
                             lineHeight: 1f, scale: textScale, settingFlag: OverlayLabelsFlags.Axis, autoAlign: true, alwaysOnTop: alwaysOnTop);
 
-                        LabelRender.DrawLineLabel(LabelType.AxisZ, matrix.Translation, matrix.Forward, Color.Blue, cacheMessage: "Forward",
+                        LabelRender.DrawLineLabel(LabelType.AxisZ, matrix.Translation, matrix.Forward, Color.Blue, cacheMessage: "Forward\n-Z",
                             lineHeight: 1f, scale: textScale, settingFlag: OverlayLabelsFlags.Axis, autoAlign: true, alwaysOnTop: alwaysOnTop);
                     }
                     else
                     {
                         LabelRender.DrawLine(matrix.Translation, matrix.Right, Color.Red,
-                            lineHeight: 1f, scale: textScale, autoAlign: true, alwaysOnTop: alwaysOnTop);
+                            lineHeight: 1f, scale: textScale, alwaysOnTop: alwaysOnTop);
 
                         LabelRender.DrawLine(matrix.Translation, matrix.Up, Color.Lime,
-                            lineHeight: 1f, scale: textScale, autoAlign: true, alwaysOnTop: alwaysOnTop);
+                            lineHeight: 1f, scale: textScale, alwaysOnTop: alwaysOnTop);
 
                         LabelRender.DrawLine(matrix.Translation, matrix.Forward, Color.Blue,
-                            lineHeight: 1f, scale: textScale, autoAlign: true, alwaysOnTop: alwaysOnTop);
-
-                        // re-assigning mount points temporarily to prevent the original mountpoint wireframe from being drawn while keeping the axis text
-                        //MyCubeBlockDefinition.MountPoint[] mp = def.MountPoints;
-                        //def.MountPoints = BLANK_MOUNTPOINTS;
-                        //MyCubeBuilder.DrawMountPoints(CellSize, def, ref drawMatrix);
-                        //def.MountPoints = mp;
-                        //
-                        //private readonly MyCubeBlockDefinition.MountPoint[] BLANK_MOUNTPOINTS = new MyCubeBlockDefinition.MountPoint[0];
+                            lineHeight: 1f, scale: textScale, alwaysOnTop: alwaysOnTop);
                     }
+
+
+                    // re-assigning mount points temporarily to prevent the original mountpoint wireframe from being drawn while keeping the axis text
+                    //private readonly MyCubeBlockDefinition.MountPoint[] BLANK_MOUNTPOINTS = new MyCubeBlockDefinition.MountPoint[0];
+                    //MyCubeBlockDefinition.MountPoint[] mp = def.MountPoints;
+                    ////def.MountPoints = BLANK_MOUNTPOINTS;
+                    //def.MountPoints = new MyCubeBlockDefinition.MountPoint[0];
+                    //MyCubeBuilder.DrawMountPoints(CellSize, def, ref drawMatrix);
+                    //def.MountPoints = mp;
+
+
+                    //if(mode == Overlays.ModeEnum.MountPoints)
+                    //{
+                    //    DrawMountPointsAxisHelpers(def, ref drawMatrix, CellSize);
+                    //}
+
+                    //const float NegativeAxisDesaturate = 0.15f;
+                    //
+                    //LabelRender.DrawLine(matrix.Translation, matrix.Left, new Color(NegativeAxisDesaturate, 0f, 0f),
+                    //    lineHeight: 1f, scale: textScale, alwaysOnTop: alwaysOnTop);
+                    //
+                    //LabelRender.DrawLine(matrix.Translation, matrix.Down, new Color(0f, NegativeAxisDesaturate, 0f),
+                    //    lineHeight: 1f, scale: textScale, alwaysOnTop: alwaysOnTop);
+                    //
+                    //LabelRender.DrawLine(matrix.Translation, matrix.Forward, new Color(0f, 0f, NegativeAxisDesaturate),
+                    //    lineHeight: 1f, scale: textScale, alwaysOnTop: alwaysOnTop);
                 }
                 #endregion
 
@@ -603,6 +621,87 @@ namespace Digi.BuildInfo.Features.Overlays
                 Log.Error($"Overlay draw error for {DebugName}; block={block?.BlockDefinition?.Id.ToString()}; def={def?.Id.ToString()}; error={e}");
             }
         }
+
+#if false
+        void DrawMountPointsAxisHelpers(MyCubeBlockDefinition def, ref MatrixD drawMatrix, float cellSize)
+        {
+            Vector3I center = def.Center;
+            Vector3 value = def.Size * 0.5f;
+            MatrixD matrix = MatrixD.CreateTranslation(center - value) * MatrixD.CreateScale(cellSize) * drawMatrix;
+
+            for(int i = 0; i < 6; i++)
+            {
+                Base6Directions.Direction mountPointDirection = (Base6Directions.Direction)i;
+                Vector3D vector3D = Vector3D.Zero;
+                vector3D.Z = -0.20000000298023224;
+                Vector3D v = Vector3.Forward;
+                Vector3D v2 = Vector3.Right;
+                Vector3D v3 = Vector3.Up;
+                vector3D = def.MountPointLocalToBlockLocal(vector3D, mountPointDirection);
+                vector3D = Vector3D.Transform(vector3D, matrix);
+                v = def.MountPointLocalNormalToBlockLocal(v, mountPointDirection);
+                v = Vector3D.TransformNormal(v, matrix);
+                v3 = def.MountPointLocalNormalToBlockLocal(v3, mountPointDirection);
+                v3 = Vector3D.TransformNormal(v3, matrix);
+                v2 = def.MountPointLocalNormalToBlockLocal(v2, mountPointDirection);
+                v2 = Vector3D.TransformNormal(v2, matrix);
+
+                var sphereWM = MatrixD.CreateTranslation(vector3D - def.ModelOffset);
+                Utils.DrawSphere(ref sphereWM, 0.03f * cellSize, SpecializedOverlayBase.RoundedQualityLow, Color.Red, Constants.Mat_Laser, 0.01f);
+                //MyRenderProxy.DebugDrawSphere(vector3D - def.ModelOffset, 0.03f * cellSize, Color.Red.ToVector3());
+
+                //MatrixD worldMatrix = MatrixD.CreateWorld(vector3D + v2 * 0.25 - def.ModelOffset, v, v2);
+                //MatrixD worldMatrix2 = MatrixD.CreateWorld(vector3D + v3 * 0.25 - def.ModelOffset, v, v3);
+                //Vector4 vctColor = Color.Red.ToVector4();
+                //Vector4 vctColor2 = Color.Green.ToVector4();
+                //MySimpleObjectDraw.DrawTransparentCylinder(ref worldMatrix, 0f, 0.03f * cellSize, 0.5f * cellSize, ref vctColor, false, 16, 0.01f * cellSize);
+                //MySimpleObjectDraw.DrawTransparentCylinder(ref worldMatrix2, 0f, 0.03f * cellSize, 0.5f * cellSize, ref vctColor2, false, 16, 0.01f * cellSize);
+
+                MyTransparentGeometry.AddLineBillboard(Constants.Mat_Laser, Color.Red, vector3D - def.ModelOffset, v, 0.2f, 0.01f, BlendTypeEnum.PostPP);
+                //MyRenderProxy.DebugDrawLine3D(vector3D - def.ModelOffset, vector3D - v * 0.20000000298023224 - def.ModelOffset, Color.Red, Color.Red, depthRead: true);
+
+
+
+                //float num = 0.5f * cellSize;
+                //float num2 = 0.5f * cellSize;
+                //float num3 = 0.5f * cellSize;
+                //
+                //if(MySector.MainCamera != null)
+                //{
+                //    Vector3D camPos = MyAPIGateway.Session.Camera.Position;
+                //    float num4 = (float)(vector3D + v2 * 0.550000011920929 - camPos).Length();
+                //    float num5 = (float)(vector3D + v3 * 0.550000011920929 - camPos).Length();
+                //    float num6 = (float)(vector3D + v * 0.10000000149011612 - camPos).Length();
+                //    num = num * 6f / num4;
+                //    num2 = num2 * 6f / num5;
+                //    num3 = num3 * 6f / num6;
+                //}
+                //
+                //MyRenderProxy.DebugDrawText3D(vector3D + v2 * 0.550000011920929 - def.ModelOffset, "X", Color.Red, num, depthRead: false, MyGuiDrawAlignEnum.HORISONTAL_CENTER_AND_VERTICAL_CENTER);
+                //MyRenderProxy.DebugDrawText3D(vector3D + v3 * 0.550000011920929 - def.ModelOffset, "Y", Color.Green, num2, depthRead: false, MyGuiDrawAlignEnum.HORISONTAL_CENTER_AND_VERTICAL_CENTER);
+                //MyRenderProxy.DebugDrawText3D(vector3D + v * 0.10000000149011612 - def.ModelOffset, m_mountPointSideNames[i], Color.White, num3, depthRead: true, MyGuiDrawAlignEnum.HORISONTAL_CENTER_AND_VERTICAL_CENTER);
+
+                LabelRender.DynamicLabel.Clear().Append("X");
+                LabelRender.DrawLineLabel(LabelType.DynamicLabel, sphereWM.Translation, v2, Color.DarkRed, null, 1f, 0.55f);
+
+                LabelRender.DynamicLabel.Clear().Append("Y");
+                LabelRender.DrawLineLabel(LabelType.DynamicLabel, sphereWM.Translation, v3, Color.Green, null, 1f, 0.55f);
+
+                LabelRender.DynamicLabel.Clear().Append(m_mountPointSideNames[i]);
+                LabelRender.DrawLineLabel(LabelType.DynamicLabel, sphereWM.Translation, v, Color.White, null, 1f, 0.1f);
+            }
+        }
+
+        readonly string[] m_mountPointSideNames = new string[6]
+        {
+            "Front",
+            "Back",
+            "Left",
+            "Right",
+            "Top",
+            "Bottom"
+        };
+#endif
 
         #region Draw ports
         readonly List<PortInfo> AimedPorts = new List<PortInfo>();
