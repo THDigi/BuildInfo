@@ -4,6 +4,7 @@ using Digi.BuildInfo.VanillaData;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
+using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -27,9 +28,6 @@ namespace Digi.BuildInfo.Features.LiveData
         public readonly Dictionary<MyObjectBuilderType, bool> ConveyorSupportTypes = new Dictionary<MyObjectBuilderType, bool>(MyObjectBuilderType.Comparer);
 
         public event Action<MyDefinitionId, BData_Base> DataGenerated;
-
-        Type ConveyorEndpointInterface = null;
-        Type ConveyorSegmentInterface = null;
 
         readonly Cache DefaultCache = new Cache();
 
@@ -104,6 +102,9 @@ namespace Digi.BuildInfo.Features.LiveData
 
             // every other block type is going to use BData_Base
             Main.BlockMonitor.BlockAdded += BlockMonitor_BlockAdded;
+
+            // HACK: because GetConveyorEndpointBlock() doesn't include this (IMyConveyorSegmentBlock)
+            ConveyorSupportTypes.Add(typeof(MyObjectBuilder_ConveyorConnector), true);
         }
 
         public override void RegisterComponent()
@@ -252,13 +253,18 @@ namespace Digi.BuildInfo.Features.LiveData
         //
         //}
 
+        Type ConveyorEndpointInterface = null;
+        Type ConveyorSegmentInterface = null;
+
         void CheckConveyorSupport(IMyCubeBlock block)
         {
             if(ConveyorSupportTypes.ContainsKey(block.BlockDefinition.TypeId))
                 return;
 
-            Type[] interfaces = MyAPIGateway.Reflection.GetInterfaces(block.GetType());
             bool supportsConveyors = false;
+
+#if VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 || VERSION_206 // HACK: backwards compatible
+            Type[] interfaces = MyAPIGateway.Reflection.GetInterfaces(block.GetType());
 
             if(ConveyorEndpointInterface == null || ConveyorSegmentInterface == null)
             {
@@ -291,6 +297,9 @@ namespace Digi.BuildInfo.Features.LiveData
                     }
                 }
             }
+#else
+            supportsConveyors = MyResourceDistributorComponent.GetConveyorEndpointBlock(block) != null;
+#endif
 
             ConveyorSupportTypes.Add(block.BlockDefinition.TypeId, supportsConveyors);
         }

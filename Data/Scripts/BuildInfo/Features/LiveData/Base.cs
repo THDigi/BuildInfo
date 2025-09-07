@@ -578,9 +578,9 @@ namespace Digi.BuildInfo.Features.LiveData
 
             if(hasConveyorsForUnsupported && showModderAlerts && isModModel)
             {
-                Main.ModderHelpMain.ModHint(def, $"Its model has 'conveyor_' dummies but the block type does not support connecting to conveyor network." +
+                Main.ModderHelpMain.ModHint(def, $"Its model has 'conveyor_' dummies but the block does not support connecting to conveyor network." +
                                                   "\nDepending on the intent:" +
-                                                  "\n- If you want conveyor connection you must pick a compatible block type, see: https://spaceengineers.wiki.gg/wiki/Modding/Reference/SBC/BlockTypeSupport " +
+                                                  "\n- If you want conveyor connection, the block needs an entity component to enable it, see: https://spaceengineers.wiki.gg/wiki/Modding/Reference/SBC/BlockTypeSupport " +
                                                   "\n- If you only want interaction to open inventory, use a 'detector_inventory' dummy instead.");
             }
 
