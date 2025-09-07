@@ -41,6 +41,7 @@ namespace Digi.BuildInfo
         public readonly HUDSounds HUDSounds;
 
         // Systems
+        public readonly TemporaryMemory TemporaryMemory;
         public readonly TextAPI TextAPI;
         public readonly GUIMonitor GUIMonitor;
         public readonly GameConfig GameConfig;
@@ -146,6 +147,7 @@ namespace Digi.BuildInfo
             HUDSounds = new HUDSounds(this);
 
             // Systems
+            TemporaryMemory = new TemporaryMemory(this);
             TextAPI = new TextAPI(this);
             InputLibHandler = new InputLibHandler(this);
             GUIMonitor = new GUIMonitor(this);

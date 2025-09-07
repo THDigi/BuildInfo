@@ -1734,5 +1734,30 @@ namespace Digi.BuildInfo.Utilities
             closestPointLine2 = linePoint2 + lineVec2 * t;
             return true;
         }
+
+        /// <summary>
+        /// Subnormal numbers are very tiny and require more CPU time to compute than usual.
+        /// Code from https://stackoverflow.com/a/26575832 - newer .NET has this built-in.
+        /// </summary>
+        public static bool IsSubnormal(double num)
+        {
+            if(num == 0)
+                return false;
+
+            const long ExponentMask = 0x7FF0000000000000;
+            long bits = BitConverter.DoubleToInt64Bits(num);
+            return (bits & ExponentMask) == 0;
+        }
+
+        public static void AssertSubnormal(double num)
+        {
+            if(num == 0)
+                return;
+
+            const long ExponentMask = 0x7FF0000000000000;
+            long bits = BitConverter.DoubleToInt64Bits(num);
+            if((bits & ExponentMask) == 0)
+                throw new Exception($"subnormal detected '{num}'");
+        }
     }
 }
