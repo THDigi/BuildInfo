@@ -456,21 +456,25 @@ namespace Digi.BuildInfo.Features.Tooltips
 
                     int lengthCheck = s.Length;
 
+                    MyPhysicalItemDefinition physDef = def as MyPhysicalItemDefinition;
+
                     const int MaxWidth = 70;
                     string desc = def.DescriptionText;
-                    if(!string.IsNullOrWhiteSpace(desc))
-                    {
-                        s.Append('"').AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append('"').Append('\n');
-                    }
 
-                    MyPhysicalItemDefinition physDef = def as MyPhysicalItemDefinition;
                     if(physDef != null)
                     {
                         /// NOTE: this is before <see cref="ItemTooltips"/> appends stuff to it.
                         string tooltip = physDef.ExtraInventoryTooltipLine?.ToString().Trim(); // game adds some leading newlines
                         string bpTooltip = bpBaseDef.DisplayNameText;
 
-                        s.TrimEndWhitespace().Append('\n');
+                        if(!string.IsNullOrWhiteSpace(desc))
+                        {
+                            // only add description if the extra tooltip is empty
+                            if(tooltip == null || tooltip.Length == 0)
+                            {
+                                s.Append('"').AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append('"').Append('\n');
+                            }
+                        }
 
                         // don't add this if another mod already did
                         if(!string.IsNullOrWhiteSpace(tooltip) && !bpTooltip.Contains(tooltip))
@@ -488,6 +492,13 @@ namespace Digi.BuildInfo.Features.Tooltips
                         it.TooltipUsedIn(s, physDef, true);
                         it.TooltipBoughtOrSold(s, physDef, true);
                         it.TooltipCrafting(s, physDef, true);
+                    }
+                    else
+                    {
+                        if(!string.IsNullOrWhiteSpace(desc))
+                        {
+                            s.Append('"').AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append('"').Append('\n');
+                        }
                     }
 
                     // erase the result info if nothing was appended

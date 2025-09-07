@@ -240,7 +240,11 @@ namespace Digi.BuildInfo.Features.Tooltips
 
                 if(!string.IsNullOrWhiteSpace(desc))
                 {
-                    s.Append("\"").AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append("\"\n");
+                    // only add description if the extra tooltip is empty
+                    if(physDef.ExtraInventoryTooltipLine == null || physDef.ExtraInventoryTooltipLine.Length == 0)
+                    {
+                        s.Append("\"").AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append("\"\n");
+                    }
                 }
 
                 TooltipConsumable(s, physDef);
@@ -268,6 +272,13 @@ namespace Digi.BuildInfo.Features.Tooltips
             {
                 s.Append("Consumable: ");
 
+                // keep some level of mystery around hidden items
+                if(!physDef.Public || (physDef.ExtraInventoryTooltipLine != null && physDef.ExtraInventoryTooltipLine.ToString().Contains("???")))
+                {
+                    s.Append("Unknown effects\n");
+                    return;
+                }
+
                 Dictionary<string, string> statNames = Main.TooltipHandler.TmpStatDisplayNames;
 
                 if(consumable.Stats.Count == 1)
@@ -279,6 +290,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 }
                 else
                 {
+                    s.Append('\n');
                     foreach(MyConsumableItemDefinition.StatValue stat in consumable.Stats)
                     {
                         s.Append("  ").Append(stat.Value > 0 ? "+" : "").ProportionToPercent(stat.Value * stat.Time, 2).Append(" ")
