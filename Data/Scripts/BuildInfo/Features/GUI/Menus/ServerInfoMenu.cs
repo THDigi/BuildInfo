@@ -64,12 +64,12 @@ namespace Digi.BuildInfo.Features.GUI
         ITooltipHandler TooltipHandler;
         HudAPIv2.BillBoardHUDMessage TooltipSelectionBox;
 
-        Column[] Columns = new Column[4];
+        Column[] Columns = new Column[5];
         Column CurrentColumn;
         int ColumnIndex;
 
         ScrollableSection ScrollableBlockLimits = new ScrollableSection(5);
-        ScrollableSection ScrollableModsList = new ScrollableSection(50);
+        ScrollableSection ScrollableModsList = new ScrollableSection(35);
         ScrollableSection ScrollableWarnings = new ScrollableSection(10);
         List<ScrollableSection> ScrollableSections;
 
@@ -186,10 +186,10 @@ namespace Digi.BuildInfo.Features.GUI
 
             for(int i = 0; i < Columns.Length; i++)
             {
-                Columns[i] = new Column(DebugDrawBoxes);
+                Columns[i] = new Column(i, DebugDrawBoxes);
             }
 
-            Columns[0].Render.TextStringBuilder.Append("aAqQjJ!W");
+            Columns[0].Render.TextStringBuilder.Append("aAgGqQjJ!W");
             LineHeight = (float)Math.Abs(Columns[0].Render.Text.GetTextLength().Y);
             Columns[0].Render.TextStringBuilder.Append(" ");
             SpaceWidth = (float)Math.Abs(Columns[0].Render.Text.GetTextLength().Y);
@@ -255,7 +255,7 @@ namespace Digi.BuildInfo.Features.GUI
 
                 Vector2D pxSize = HudAPIv2.APIinfo.ScreenPositionOnePX;
 
-                const double PosX = 0.15;
+                const double PosX = 0.2; // right-offset to reduce overlap with chat
                 const float BorderPaddingPx = 20; // on each side
                 const float ColumnSpacingPx = 16; // between columns only
                 Vector2D columnSize = new Vector2D(0, 0);
@@ -306,7 +306,7 @@ namespace Digi.BuildInfo.Features.GUI
                 CloseButton.Label.Visible = true;
                 */
 
-                WindowBG.Origin = new Vector2D(PosX, 0); // right-offset to reduce chat overlap
+                WindowBG.Origin = new Vector2D(PosX, 0);
                 WindowBG.Width = (float)(windowSize.X + pxSize.X * BorderPaddingPx * 2);
                 WindowBG.Height = (float)(windowSize.Y + pxSize.Y * BorderPaddingPx * 2);
                 WindowBG.Visible = true;
@@ -513,6 +513,11 @@ namespace Digi.BuildInfo.Features.GUI
 
             string findTextUpper = string.Join("", TextInput).ToUpperInvariant();
             int findLength = findTextUpper.Length;
+
+            foreach(var scrollable in ScrollableSections)
+            {
+                scrollable.SearchAndScroll(findTextUpper, LinesHighlighted);
+            }
 
             for(int columnIdx = 0; columnIdx < Columns.Length; columnIdx++)
             {
@@ -742,7 +747,16 @@ namespace Digi.BuildInfo.Features.GUI
 
             AppendSettings();
 
-            StringBuilder sb = NextColumn();
+            //StringBuilder sb = NextColumn();
+
+            AppendModsList();
+
+            FinishColumnFormat();
+        }
+
+        void AppendModsList()
+        {
+            StringBuilder sb = CurrentColumn.Render.TextStringBuilder;
 
             Header(sb, "Mods");
             CurrentColumn.SetTooltip(0, "Mods at the top are loaded last therefore they override other ones below them." +
@@ -764,35 +778,35 @@ namespace Digi.BuildInfo.Features.GUI
                 int sbIndex = sb.Length;
 
 #if false // for testing mods list
-            {
-                int totalMods = 167 - mods.Count;
-                var fakeMods = new List<MyObjectBuilder_Checkpoint.ModItem>(totalMods + mods.Count);
-
-                for(int i = 0; i <= totalMods; i++)
                 {
-                    string modName = "";
-                    int len = MyRandom.Instance.Next(5, 100);
-                    for(int n = 0; n < len; n++)
+                    int totalMods = 167 - mods.Count;
+                    var fakeMods = new List<MyObjectBuilder_Checkpoint.ModItem>(totalMods + mods.Count);
+
+                    for(int i = 0; i <= totalMods; i++)
                     {
-                        if(MyRandom.Instance.Next(0, 100) <= 10)
-                            modName += ' ';
-                        else
-                            modName += (char)MyRandom.Instance.Next('a', 'z');
+                        string modName = "";
+                        int len = MyRandom.Instance.Next(5, 100);
+                        for(int n = 0; n < len; n++)
+                        {
+                            if(MyRandom.Instance.Next(0, 100) <= 10)
+                                modName += ' ';
+                            else
+                                modName += (char)MyRandom.Instance.Next('a', 'z');
+                        }
+
+                        fakeMods.Add(new MyObjectBuilder_Checkpoint.ModItem()
+                        {
+                            FriendlyName = modName,
+                            IsDependency = MyRandom.Instance.Next(0, 100) <= 10,
+                            Name = modName,
+                            PublishedFileId = MyRandom.Instance.Next(0, 100) <= 10 ? 0 : (ulong)MyRandom.Instance.NextLong(),
+                            PublishedServiceName = "steam",
+                        });
                     }
 
-                    fakeMods.Add(new MyObjectBuilder_Checkpoint.ModItem()
-                    {
-                        FriendlyName = modName,
-                        IsDependency = MyRandom.Instance.Next(0, 100) <= 10,
-                        Name = modName,
-                        PublishedFileId = MyRandom.Instance.Next(0, 100) <= 10 ? 0 : (ulong)MyRandom.Instance.NextLong(),
-                        PublishedServiceName = "steam",
-                    });
+                    fakeMods.AddList(mods);
+                    mods = fakeMods;
                 }
-
-                fakeMods.AddList(mods);
-                mods = fakeMods;
-            }
 #endif
 
                 bool scrollMods = mods.Count > ScrollableModsList.DisplayLines;
@@ -833,8 +847,6 @@ namespace Digi.BuildInfo.Features.GUI
 
                 ScrollableModsList.Finish(CurrentColumn, sbIndex);
             }
-
-            FinishColumnFormat();
         }
 
         string GetExperimentalTooltip()
@@ -952,7 +964,7 @@ namespace Digi.BuildInfo.Features.GUI
                 KnownFields.Add("ClientCanSave"); // always false
                 KnownFields.Add("TrashFlags"); // points to TrashFlagsValue
 
-                // from medieval engineers
+                // from medieval engineers (deleted in 207)
                 KnownFields.Add("MaxActiveFracturePieces");
                 KnownFields.Add("EnableStructuralSimulation");
             }
@@ -965,9 +977,12 @@ namespace Digi.BuildInfo.Features.GUI
             //IMyConfigDedicated dsConfig = MyAPIGateway.Utilities.ConfigDedicated; // is null for non-DS
             //var dsConfigDefault = new MyConfigDedicatedData<MyObjectBuilder_SessionSettings>();
 
+            bool globalEncountersOn = settings.GlobalEncounterCap > 0;
+
             sb = NextColumn();
 
 
+            #region Summary
             if(sb != null)
             {
                 sb.Color(ValueColorDefault).Append("(").Append(DefaultFrom).Append("'s default)\n");
@@ -977,8 +992,8 @@ namespace Digi.BuildInfo.Features.GUI
                 //sb.Append("\n<reset>");
                 sb.Color(Color.Yellow).Append("Search<reset> by opening chat.\n");
             }
+            #endregion
 
-            bool globalEncountersOn = settings.GlobalEncounterCap > 0;
 
             #region General
             Header(sb, "General");
@@ -1037,18 +1052,31 @@ namespace Digi.BuildInfo.Features.GUI
 
             PrintSetting(sb, nameof(settings.EnableJetpack), settings.EnableJetpack, DefaultSettings.EnableJetpack, true,
                 "Jetpack", "Allows players to use their jetpack.");
+
             PrintSetting(sb, nameof(settings.SpawnWithTools), settings.SpawnWithTools, DefaultSettings.SpawnWithTools, true,
                 "Spawn with Tools", "Enables spawning with tools in the inventory.");
+
             PrintFormattedNumber(sb, nameof(settings.CharacterSpeedMultiplier), settings.CharacterSpeedMultiplier, DefaultSettings.CharacterSpeedMultiplier, false,
                 "On-foot Speed Multiplier", "x", "Modifier for walking,running,etc and affects NPCs too." +
                                                  "\nJetpack flight not affected.");
+
             PrintFormattedNumber(sb, nameof(settings.EnvironmentDamageMultiplier), settings.EnvironmentDamageMultiplier, DefaultSettings.EnvironmentDamageMultiplier, false,
                 "Environment Damage Multiplier", "x", "This multiplier only applies for damage caused to a character by Environment damage types." +
                                                       "\nAffects NPCs too.");
+
             PrintFormattedNumber(sb, nameof(settings.BackpackDespawnTimer), settings.BackpackDespawnTimer, DefaultSettings.BackpackDespawnTimer, false,
                 "Backpack Despawn Time", " min", "Sets the timer (minutes) for the backpack to be removed from the world."); // TODO: zero might despawn instantly, negative might never despawn? ... needs testing
+
             PrintFormattedNumber(sb, string.Empty, MyPerGameSettings.CharacterGravityMultiplier, Hardcoded.DefaultCharacterGravityMultiplier, false,
                 "Character Gravity Multiplier", "x", "Gravity acceleration is multiplied by this value only for characters." + TooltipSettingModdable);
+
+#if !(VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 || VERSION_206) // HACK: backwards compatible
+            PrintSetting(sb, nameof(settings.EnableSurvivalBuffs), settings.EnableSurvivalBuffs, DefaultSettings.EnableSurvivalBuffs, false,
+                NewSettingTag + "Enable Survival Buffs", "Enable buffs and enhancements which player characters earn over time. These benefits are lost if the player respawns.");
+
+            PrintSetting(sb, nameof(settings.EnableReducedStatsOnRespawn), settings.EnableReducedStatsOnRespawn, DefaultSettings.EnableReducedStatsOnRespawn, false,
+                NewSettingTag + "Enable Reduced Stats", "Upon respawning, all players will have their health, oxygen, gas tank levels, and other stats set to critically low levels.");
+#endif
             #endregion Characters
 
 
@@ -1140,49 +1168,24 @@ namespace Digi.BuildInfo.Features.GUI
             PrintSetting(sb, nameof(settings.EnableOrca), settings.EnableOrca, DefaultSettings.EnableOrca, false,
                 "Advanced ORCA algorithm", "Enable advanced Optimal Reciprocal Collision Avoidance algorithm.");
             PrintSetting(sb, nameof(settings.EnableShareInertiaTensor), settings.EnableShareInertiaTensor, DefaultSettings.EnableShareInertiaTensor, true,
-                 NewSettingTag + "Allow 'Share Inertia Tensor'", "Allows the use of 'Share Inertia Tensor' on mechanical connection blocks.\nIf turned off it will force the setting off on all existing blocks too.");
+                 "Allow 'Share Inertia Tensor'", "Allows the use of 'Share Inertia Tensor' on mechanical connection blocks.\nIf turned off it will force the setting off on all existing blocks too.");
             PrintSetting(sb, nameof(settings.EnableUnsafePistonImpulses), settings.EnableUnsafePistonImpulses, DefaultSettings.EnableUnsafePistonImpulses, true,
-                 NewSettingTag + "Allow Unsafe Piston Impulses", "Allows pistons to use forces past the safe amount.\nIf turned off it will cap on all existing blocks too.");
+                 "Allow Unsafe Piston Impulses", "Allows pistons to use forces past the safe amount.\nIf turned off it will cap on all existing blocks too.");
             PrintSetting(sb, nameof(settings.EnableUnsafeRotorTorques), settings.EnableUnsafeRotorTorques, DefaultSettings.EnableUnsafeRotorTorques, true,
-                 NewSettingTag + "Allow Unsafe Rotor Torques", "Allows rotors/hinges to use torques past the safe amount.\nIf turned off it will cap on all existing blocks too.");
+                 "Allow Unsafe Rotor Torques", "Allows rotors/hinges to use torques past the safe amount.\nIf turned off it will cap on all existing blocks too.");
             #endregion Ships & blocks
 
 
-            #region PvP
-            Header(sb, "PvP");
+            #region Bots
+            Header(sb, "Bots");
 
-            PrintSetting(sb, nameof(settings.EnableMatchComponent), settings.EnableMatchComponent, DefaultSettings.EnableMatchComponent, false,
-                "Match Enabled");
-            PrintFormattedNumber(sb, nameof(settings.MatchRestartWhenEmptyTime), settings.MatchRestartWhenEmptyTime, DefaultSettings.MatchRestartWhenEmptyTime, false,
-                "Match Restart When Empty", " min", "Server will restart after specified time (minutes), when it's empty after match started. Works only in PvP scenarios.\n0 means disabled.",
-                GrayIfFalse(settings.EnableMatchComponent));
-            PrintFormattedNumber(sb, nameof(settings.MatchDuration), settings.MatchDuration, DefaultSettings.MatchDuration, false,
-                "Match Duration", " min", "Duration of Match phase of the match.",
-                GrayIfFalse(settings.EnableMatchComponent));
-            PrintFormattedNumber(sb, nameof(settings.PreMatchDuration), settings.PreMatchDuration, DefaultSettings.PreMatchDuration, false,
-                "Pre-Match Duration", " min", "Duration of PreMatch phase of the match.",
-                GrayIfFalse(settings.EnableMatchComponent));
-            PrintFormattedNumber(sb, nameof(settings.PostMatchDuration), settings.PostMatchDuration, DefaultSettings.PostMatchDuration, false,
-                "Post-Match Duration", " min", "Duration of PostMatch phase of the match.",
-                GrayIfFalse(settings.EnableMatchComponent));
-            PrintSetting(sb, nameof(settings.EnableTeamScoreCounters), settings.EnableTeamScoreCounters, DefaultSettings.EnableTeamScoreCounters, false,
-                "Team Score Counters", "Show team scores at the top of the screen.",
-                GrayIfFalse(settings.EnableMatchComponent));
-            PrintSetting(sb, nameof(settings.EnableFriendlyFire), settings.EnableFriendlyFire, DefaultSettings.EnableFriendlyFire, false,
-                "Friendly Fire", "If disabled, characters do not get damaged by friends with hand weapons or hand tools.");
-            PrintSetting(sb, nameof(settings.EnableFactionVoiceChat), settings.EnableFactionVoiceChat, DefaultSettings.EnableFactionVoiceChat, false,
-                "Faction Voice Chat", "Faction Voice Chat removes the need of antennas and broadcasting of the character for faction.");
-            PrintSetting(sb, nameof(settings.EnableTeamBalancing), settings.EnableTeamBalancing, DefaultSettings.EnableTeamBalancing, false,
-                "Team balancing", "New players automatically join the faction with the least members.");
-            PrintSetting(sb, nameof(settings.ShowPlayerNamesOnHud), settings.ShowPlayerNamesOnHud, DefaultSettings.ShowPlayerNamesOnHud, true,
-                "Show player names", "If false player names are never shown, even if personal broadcast is on.");
-            PrintSetting(sb, nameof(settings.EnableFactionPlayerNames), settings.EnableFactionPlayerNames, DefaultSettings.EnableFactionPlayerNames, false,
-                "Show teammate names", "Shows player names above their head if they're in the same faction even if personal broadcast is off.");
-            PrintSetting(sb, nameof(settings.EnableGamepadAimAssist), settings.EnableGamepadAimAssist, DefaultSettings.EnableGamepadAimAssist, false,
-                "Gamepad Aim Assist", "Enable aim assist for gamepad.");
-            PrintFormattedNumber(sb, nameof(settings.EnemyTargetIndicatorDistance), settings.EnemyTargetIndicatorDistance, DefaultSettings.EnemyTargetIndicatorDistance, false,
-                "Aimed Enemy Indicator Distance", " m", "Max distance to show enemy indicator when aiming at a character.");
-            #endregion PvP
+            PrintSetting(sb, nameof(settings.TotalBotLimit), settings.TotalBotLimit, DefaultSettings.TotalBotLimit, true,
+                "Animal NPC Limit", "Maximum number of organic bots in the world");
+            PrintSetting(sb, nameof(settings.EnableSpiders), settings.EnableSpiders, DefaultSettings.EnableSpiders, true,
+                "Spiders", "Enables spawning of spiders in the world.");
+            PrintSetting(sb, nameof(settings.EnableWolfs), settings.EnableWolfs, DefaultSettings.EnableWolfs, true,
+                "Wolves", "Enables spawning of wolves in the world.");
+            #endregion
 
 
             sb = NextColumn(); // ------------------------------------------------------------------------------------------------------------------------------
@@ -1195,6 +1198,10 @@ namespace Digi.BuildInfo.Features.GUI
                 "Block Inventory", "x", "Multiplier for block inventory sizes.\nNOTE: Cargo mass gets inversely multiplied meaning a full ship is roughly the same mass regardless of this multiplier.");
             PrintFormattedNumber(sb, nameof(settings.InventorySizeMultiplier), settings.InventorySizeMultiplier, DefaultSettings.InventorySizeMultiplier, true,
                 "Character Inventory", "x", "Multiplier for character inventory size.");
+#if !(VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 || VERSION_206) // HACK: backwards compatible
+            PrintFormattedNumber(sb, nameof(settings.FoodConsumptionRate), settings.FoodConsumptionRate, DefaultSettings.FoodConsumptionRate, true,
+                NewSettingTag + "Food Consumption Rate", "x", "This value impacts how quickly the player becomes hungry, as well as how quickly food production occurs.");
+#endif
             PrintFormattedNumber(sb, nameof(settings.WelderSpeedMultiplier), settings.WelderSpeedMultiplier, DefaultSettings.WelderSpeedMultiplier, true,
                 "Welding", "x", "Speed multiplier for welding (both hand and ship).");
             PrintFormattedNumber(sb, nameof(settings.GrinderSpeedMultiplier), settings.GrinderSpeedMultiplier, DefaultSettings.GrinderSpeedMultiplier, true,
@@ -1244,6 +1251,12 @@ namespace Digi.BuildInfo.Features.GUI
                 "Automatic Weather System", "Enable automatic weather generation on planets.");
             PrintSetting(sb, nameof(settings.EnvironmentHostility), settings.EnvironmentHostility, DefaultSettings.EnvironmentHostility, true,
                 "Meteorite Showers", $"Enables meteorites, available difficulties: {string.Join(", ", Enum.GetNames(typeof(MyEnvironmentHostilityEnum)))}" + TooltipOriginalName("WorldSettings_EnvironmentHostility"));
+#if !(VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 || VERSION_206) // HACK: backwards compatible
+            PrintSetting(sb, nameof(settings.EnableRadiation), settings.EnableRadiation, DefaultSettings.EnableRadiation, false,
+                NewSettingTag + "Enable Radiation", "Enable radiation hazards.");
+            PrintSetting(sb, nameof(settings.SolarRadiationIntensity), settings.SolarRadiationIntensity, DefaultSettings.SolarRadiationIntensity, false,
+                NewSettingTag + "Solar Radiation Intensity", "A multiplier for the amount of radiation gained in space from sun exposure.");
+#endif
             PrintSetting(sb, nameof(settings.WeatherLightingDamage), settings.WeatherLightingDamage, DefaultSettings.WeatherLightingDamage, false,
                 "Enable lightning damage", "Lightning strikes from weather can damage grids.");
             PrintSetting(sb, nameof(settings.EnableVoxelDestruction), settings.EnableVoxelDestruction, DefaultSettings.EnableVoxelDestruction, true,
@@ -1511,24 +1524,6 @@ namespace Digi.BuildInfo.Features.GUI
             #endregion Combat
 
 
-
-            #region Misc
-            Header(sb, "Misc.");
-
-            PrintSetting(sb, nameof(settings.EnableSpectator), settings.EnableSpectator, DefaultSettings.EnableSpectator, true,
-                "Everyone Spectator Camera", "Allows all players to use spectator camera (F6-F9).\nWith this off, spectator is still allowed in creative mode or admin creative tools.",
-                GrayOrWarn(true, MyAPIGateway.Session.SurvivalMode && settings.EnableSpectator));
-            PrintSetting(sb, nameof(settings.EnableVoxelHand), settings.EnableVoxelHand, DefaultSettings.EnableVoxelHand, false,
-                "Voxel Hands", "Only usable in creative mode or admin creative tools.\nAllows use of voxel hand tools to manipulate voxels (in toolbar config menu).");
-            PrintSetting(sb, nameof(settings.EnableCopyPaste), settings.EnableCopyPaste, DefaultSettings.EnableCopyPaste, true,
-                "Copy & Paste", "Usable only in creative mode or admin creative tools.\nEnables copy and paste feature.");
-            PrintSuppressedWarnings(sb, nameof(settings.SuppressedWarnings), settings.SuppressedWarnings, DefaultSettings.SuppressedWarnings, false,
-                "Suppressed Warnings", "Makes players ignore certain warnings from top-right red box popup, but not from the fully opened Shift+F1 menu.");
-            PrintSetting(sb, string.Empty, "(hover)", null, false,
-                "Undisclosed settings", "There are some settings that were intentionally not disclosed in this menu:" + UndisclosedSettingsList);
-            #endregion Misc
-
-
             sb = NextColumn(); // ------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -1637,6 +1632,20 @@ namespace Digi.BuildInfo.Features.GUI
 
             PrintSetting(sb, nameof(settings.MaxFloatingObjects), settings.MaxFloatingObjects, DefaultSettings.MaxFloatingObjects, true,
                 "Max Floating Objects", "The maximum number of concurrent loose items.\nOlder floating objects are removed when newer ones need to spawn.");
+
+            PrintSetting(sb, nameof(settings.MaxCargoBags), settings.MaxCargoBags, DefaultSettings.MaxCargoBags, false,
+                "Max Cargo Bags", "The maximum number of existing cargo bags.");
+
+#if !(VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 || VERSION_206) // HACK: backwards compatible
+            PrintSetting(sb, nameof(settings.ResetForageableItems), settings.ResetForageableItems, DefaultSettings.ResetForageableItems, false,
+                NewSettingTag + "Reset forageable items", "Enables reseting forageable items.");
+
+            PrintFormattedNumber(sb, nameof(settings.ResetForageableItemsTimeM), settings.ResetForageableItemsTimeM, DefaultSettings.ResetForageableItemsTimeM, false,
+                NewSettingTag + "Reset forageable items time", " min", "Defines time in minutes after which forageable items are reset.");
+
+            PrintFormattedNumber(sb, nameof(settings.ResetForageableItemsDistance), settings.ResetForageableItemsDistance, DefaultSettings.ResetForageableItemsDistance, false,
+                NewSettingTag + "Reset forageable items distance", " m", "Defines minimum distance from player for forageable items to reset.");
+#endif
             #endregion Cleanup
 
 
@@ -1763,16 +1772,61 @@ namespace Digi.BuildInfo.Features.GUI
             #endregion Performance
 
 
-            #region Bots
-            Header(sb, "Bots");
+            sb = NextColumn(); // ------------------------------------------------------------------------------------------------------------------------------
 
-            PrintSetting(sb, nameof(settings.TotalBotLimit), settings.TotalBotLimit, DefaultSettings.TotalBotLimit, true,
-                "Animal NPC Limit", "Maximum number of organic bots in the world");
-            PrintSetting(sb, nameof(settings.EnableSpiders), settings.EnableSpiders, DefaultSettings.EnableSpiders, true,
-                "Spiders", "Enables spawning of spiders in the world.");
-            PrintSetting(sb, nameof(settings.EnableWolfs), settings.EnableWolfs, DefaultSettings.EnableWolfs, true,
-                "Wolves", "Enables spawning of wolves in the world.");
-            #endregion
+
+            #region PvP
+            Header(sb, "PvP");
+
+            PrintSetting(sb, nameof(settings.EnableMatchComponent), settings.EnableMatchComponent, DefaultSettings.EnableMatchComponent, false,
+                "Match Enabled");
+            PrintFormattedNumber(sb, nameof(settings.MatchRestartWhenEmptyTime), settings.MatchRestartWhenEmptyTime, DefaultSettings.MatchRestartWhenEmptyTime, false,
+                "Match Restart When Empty", " min", "Server will restart after specified time (minutes), when it's empty after match started. Works only in PvP scenarios.\n0 means disabled.",
+                GrayIfFalse(settings.EnableMatchComponent));
+            PrintFormattedNumber(sb, nameof(settings.MatchDuration), settings.MatchDuration, DefaultSettings.MatchDuration, false,
+                "Match Duration", " min", "Duration of Match phase of the match.",
+                GrayIfFalse(settings.EnableMatchComponent));
+            PrintFormattedNumber(sb, nameof(settings.PreMatchDuration), settings.PreMatchDuration, DefaultSettings.PreMatchDuration, false,
+                "Pre-Match Duration", " min", "Duration of PreMatch phase of the match.",
+                GrayIfFalse(settings.EnableMatchComponent));
+            PrintFormattedNumber(sb, nameof(settings.PostMatchDuration), settings.PostMatchDuration, DefaultSettings.PostMatchDuration, false,
+                "Post-Match Duration", " min", "Duration of PostMatch phase of the match.",
+                GrayIfFalse(settings.EnableMatchComponent));
+            PrintSetting(sb, nameof(settings.EnableTeamScoreCounters), settings.EnableTeamScoreCounters, DefaultSettings.EnableTeamScoreCounters, false,
+                "Team Score Counters", "Show team scores at the top of the screen.",
+                GrayIfFalse(settings.EnableMatchComponent));
+            PrintSetting(sb, nameof(settings.EnableFriendlyFire), settings.EnableFriendlyFire, DefaultSettings.EnableFriendlyFire, false,
+                "Friendly Fire", "If disabled, characters do not get damaged by friends with hand weapons or hand tools.");
+            PrintSetting(sb, nameof(settings.EnableFactionVoiceChat), settings.EnableFactionVoiceChat, DefaultSettings.EnableFactionVoiceChat, false,
+                "Faction Voice Chat", "Faction Voice Chat removes the need of antennas and broadcasting of the character for faction.");
+            PrintSetting(sb, nameof(settings.EnableTeamBalancing), settings.EnableTeamBalancing, DefaultSettings.EnableTeamBalancing, false,
+                "Team balancing", "New players automatically join the faction with the least members.");
+            PrintSetting(sb, nameof(settings.ShowPlayerNamesOnHud), settings.ShowPlayerNamesOnHud, DefaultSettings.ShowPlayerNamesOnHud, true,
+                "Show player names", "If false player names are never shown, even if personal broadcast is on.");
+            PrintSetting(sb, nameof(settings.EnableFactionPlayerNames), settings.EnableFactionPlayerNames, DefaultSettings.EnableFactionPlayerNames, false,
+                "Show teammate names", "Shows player names above their head if they're in the same faction even if personal broadcast is off.");
+            PrintSetting(sb, nameof(settings.EnableGamepadAimAssist), settings.EnableGamepadAimAssist, DefaultSettings.EnableGamepadAimAssist, false,
+                "Gamepad Aim Assist", "Enable aim assist for gamepad.");
+            PrintFormattedNumber(sb, nameof(settings.EnemyTargetIndicatorDistance), settings.EnemyTargetIndicatorDistance, DefaultSettings.EnemyTargetIndicatorDistance, false,
+                "Aimed Enemy Indicator Distance", " m", "Max distance to show enemy indicator when aiming at a character.");
+            #endregion PvP
+
+
+            #region Misc
+            Header(sb, "Misc.");
+
+            PrintSetting(sb, nameof(settings.EnableSpectator), settings.EnableSpectator, DefaultSettings.EnableSpectator, true,
+                "Everyone Spectator Camera", "Allows all players to use spectator camera (F6-F9).\nWith this off, spectator is still allowed in creative mode or admin creative tools.",
+                GrayOrWarn(true, MyAPIGateway.Session.SurvivalMode && settings.EnableSpectator));
+            PrintSetting(sb, nameof(settings.EnableVoxelHand), settings.EnableVoxelHand, DefaultSettings.EnableVoxelHand, false,
+                "Voxel Hands", "Only usable in creative mode or admin creative tools.\nAllows use of voxel hand tools to manipulate voxels (in toolbar config menu).");
+            PrintSetting(sb, nameof(settings.EnableCopyPaste), settings.EnableCopyPaste, DefaultSettings.EnableCopyPaste, true,
+                "Copy & Paste", "Usable only in creative mode or admin creative tools.\nEnables copy and paste feature.");
+            PrintSuppressedWarnings(sb, nameof(settings.SuppressedWarnings), settings.SuppressedWarnings, DefaultSettings.SuppressedWarnings, false,
+                "Suppressed Warnings", "Makes players ignore certain warnings from top-right red box popup, but not from the fully opened Shift+F1 menu.");
+            PrintSetting(sb, string.Empty, "(hover)", null, false,
+                "Undisclosed settings", "There are some settings that were intentionally not disclosed in this menu:" + UndisclosedSettingsList);
+            #endregion Misc
 
 
             #region Stats
@@ -2005,23 +2059,50 @@ namespace Digi.BuildInfo.Features.GUI
 
             PrintSetting<string>(sb, $"{fieldLimits} and {fieldLimitBy}", $"(by {limitBy})", $"(by {defaultLimitBy})", shownInVanillaUI, displayName, description, formatting);
 
-            bool valuePresent = (limits?.Dictionary != null && limits.Dictionary.Count > 0);
-            bool defaultPresent = (defaultLimits?.Dictionary != null && defaultLimits.Dictionary.Count > 0);
+#if false // for testing list
+            limits = new SerializableDictionary<string, short>();
+            limits.Dictionary = new Dictionary<string, short>();
+
+            if(!MyAPIGateway.Input.IsAnyShiftKeyPressed())
+            {
+                limitBy = MyObjectBuilder_SessionSettings.LimitBlocksByOption.BlockPairName;
+
+                foreach(var blockPair in MyDefinitionManager.Static.GetDefinitionPairs())
+                {
+                    if(MyUtils.GetRandomInt(0, 100) <= 10)
+                    {
+                        limits.Dictionary.Add(blockPair.Key, (short)MyUtils.GetRandomInt(1, short.MaxValue + 1));
+                    }
+                }
+            }
+            else
+            {
+                limitBy = MyObjectBuilder_SessionSettings.LimitBlocksByOption.Tag;
+
+                foreach(var tag in new string[] { "ActionRelays", "AIBlocks", "AirVents", "Assemblers", "AtmosphericThrusters", "Batteries", "Beacons", "BroadcastControllers", "ButtonPanels" })
+                {
+                    limits.Dictionary.Add(tag, (short)MyUtils.GetRandomInt(1, short.MaxValue + 1));
+                }
+            }
+#endif
+
+            bool hasValue = (limits?.Dictionary != null && limits.Dictionary.Count > 0);
+            bool hasDefault = (defaultLimits?.Dictionary != null && defaultLimits.Dictionary.Count > 0);
 
             Color valueColor = ValueColorDefault;
             if(formatting == Formatting.GrayedOut)
                 valueColor = ValueColorDisabled;
             else if(formatting == Formatting.Warning)
                 valueColor = ValueColorWarning;
-            else if(defaultPresent != valuePresent)
+            else if(hasDefault != hasValue)
                 valueColor = ValueColorChanged;
 
             ScrollableBlockLimits.Reset();
-            bool scroll = valuePresent && limits.Dictionary.Count > ScrollableBlockLimits.DisplayLines;
+            bool scroll = hasValue && limits.Dictionary.Count > ScrollableBlockLimits.DisplayLines;
 
             int sbIndex = sb.Length;
 
-            if(!valuePresent)
+            if(!hasValue)
             {
                 sb.Append(LabelPrefix).Color(valueColor).Append("  (Empty)\n");
             }
@@ -2529,13 +2610,15 @@ namespace Digi.BuildInfo.Features.GUI
                 public Action ClickAction;
             }
 
-            public TextAPI.TextPackage Render;
+            public readonly int Index;
+            public TextPackage Render;
             public Vector2D TextSize;
             public Dictionary<int, Tooltip> Tooltips;
 
-            public Column(bool debug = false)
+            public Column(int index, bool debug = false)
             {
-                Render = new TextAPI.TextPackage(512, false, debug ? Constants.MatUI_Square : (MyStringId?)null);
+                Index = index;
+                Render = new TextPackage(512, false, debug ? Constants.MatUI_Square : (MyStringId?)null);
                 Render.HideWithHUD = false;
                 Render.Scale = TextScale;
 
@@ -2852,6 +2935,27 @@ namespace Digi.BuildInfo.Features.GUI
                 double scrollRatio = -(Scroll / (double)maxScrollIndex);
                 ScrollbarRender.Origin = new Vector2D(0, scrollRatio * ScrollableHeight);
                 return true;
+            }
+
+            public void SearchAndScroll(string findTextUpper, HashSet<Vector2I> linesHighlighted)
+            {
+                //foreach(var line in Lines)
+                //{
+                //    // TODO: a clean way to not highlight twice for visible lines
+                //
+                //    //Vector2I id = new Vector2I(columnIdx, line.);
+                //    //if(LinesHighlighted.Contains(id))
+                //    //    continue;
+                //
+                //    if(line.Tooltip.IndexOf(findTextUpper, StringComparison.OrdinalIgnoreCase) != -1)
+                //    {
+                //        //LinesHighlighted.Add(id);
+                //
+                //        HighlightLine(Column, ...);
+                //    }
+                //}
+                //
+                //linesHighlighted.Add(new Vector2I(Column.Index, ));
             }
         }
 
