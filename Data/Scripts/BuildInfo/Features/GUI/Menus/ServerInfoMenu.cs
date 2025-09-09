@@ -988,7 +988,7 @@ namespace Digi.BuildInfo.Features.GUI
                 sb.Color(ValueColorDefault).Append("(").Append(DefaultFrom).Append("'s default)\n");
                 sb.Color(ValueColorChanged).Append("(Different)\n");
                 sb.Color(ValueColorDisabled).Append("(Requires something else)\n");
-                sb.Color(NewSettingColor).Append("*<reset> new settings in SE v1.206\n"); // find all 'NewSettingTag +' and remove, then add to the new ones if any
+                sb.Color(NewSettingColor).Append("*<reset> new settings in SE v1.207\n"); // find all 'NewSettingTag +' and remove, then add to the new ones if any
                 //sb.Append("\n<reset>");
                 sb.Color(Color.Yellow).Append("Search<reset> by opening chat.\n");
             }
