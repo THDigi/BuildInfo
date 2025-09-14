@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using CoreSystems.Api;
 using Digi.BuildInfo.Features.LiveData;
+using Digi.BuildInfo.Features.Toolbars.FakeAPI;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
@@ -146,6 +147,8 @@ namespace Digi.BuildInfo.Features.Terminal
             Add(typeof(MyObjectBuilder_SoundBlock), Format_SoundBlock);
 
             Add(typeof(MyObjectBuilder_ButtonPanel), Format_ButtonPanel);
+
+            Add(typeof(MyObjectBuilder_EventControllerBlock), Format_EventController);
 
             action = Format_Weapons;
             Add(typeof(MyObjectBuilder_TurretBase), action);
@@ -1917,6 +1920,46 @@ namespace Digi.BuildInfo.Features.Terminal
 
             info.DetailInfo_Type(block);
             info.DetailInfo_InputPower(Sink);
+        }
+
+        void Format_EventController(IMyTerminalBlock block, StringBuilder info)
+        {
+            // Vanilla info in 1.206.028:
+            //     Event: <event name>
+            //     Input: <...>
+            //     (might repeat)
+            //     Output: <...>
+
+            info.DetailInfo_Type(block);
+            info.DetailInfo_InputPower(Sink);
+
+            ToolbarHolder th;
+            if(Main.ToolbarTracker.EntitiesWithToolbars.TryGetValue(block, out th))
+            {
+                Toolbar toolbar = th.Toolbars[0];
+                MyObjectBuilder_Toolbar toolbarOB = ToolbarTracker.GetToolbarOBFromEntity(block, toolbar.Id);
+                toolbar.LoadFromOB(toolbarOB);
+
+                bool hasLeft = false;
+                bool hasRight = false;
+
+                for(int i = 0; i < toolbar.Items.Length; i++)
+                {
+                    var item = toolbar.Items[i];
+                    if(item?.IsValid ?? false)
+                    {
+                        if(i % 2 == 0)
+                            hasLeft = true;
+                        else
+                            hasRight = true;
+                    }
+                }
+
+                if(!hasLeft || !hasRight)
+                {
+                    info.Append("WARNING: Emissive not reliable with empty sides in toolbar.\n");
+                }
+            }
         }
 
         void Format_ProgrammableBlock(IMyTerminalBlock block, StringBuilder info)
