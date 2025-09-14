@@ -34,6 +34,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
         bool DefinitionErrors = false;
         bool CompileErrors = false;
         bool F11MenuShownOnLoad = false;
+        bool CheckDelayed = true;
 
         HudAPIv2.BillBoardHUDMessage ErrorsMenuBackdrop;
 
@@ -94,6 +95,8 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
             // This game bug was fixed in SE v205
             //CheckVideos();
+
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
         }
 
         public override void UnregisterComponent()
@@ -1021,50 +1024,6 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
                     continue;
                 }
-
-                MySpawnGroupDefinition spawnGroup = def as MySpawnGroupDefinition;
-                if(spawnGroup != null)
-                {
-                    // MyNeutralShipSpawner & IsCargoShip - cargo ships
-                    // MyEncounterGenerator & IsEncounter - random encounters
-                    // MyGlobalEncountersGenerator & IsGlobalEncounter - global encounters (factorum)
-                    // MyPlanetaryEncountersGenerator & IsPlanetaryEncounter - planetary encounters
-                    // MyStationCellGenerator - economy trade stations, which are not spawngroups but MyObjectBuilder_StationsListDefinition
-
-                    long discard;
-
-                    if(spawnGroup.IsCargoShip || spawnGroup.IsEncounter || spawnGroup.IsGlobalEncounter || spawnGroup.IsPlanetaryEncounter)
-                    {
-                        if(!spawnGroup.TryGetOwnerId(out discard))
-                        {
-                            ModProblem(spawnGroup, "Could not resolve owner, resulting in this not getting spawned by CargoShips, Encounters, GlobalEncounters or PlanetaryEncounters.");
-                        }
-                    }
-
-                    var enemies = spawnGroup.HostileSubEncounters;
-                    if(enemies != null && enemies.Count > 0)
-                    {
-                        foreach(var enemy in enemies)
-                        {
-                            MySpawnGroupDefinition sg;
-                            if(MyDefinitionManager.Static.TryGetSpawnGroupDefinition(enemy.SubtypeId, out sg))
-                            {
-                                if(!sg.TryGetOwnerId(out discard, isGlobalSubEncounter: spawnGroup.IsGlobalEncounter))
-                                {
-                                    ModProblem(spawnGroup, $"HostileSubEncounters's '{enemy.SubtypeId}' cannot resolve owner, resulting in this sub-encounter not spawning with the primary encounter.");
-                                }
-                            }
-                            else
-                            {
-                                ModHint(spawnGroup, $"HostileSubEncounters's '{enemy.SubtypeId}' does not exist as a SpawnGroup definition.");
-                            }
-                        }
-                    }
-
-                    // spawnGroup.FactionSubEncounters does not call TryGetOwnerId() as they're same owner as the primary encounter
-
-                    continue;
-                }
             }
 
             foreach(var def in MyDefinitionManager.Static.GetAllDefinitions<MyDefinitionBase>())
@@ -1370,6 +1329,74 @@ namespace Digi.BuildInfo.Features.ModderHelp
             }
         }
 
+        /// <summary>
+        /// Needed delayed because factions didn't exist on first load.
+        /// </summary>
+        void CheckSpawnGroupsDelayed()
+        {
+            foreach(var spawnGroup in MyDefinitionManager.Static.GetSpawnGroupDefinitions())
+            {
+                if(spawnGroup == null)
+                    continue;
+
+                if(spawnGroup.Context == null)
+                {
+                    ModHint(spawnGroup.Context, $"'{GetDefId(spawnGroup)}' has null Context, a script probably set it like this?");
+                    continue;
+                }
+
+                if(!CheckEverything)
+                {
+                    // ignore untouched definitions
+                    if(spawnGroup.Context.IsBaseGame)
+                        continue;
+
+                    // ignore workshop mods
+                    if(spawnGroup.Context.ModItem.PublishedFileId != 0)
+                        continue;
+                }
+
+                // MyNeutralShipSpawner & IsCargoShip - cargo ships
+                // MyEncounterGenerator & IsEncounter - random encounters
+                // MyGlobalEncountersGenerator & IsGlobalEncounter - global encounters (factorum)
+                // MyPlanetaryEncountersGenerator & IsPlanetaryEncounter - planetary encounters
+                // MyStationCellGenerator - economy trade stations, which are not spawngroups but MyObjectBuilder_StationsListDefinition
+
+                long discard;
+
+                if(spawnGroup.IsCargoShip || spawnGroup.IsEncounter || spawnGroup.IsGlobalEncounter || spawnGroup.IsPlanetaryEncounter)
+                {
+
+                    if(!spawnGroup.TryGetOwnerId(out discard))
+                    {
+                        ModProblem(spawnGroup, "Could not resolve owner, resulting in this not getting spawned by CargoShips, Encounters, GlobalEncounters or PlanetaryEncounters.");
+                    }
+                }
+
+                var enemies = spawnGroup.HostileSubEncounters;
+                if(enemies != null && enemies.Count > 0)
+                {
+                    foreach(var enemy in enemies)
+                    {
+                        MySpawnGroupDefinition sg;
+                        if(MyDefinitionManager.Static.TryGetSpawnGroupDefinition(enemy.SubtypeId, out sg))
+                        {
+                            if(!sg.TryGetOwnerId(out discard, isGlobalSubEncounter: spawnGroup.IsGlobalEncounter))
+                            {
+                                ModProblem(spawnGroup, $"HostileSubEncounters's '{enemy.SubtypeId}' cannot resolve owner, resulting in this sub-encounter not spawning with the primary encounter.");
+                            }
+                        }
+                        else
+                        {
+                            ModHint(spawnGroup, $"HostileSubEncounters's '{enemy.SubtypeId}' does not exist as a SpawnGroup definition.");
+                        }
+                    }
+                }
+
+                // spawnGroup.FactionSubEncounters does not call TryGetOwnerId() as they're same owner as the primary encounter
+            }
+        }
+
         void CheckResourceGroup(MyDefinitionBase def, string group) => CheckResourceGroup(def, MyStringHash.GetOrCompute(group));
 
         void CheckResourceGroup(MyDefinitionBase def, MyStringHash group)
@@ -1525,6 +1552,12 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
         public override void UpdateAfterSim(int tick)
         {
+            if(CheckDelayed)
+            {
+                CheckDelayed = false;
+                CheckSpawnGroupsDelayed();
+            }
+
             if(Main.Config.ModderHelpAlerts.Value && MyAPIGateway.Input.IsNewKeyPressed(MyKeys.F11) && IsF11MenuAccessible)
             {
                 CheckErrorsOnF11();
@@ -1535,9 +1568,6 @@ namespace Digi.BuildInfo.Features.ModderHelp
         {
             if(Main.Config.ModderHelpAlerts.Value)
             {
-                if(IsF11MenuAccessible)
-                    SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true); // check errors added in realtime
-
                 // F11 menu auto-popped up, don't bother writing to chat
                 if(!(IsF11MenuAccessible && F11MenuShownOnLoad))
                 {
