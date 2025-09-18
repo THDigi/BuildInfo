@@ -2280,6 +2280,49 @@ namespace Digi.BuildInfo.Features
                 AddScreenInfo(fbDef);
             }
 
+            #region Entity components
+            {
+                #region ResourceStorageComponent
+                //{
+                //    // MyResourceStorageComponentDefinition is not whitelisted :/
+                //    var comp = Utils.GetEntityComponentFromDef<MyResourceStorageComponentDefinition>(def.Id, typeof(MyObjectBuilder_ResourceStorageComponent));
+                //    if(comp != null)
+                //    {
+                //        AddLine().Label("Stores Resource").Append(comp.StoredResourceId.SubtypeName).Separator().Label("Capacity").VolumeFormat(comp.Capacity);
+                //    }
+                //}
+                #endregion
+
+                MyContainerDefinition containerDef;
+                if(MyComponentContainerExtension.TryGetContainerDefinition(def.Id.TypeId, def.Id.SubtypeId, out containerDef) && containerDef.DefaultComponents != null)
+                {
+                    //foreach(MyContainerDefinition.DefaultComponent compInfo in containerDef.DefaultComponents)
+                    //{
+                    //    if(compInfo.BuilderType == typeof(MyObjectBuilder_RadiationSourceEntityComponent))
+                    //    {
+                    //        AddLine().Color(COLOR_WARNING).Label("Radioactive").Append(compInfo.SubtypeId);
+                    //        SimpleTooltip("This block contains a RadiationSourceEntityComponent but the API for it is not whitelisted." +
+                    //                      "\nTherefore this mod can only warn that it exists and which ID it uses, but no actual numbers.");
+                    //    }
+                    //}
+
+                    if(BuildInfoMod.IsDevMod && MyAPIGateway.Input.IsAnyShiftKeyPressed())
+                    {
+                        foreach(MyContainerDefinition.DefaultComponent compInfo in containerDef.DefaultComponents)
+                        {
+                            AddLine().Append($"{compInfo.BuilderType} / {compInfo.InstanceType} / {compInfo.SubtypeId}; forceCreate={compInfo.ForceCreate}");
+                            MyStringHash subtype = compInfo.SubtypeId.GetValueOrDefault(def.Id.SubtypeId);
+                            MyComponentDefinitionBase compBase;
+                            if(MyComponentContainerExtension.TryGetComponentDefinition(compInfo.BuilderType, subtype, out compBase))
+                            {
+                                GetLine().Append($" - {compBase.GetType().Name}");
+                            }
+                        }
+                    }
+                }
+            }
+            #endregion
+
             #region Added by mod
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.AddedByMod) && !def.Context.IsBaseGame)
             {
@@ -2303,25 +2346,6 @@ namespace Digi.BuildInfo.Features
                 AddOverlaysHint(def);
             }
             #endregion Overlay hints
-
-            //{
-            //    MyContainerDefinition containerDef;
-            //    if(MyComponentContainerExtension.TryGetContainerDefinition(def.Id.TypeId, def.Id.SubtypeId, out containerDef) && containerDef.DefaultComponents != null)
-            //    {
-            //        foreach(MyContainerDefinition.DefaultComponent compInfo in containerDef.DefaultComponents)
-            //        {
-            //            AddLine().Append($"{compInfo.BuilderType} / {compInfo.InstanceType} / {compInfo.SubtypeId}; forceCreate={compInfo.ForceCreate}");
-            //
-            //            MyStringHash subtype = compInfo.SubtypeId.GetValueOrDefault(def.Id.SubtypeId);
-            //
-            //            MyComponentDefinitionBase compBase;
-            //            if(MyComponentContainerExtension.TryGetComponentDefinition(compInfo.BuilderType, subtype, out compBase))
-            //            {
-            //                GetLine().Append($" - {compBase}");
-            //            }
-            //        }
-            //    }
-            //}
 
             EndAddedLines();
         }
@@ -3745,6 +3769,14 @@ namespace Digi.BuildInfo.Features
                         tooltip.Append("Additionally, all SurvivalKit types will have locked 100% efficiency for any blueprint that uses at least one ore in its requirements.");
                     }
                 }
+
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+                {
+#if !(VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 || VERSION_206) // HACK: backwards compatible
+                    AddLine().Color(assembler.EnableDisassembly ? COLOR_NORMAL : COLOR_WARNING).Label("Can disassemble").BoolFormat(assembler.EnableDisassembly)
+                        .Separator().Label("Can co-op").BoolFormat(assembler.EnableCooperativeMode);
+#endif
+                }
             }
 
             MySurvivalKitDefinition survivalKit = def as MySurvivalKitDefinition; // this extends MyAssemblerDefinition
@@ -3860,6 +3892,14 @@ namespace Digi.BuildInfo.Features
                         AddLine(FontsHandler.RedSh).Append("Produces: <N/A>");
                     }
                 }
+
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+                {
+                    // TODO: compact this and the below "Refills"...
+#if !(VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 || VERSION_206) // HACK: backwards compatible
+                    AddLine().Color(gasGenerator.CanRefillBottles ? COLOR_NORMAL : COLOR_WARNING).Label("Refills Bottles").BoolFormat(gasGenerator.CanRefillBottles);
+#endif
+                }
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
@@ -3882,33 +3922,38 @@ namespace Digi.BuildInfo.Features
             {
                 if(gasGenerator != null || gasTank != null)
                 {
-                    StringBuilder sb = AddLine().Label("Refills");
-                    int startLen = sb.Length;
-
-                    if(production.InputInventoryConstraint != null)
+#if !(VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 || VERSION_206) // HACK: backwards compatible
+                    if(gasGenerator == null || gasGenerator.CanRefillBottles)
+#endif
                     {
-                        foreach(MyDefinitionId id in production.InputInventoryConstraint.ConstrainedIds)
-                        {
-                            if(id.TypeId == typeof(MyObjectBuilder_OxygenContainerObject) || id.TypeId == typeof(MyObjectBuilder_GasContainerObject))
-                            {
-                                sb.ItemName(id).Append(", ");
-                            }
-                        }
+                        StringBuilder sb = AddLine().Label("Refills");
+                        int startLen = sb.Length;
 
-                        foreach(MyObjectBuilderType type in production.InputInventoryConstraint.ConstrainedTypes)
+                        if(production.InputInventoryConstraint != null)
                         {
-                            if(type == typeof(MyObjectBuilder_OxygenContainerObject) || type == typeof(MyObjectBuilder_GasContainerObject))
+                            foreach(MyDefinitionId id in production.InputInventoryConstraint.ConstrainedIds)
                             {
-                                sb.IdTypeFormat(type).Append(", ");
+                                if(id.TypeId == typeof(MyObjectBuilder_OxygenContainerObject) || id.TypeId == typeof(MyObjectBuilder_GasContainerObject))
+                                {
+                                    sb.ItemName(id).Append(", ");
+                                }
                             }
-                        }
 
-                        if(sb.Length > startLen)
-                            sb.Length -= 2; // remove last comma
-                    }
-                    else
-                    {
-                        sb.Append("(unknown)");
+                            foreach(MyObjectBuilderType type in production.InputInventoryConstraint.ConstrainedTypes)
+                            {
+                                if(type == typeof(MyObjectBuilder_OxygenContainerObject) || type == typeof(MyObjectBuilder_GasContainerObject))
+                                {
+                                    sb.IdTypeFormat(type).Append(", ");
+                                }
+                            }
+
+                            if(sb.Length > startLen)
+                                sb.Length -= 2; // remove last comma
+                        }
+                        else
+                        {
+                            sb.Append("(unknown)");
+                        }
                     }
                 }
                 else
