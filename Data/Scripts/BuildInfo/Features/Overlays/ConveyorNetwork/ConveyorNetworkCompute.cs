@@ -135,7 +135,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
             TempConveyorData.Clear();
         }
 
-        void CollectConveyorData(ICollection<IMyCubeGrid> grids)
+        void CollectConveyorData(ICollection<IMyCubeGrid> friendlyGrids)
         {
             //using(new DevProfiler("conveyor data", 2000))
             {
@@ -151,17 +151,19 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
 
                 MyObjectBuilderType cubeBlockType = typeof(MyObjectBuilder_CubeBlock);
 
-                foreach(MyCubeGrid grid in grids)
+                foreach(MyCubeGrid grid in friendlyGrids)
                 {
-                    if(!Utils.IsGridFriendly(grid))
-                        continue;
+                    //if(!Utils.IsGridFriendly(grid))
+                    //    continue;
 
                     foreach(MyCubeBlock block in grid.GetFatBlocks())
                     {
-                        if(block.BlockDefinition.Id.TypeId == cubeBlockType)
-                            continue; // easily skip a lot of irrelevant blocks
-
                         MyCubeBlockDefinition blockDef = block.BlockDefinition;
+                        MyObjectBuilderType typeId = blockDef.Id.TypeId;
+
+                        if(typeId == cubeBlockType || !LiveData.ConveyorSupportTypes[typeId]) // expected to be present, if somehow not, do error
+                            continue;
+
                         BData_Base data = LiveData.Get<BData_Base>(blockDef);
                         if(data == null)
                             continue;
@@ -190,7 +192,10 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                                 continue;
 
                             BData_Base otherData = LiveData.Get<BData_Base>((MyCubeBlockDefinition)otherSlim.BlockDefinition);
-                            if(otherData == null || (otherData.Has & BlockHas.ConveyorSupport) == 0 || otherData.ConveyorPorts == null)
+                            if(otherData == null)
+                                continue;
+
+                            if((otherData.Has & BlockHas.ConveyorSupport) == 0 || otherData.ConveyorPorts == null)
                                 continue;
 
                             bool portSmall = (port.Flags & ConveyorFlags.Small) != 0;
@@ -231,7 +236,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
             }
         }
 
-        public bool FindConveyorNetworks(ICollection<IMyCubeGrid> grids, IMySlimBlock traceFrom = null, bool notify = true)
+        public void FindConveyorNetworks(ICollection<IMyCubeGrid> grids, IMySlimBlock traceFrom = null, bool notify = true, Action onSuccess = null, int attempt = 1)
         {
             UnhookEvents();
             ResetCompute();
@@ -239,7 +244,61 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
             //MyCubeBlock traceFromBlock = traceFrom?.FatBlock as MyCubeBlock;
             //bool tracebackPath = false; // TODO: make this feature work? currently it struggles with sorters which is where it's needed
 
-            CollectConveyorData(grids);
+            MyObjectBuilderType cubeBlockType = typeof(MyObjectBuilder_CubeBlock);
+
+            List<IMyCubeGrid> friendlyGrids = new List<IMyCubeGrid>();
+
+            int expectingBData = 0;
+
+            List<MyDefinitionId> missingBData = new List<MyDefinitionId>();
+
+            foreach(MyCubeGrid grid in grids)
+            {
+                if(!Utils.IsGridFriendly(grid))
+                    continue;
+
+                friendlyGrids.Add(grid);
+
+                foreach(MyCubeBlock block in grid.GetFatBlocks())
+                {
+                    MyCubeBlockDefinition blockDef = block.BlockDefinition;
+                    MyObjectBuilderType typeId = blockDef.Id.TypeId;
+
+                    if(typeId == cubeBlockType || !LiveData.ConveyorSupportTypes[typeId]) // expected to be present, if somehow not, do error
+                        continue;
+
+                    BData_Base data = LiveData.Get<BData_Base>(blockDef);
+                    if(data == null)
+                    {
+                        missingBData.Add(blockDef.Id);
+                        expectingBData++;
+                    }
+                }
+            }
+
+            if(expectingBData > 0 && attempt >= 5)
+            {
+                string log = $"Failed to spawn all expected live data blocks, missing for ({missingBData.Count}):\n{string.Join("\n", missingBData)}";
+                Log.Error(log, "Failed to spawn all expected live data blocks - please send mod log to author");
+                expectingBData = 0;
+            }
+
+            if(expectingBData > 0)
+            {
+                MyAPIGateway.Utilities.InvokeOnGameThread(() =>
+                {
+                    FindConveyorNetworks(friendlyGrids, traceFrom, notify, onSuccess, ++attempt);
+                }, StartAt: MyAPIGateway.Session.GameplayFrameCounter + 60);
+            }
+            else
+            {
+                FindNetworks(friendlyGrids, traceFrom, notify, onSuccess);
+            }
+        }
+
+        void FindNetworks(ICollection<IMyCubeGrid> friendlyGrids, IMySlimBlock traceFrom = null, bool notify = true, Action onSuccess = null)
+        {
+            CollectConveyorData(friendlyGrids);
 
             try
             {
@@ -247,10 +306,10 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                 {
                     if(notify)
                         Handler.Notify("No conveyor blocks found.", 3000, FontsHandler.YellowSh);
-                    return false;
+                    return;
                 }
 
-                HookEvents(grids);
+                HookEvents(friendlyGrids);
 
                 #region Pathfinding
                 SetNetworkIdx(0);
@@ -311,8 +370,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
 
                 Networks = NetworkIndex;
                 ConveyorBlocks = TempConveyorData.Count;
-
-                return true;
+                onSuccess?.Invoke();
             }
             finally
             {

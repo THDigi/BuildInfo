@@ -76,8 +76,18 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
             Notification.Show();
         }
 
+        int CooldownUntil;
+
         public void ShowFor(IMyCubeGrid grid, IMySlimBlock traceFrom = null, bool notify = true)
         {
+            int tick = MyAPIGateway.Session.GameplayFrameCounter;
+            if(tick < CooldownUntil)
+            {
+                Notify("Cooldown...", 1000, FontsHandler.GraySh);
+                return;
+            }
+            CooldownUntil = tick + 30;
+
             Reset();
 
             TempGrids.Clear();
@@ -88,12 +98,10 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                 {
                     //if(notify)
                     Notify("Cannot show, unfriendly ship!", 4000, FontsHandler.RedSh);
-
                     return;
                 }
 
-                bool shouldRender = Compute.FindConveyorNetworks(TempGrids, traceFrom, notify);
-                if(shouldRender)
+                Compute.FindConveyorNetworks(TempGrids, traceFrom, notify, () =>
                 {
                     TargetGrid = grid;
                     TargetBlock = traceFrom;
@@ -102,7 +110,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         RescanAtTick = Main.Tick + RescanPeriodically;
 
                     SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
-                }
+                });
             }
             finally
             {
