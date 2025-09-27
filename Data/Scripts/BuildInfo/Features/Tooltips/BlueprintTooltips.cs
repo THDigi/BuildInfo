@@ -484,7 +484,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
                         // only specific BI's item tooltips added to the blueprint name
                         ItemTooltips it = Main.ItemTooltips;
-                        it.TooltipConsumable(s, physDef, true);
+                        //it.TooltipConsumable(s, physDef, true);
                         it.TooltipBottle(s, physDef, true);
                         it.TooltipTool(s, physDef, true);
                         it.TooltipWeapon(s, physDef, true);

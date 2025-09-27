@@ -36,9 +36,11 @@ namespace Digi.BuildInfo.Features.Tooltips
         public Dictionary<MyDefinitionId, HashSet<MyVendingMachineDefinition>> TmpVendingSell = new Dictionary<MyDefinitionId, HashSet<MyVendingMachineDefinition>>(MyDefinitionId.Comparer);
         public Dictionary<MyDefinitionId, HashSet<MyCubeBlockDefinition>> TmpComponentInBlocks = new Dictionary<MyDefinitionId, HashSet<MyCubeBlockDefinition>>(MyDefinitionId.Comparer);
         public Dictionary<MyDefinitionId, HashSet<MyCubeBlockDefinition>> TmpComponentFromGrindingBlocks = new Dictionary<MyDefinitionId, HashSet<MyCubeBlockDefinition>>(MyDefinitionId.Comparer);
+
         public Dictionary<string, string> TmpStatDisplayNames = new Dictionary<string, string>()
         {
             ["BatteryCharge"] = "Battery",
+            ["RadiationImmunity"] = "Radiation Immunity",
         };
 
         void DisposeTempObjects()

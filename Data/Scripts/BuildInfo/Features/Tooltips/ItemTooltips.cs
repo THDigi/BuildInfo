@@ -4,6 +4,8 @@ using System.Text;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
+using Sandbox.Game.Components;
+using Sandbox.Game.Definitions.Components;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using VRage;
@@ -247,7 +249,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                     }
                 }
 
-                TooltipConsumable(s, physDef);
+                //TooltipConsumable(s, physDef);
                 TooltipBottle(s, physDef);
                 TooltipTool(s, physDef);
                 TooltipWeapon(s, physDef);
@@ -265,6 +267,10 @@ namespace Digi.BuildInfo.Features.Tooltips
             }
         }
 
+        // The new RadiationImmunity stat is misleading and MyRadiationImmunityStatDefinition is not whitelisted to be able to get decay rate from it.
+        // Plus the vanilla items have their consumable effects in their tooltips so it's duplicated info for those, and mods should be showing their effects anyway.
+        // For all the above reasons this is now disabled.
+#if false
         public void TooltipConsumable(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
         {
             MyConsumableItemDefinition consumable = physDef as MyConsumableItemDefinition;
@@ -284,6 +290,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 if(consumable.Stats.Count == 1)
                 {
                     MyConsumableItemDefinition.StatValue stat = consumable.Stats[0];
+
                     s.Append(stat.Value > 0 ? "+" : "").ProportionToPercent(stat.Value * stat.Time, 2).Append(" ")
                      .Append(statNames.GetValueOrDefault(stat.Name, stat.Name)).Append(" over ").TimeFormat(stat.Time)
                      .Append('\n');
@@ -291,15 +298,25 @@ namespace Digi.BuildInfo.Features.Tooltips
                 else
                 {
                     s.Append('\n');
+
                     foreach(MyConsumableItemDefinition.StatValue stat in consumable.Stats)
                     {
                         s.Append("  ").Append(stat.Value > 0 ? "+" : "").ProportionToPercent(stat.Value * stat.Time, 2).Append(" ")
                          .Append(statNames.GetValueOrDefault(stat.Name, stat.Name)).Append(" over ").TimeFormat(stat.Time)
                          .Append('\n');
+
+                        //var statDef = MyDefinitionManager.Static.GetDefinition<MyEntityStatDefinition>(stat.Name);
+                        //if(statDef != null)
+                        //{
+                        //    s.Append($"{statDef} / {statDef.GetType().Name}\n");
+                        //
+                        //    var radImm = statDef as MyRadiationImmunityStatDefinition; // not whitelisted :/
+                        //}
                     }
                 }
             }
         }
+#endif
 
         public void TooltipBottle(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
         {
