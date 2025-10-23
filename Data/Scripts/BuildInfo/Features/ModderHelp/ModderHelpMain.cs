@@ -715,6 +715,24 @@ namespace Digi.BuildInfo.Features.ModderHelp
             HashSet<string> voxelPlacementAlerted = new HashSet<string>();
             Dictionary<int, List<MySafeZoneTexturesDefinition>> szSkinHashClash = new Dictionary<int, List<MySafeZoneTexturesDefinition>>();
 
+            HashSet<string>[] pairs = new HashSet<string>[] // MyCubeSize enum as index
+            {
+                new HashSet<string>(1024),
+                new HashSet<string>(1024),
+            };
+
+            foreach(MyModStorageComponentDefinition comp in MyDefinitionManager.Static.GetEntityComponentDefinitions<MyModStorageComponentDefinition>())
+            {
+                if(comp.Context.IsBaseGame)
+                    continue;
+
+                if(comp.Id.SubtypeName == "YourModNameHere")
+                    ModProblem(comp, "You should really change this subtype.");
+            }
+
+            if(BuildInfoMod.IsDevMod)
+                Log.Info($"[DEV] Checking block defs mountpoints for masks higher than 3...");
+
             foreach(MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
             {
                 if(def == null)
