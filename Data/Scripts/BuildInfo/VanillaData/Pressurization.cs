@@ -91,7 +91,7 @@ namespace Digi.BuildInfo.VanillaData
 
             IMyDoor door = block.FatBlock as IMyDoor;
 
-            if(door != null && (door.Status == DoorStatus.Closed || door.Status == DoorStatus.Closing))
+            if(door != null && door.Status == DoorStatus.Closed)
             {
                 if(pressurized == MyCubeBlockDefinition.MyCubePressurizationMark.PressurizedClosed)
                     return true;
