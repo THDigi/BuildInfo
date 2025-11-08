@@ -4665,7 +4665,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
-                AddLine().Label("Acceleration").ForceFormat(gravGen.MinGravityAcceleration).Append(" to ").ForceFormat(gravGen.MaxGravityAcceleration);
+                AddLine().Label("Acceleration").AccelerationFormat(gravGen.MinGravityAcceleration).Append(" to ").AccelerationFormat(gravGen.MaxGravityAcceleration);
             }
         }
 
