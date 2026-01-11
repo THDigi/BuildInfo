@@ -53,7 +53,9 @@ namespace Digi.ComponentLib
         public bool SessionHasAfterSim { get; private set; }
 
         /// <summary>
-        /// Simulation tick from session start on local machine.
+        /// Ticks while the game is not paused.
+        /// <para>WARNING: It can run in HandleInput() for clients or simulation updates for DS,
+        ///   for this reason be careful with absolute values because HandleInput() runs way earlier than simulation updates!</para>
         /// </summary>
         public int Tick;
 
@@ -80,15 +82,15 @@ namespace Digi.ComponentLib
         public event Action OnDrawEnd;
 
         public readonly List<IComponent> Components = new List<IComponent>();
-        private readonly HashSet<IComponent> ComponentRefreshFlags = new HashSet<IComponent>();
+        readonly HashSet<IComponent> ComponentRefreshFlags = new HashSet<IComponent>();
         public readonly List<IComponent> ComponentUpdateInput = new List<IComponent>();
         public readonly List<IComponent> ComponentUpdateBeforeSim = new List<IComponent>();
         public readonly List<IComponent> ComponentUpdateAfterSim = new List<IComponent>();
         public readonly List<IComponent> ComponentUpdateDraw = new List<IComponent>();
 
-        private readonly bool RunCriticalOnInput;
-        private readonly bool RunCriticalOnBeforeSim;
-        private readonly bool RunCriticalOnAfterSim;
+        readonly bool RunCriticalOnInput;
+        readonly bool RunCriticalOnBeforeSim;
+        readonly bool RunCriticalOnAfterSim;
 
         public bool Profile { get; set; } = false;
         public const double NewMeasureWeight = 0.01;

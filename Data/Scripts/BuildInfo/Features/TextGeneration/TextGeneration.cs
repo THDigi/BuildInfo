@@ -4612,7 +4612,7 @@ namespace Digi.BuildInfo.Features
 
                 const string Link = @"https://spaceengineers.wiki.gg/wiki/Scripting/Detecting_Things#Camera_Block_+_Raycasting";
 
-                StringBuilder tooltip = CreateTooltip(() => Utils.OpenExternalLink(Link));
+                StringBuilder tooltip = CreateTooltip(() => Utils.OpenLink(Link));
 
                 if(tooltip != null)
                 {

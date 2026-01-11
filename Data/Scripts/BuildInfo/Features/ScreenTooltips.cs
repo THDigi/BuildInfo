@@ -9,8 +9,6 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Features
 {
-    // TODO: highlight mass to explain it's real physical mass and point to info tab for old value
-
     public class ScreenTooltips : ModComponent
     {
         static readonly bool DebugDraw = false;

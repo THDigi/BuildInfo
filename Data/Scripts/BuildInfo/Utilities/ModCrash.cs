@@ -1,12 +1,11 @@
 ﻿using System;
 using System.IO;
-using Digi.BuildInfo;
 using Sandbox.ModAPI;
 using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 
-namespace BuildInfo.Utilities
+namespace Digi.BuildInfo.Utilities
 {
     internal class ModCrash
     {

@@ -131,10 +131,14 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             {
                 OriginalWriter?.Invoke(block, sb);
             }
-            catch(Exception)
+            catch(NullReferenceException)
             {
                 // HACK invoking original Writer on any action that has no writer throws NRE inside the game code, undetectable in a graceful way.
                 OriginalWriter = null;
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
             }
         }
 

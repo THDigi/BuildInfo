@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using BuildInfo.Utilities;
 using Digi.BuildInfo;
 using Digi.BuildInfo.Features;
 using Digi.BuildInfo.Features.Config;
