@@ -11,6 +11,7 @@ using Draygo.API;
 using ProtoBuf;
 using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using SpaceEngineers.Game.Definitions.SafeZone;
@@ -34,7 +35,6 @@ namespace Digi.BuildInfo.Features.ModderHelp
         bool DefinitionErrors = false;
         bool CompileErrors = false;
         bool F11MenuShownOnLoad = false;
-        bool CheckDelayed = true;
 
         HudAPIv2.BillBoardHUDMessage ErrorsMenuBackdrop;
 
@@ -84,16 +84,21 @@ namespace Digi.BuildInfo.Features.ModderHelp
                 }
 
                 CheckErrors(localMods, IsF11MenuAccessible);
+                F11MenuShownOnLoad = MyDefinitionErrors.ShouldShowModErrors;
 
-                if(CheckEverything || (IsF11MenuAccessible && localMods.Count > 0))
-                {
-                    CheckModDefinitions();
-                    CheckModFiles();
+                CheckDefinitions();
 
-                    F11MenuShownOnLoad = MyDefinitionErrors.ShouldShowModErrors;
-                }
+                CheckModStorageCompDuplicateGUIDs();
 
-                MyAPIGateway.Utilities.InvokeOnGameThread(CheckVoxelMaterials, $"{Log.ModName}:{nameof(CheckVoxelMaterials)}", StartAt: Constants.TicksPerSecond * 2);
+                CheckLocalModFiles();
+
+                MyAPIGateway.Utilities.InvokeOnGameThread(CheckDelayed, $"{Log.ModName}:{nameof(CheckDelayed)}",
+                    StartAt: MyAPIGateway.Session.GameplayFrameCounter + Constants.TicksPerSecond * 2);
+
+                if(localMods.Count > 0)
+                    MyLog.OnLog += OnLog;
+
+                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
             }
 
             // alert player in chat if applicable
@@ -101,15 +106,21 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
             // This game bug was fixed in SE v205
             //CheckVideos();
-
-            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
         }
 
         public override void UnregisterComponent()
         {
+            MyLog.OnLog -= OnLog;
+
             Main.GUIMonitor.ScreenAdded -= GUIScreenAdded;
             Main.GUIMonitor.ScreenRemoved -= GUIScreenRemoved;
             Main.GameConfig.FirstSpawn -= FirstSpawn;
+        }
+
+        void CheckDelayed()
+        {
+            CheckVoxelMaterials(); // why is this delayed?
+            CheckSpawnGroupsDelayed();
         }
 
         [ProtoContract]
@@ -333,6 +344,98 @@ namespace Digi.BuildInfo.Features.ModderHelp
             }
 
             return cloudLayerInfo;
+        }
+
+        HashSet<string> NotSavedGUIDs = new HashSet<string>();
+
+        // Only hooked if local mods are present
+        void OnLog(MyLogSeverity severity, StringBuilder sb)
+        {
+            try
+            {
+                // HACK: from MyModStorageComponent.Serialize() to increase awareness
+                if(severity == MyLogSeverity.Warning)
+                {
+                    const string NotSaving = "Warning: Not saving ModStorageComponent GUID:";
+                    string msg = sb.ToString();
+                    if(msg.StartsWith(NotSaving))
+                    {
+                        // NOTE: must not write to log within this even because of the lock.
+
+                        sb.AppendLine($"(Appended by {BuildInfoMod.ModName}) If the above GUID is from your in-progress mod, then you need to add a sbc file for it: https://spaceengineers.wiki.gg/wiki/Modding/Reference/Save_and_Sync#MyModStorageComponent");
+
+                        string guid = msg.Substring(NotSaving.Length);
+                        int comma = guid.IndexOf(',');
+                        if(comma > 0)
+                            guid = guid.Substring(0, comma);
+                        guid = guid.Trim();
+
+                        if(NotSavedGUIDs.Add(guid)) // was added therefore it wasn't in the list already
+                        {
+                            // just in case chat messages ever write to log
+                            MyAPIGateway.Utilities.InvokeOnGameThread(() =>
+                            {
+                                string coloredSender = "GUID not saved";
+                                string chatMsg = guid + " - if this is yours you need a .sbc file to claim it! (Search \"Save and Sync\" on the SE wiki)";
+
+                                if(MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE)
+                                    MyVisualScriptLogicProvider.SendChatMessageColored(chatMsg, Color.Red, coloredSender);
+                                else
+                                    Utils.ShowColoredChatMessage(coloredSender, chatMsg, null, Color.Red);
+                            });
+                        }
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+        }
+
+        void CheckModStorageCompDuplicateGUIDs()
+        {
+            Dictionary<Guid, List<MyModContext>> parsed = new Dictionary<Guid, List<MyModContext>>();
+            bool hasDuplicates = false;
+
+            foreach(MyModStorageComponentDefinition comp in MyDefinitionManager.Static.GetEntityComponentDefinitions<MyModStorageComponentDefinition>())
+            {
+                if(comp.RegisteredStorageGuids == null)
+                    continue;
+
+                foreach(var guid in comp.RegisteredStorageGuids)
+                {
+                    var list = parsed.GetValueOrNew(guid);
+                    list.Add(comp.Context);
+
+                    hasDuplicates |= (list.Count > 1);
+                }
+            }
+
+            if(hasDuplicates)
+            {
+                StringBuilder sb = new StringBuilder(1024).Append("Multiple mods register the same GUID, this is a problem!").AppendLine();
+
+                foreach(var kv in parsed)
+                {
+                    if(kv.Value.Count > 1)
+                    {
+                        sb.Append("  ").Append(kv.Key).Append(" is used by these mods:").AppendLine();
+
+                        foreach(var modContext in kv.Value)
+                        {
+                            sb.Append("    ").Append(modContext.GetNameAndId()).AppendLine();
+
+                            if(!modContext.IsBaseGame && !modContext.IsLocal())
+                                sb.Append(" - ").Append(Utils.GetModLink(modContext.ModServiceName, modContext.ModItem.PublishedFileId));
+                        }
+                    }
+                }
+
+                sb.Append("Report this to all involved mods and let their authors decide which should change.");
+
+                SharedProblem(sb.ToString());
+            }
         }
 
         void CheckErrors(HashSet<string> localMods, bool f11MenuAccessible)
@@ -668,7 +771,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
         /// <summary>
         /// Find .sbc files that are not lower case ".sbc", making the game not load them.
         /// </summary>
-        void CheckModFiles()
+        void CheckLocalModFiles()
         {
             foreach(MyObjectBuilder_Checkpoint.ModItem modItem in MyAPIGateway.Session.Mods)
             {
@@ -715,7 +818,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
             }
         }
 
-        void CheckModDefinitions()
+        void CheckDefinitions()
         {
             Dictionary<string, ModHintData> modHints = new Dictionary<string, ModHintData>();
             HashSet<string> voxelPlacementAlerted = new HashSet<string>();
@@ -769,6 +872,25 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     }
                 }
 
+                #region Check BlockPairName violations, must include ALL blocks, modded or not
+                if(blockDef != null)
+                {
+                    int cubeSizeInt = (int)blockDef.CubeSize;
+                    if(cubeSizeInt < 0 || cubeSizeInt >= pairs.Length)
+                    {
+                        Log.Info($"WARNING: Block {blockDef.Id} uses non-standard size: {blockDef.CubeSize} ({cubeSizeInt}), skipped from BlockPairName checks...");
+                    }
+                    else
+                    {
+                        HashSet<string> set = pairs[cubeSizeInt];
+                        if(!set.Add(blockDef.BlockPairName)) // failed to add, already added for this size, therefore warning time!
+                        {
+                            ReportBlockPairError(blockDef);
+                        }
+                    }
+                }
+                #endregion
+
                 if(!CheckEverything)
                 {
                     // ignore untouched definitions
@@ -783,6 +905,28 @@ namespace Digi.BuildInfo.Features.ModderHelp
                 if(def.Id.SubtypeId == MyStringHash.NullOrEmpty)
                 {
                     ModHint(def, "has empty subtype, is this intended?");
+                }
+
+                // this is only for icons, would need an insane amount of checking to catch all the use cases... maybe wait for keen to fix it
+                // https://support.keenswh.com/spaceengineers/pc/topic/49190-modding-icons-will-not-load-if-defined-as-dds-or-png-upper-case
+                if(def.Icons != null && def.Icons.Length > 0)
+                {
+                    foreach(var iconPath in def.Icons)
+                    {
+                        var ext = Path.GetExtension(iconPath);
+                        if(string.IsNullOrEmpty(ext))
+                        {
+                            ModHint(def, $"Icon path does not have any extension, is this intended?");
+                        }
+                        else
+                        {
+                            if((ext.Equals(".dds", StringComparison.OrdinalIgnoreCase) && ext != ".dds")
+                            || (ext.Equals(".png", StringComparison.OrdinalIgnoreCase) && ext != ".png"))
+                            {
+                                ModHint(def, $"File extensions for .dds or .png MUST be all lower case otherwise it won't find the file!");
+                            }
+                        }
+                    }
                 }
 
                 if(blockDef != null)
@@ -1206,6 +1350,50 @@ namespace Digi.BuildInfo.Features.ModderHelp
             }
         }
 
+        void ReportBlockPairError(MyCubeBlockDefinition anyOfTheBlocks)
+        {
+            List<MyCubeBlockDefinition> defsWithThisPair = new List<MyCubeBlockDefinition>(4);
+            MyCubeBlockDefinition defForError = anyOfTheBlocks;
+            int small = 0;
+            int large = 0;
+
+            foreach(var otherDef in MyDefinitionManager.Static.GetAllDefinitions())
+            {
+                var otherBlockDef = otherDef as MyCubeBlockDefinition;
+                if(otherBlockDef == null || otherBlockDef.BlockPairName != anyOfTheBlocks.BlockPairName)
+                    continue;
+
+                if(otherBlockDef.CubeSize == MyCubeSize.Small)
+                    small++;
+                else if(otherBlockDef.CubeSize == MyCubeSize.Large)
+                    large++;
+
+                if(!otherBlockDef.Context.IsBaseGame)
+                    defForError = otherBlockDef;
+
+                defsWithThisPair.Add(otherBlockDef);
+            }
+
+            if(small > 1 || large > 1)
+            {
+                var sb = new StringBuilder(1024);
+
+                sb.Append("The BlocKPairName '").Append(anyOfTheBlocks.BlockPairName).Append("' is referenced by ").Append(small).Append(" SmallGrid blocks and ").Append(large).Append(" LargeGrid blocks. It should be a maximum of 1 in each!");
+                sb.Append("\nList of blocks found:");
+
+                foreach(MyCubeBlockDefinition otherBlockDef in defsWithThisPair)
+                {
+                    sb.Append("\n    ").Append(MyEnum<MyCubeSize>.GetName(otherBlockDef.CubeSize)).Append("Grid, ID: ").Append(otherBlockDef.Id.ToShortString()).Append(", Name: '").Append(otherBlockDef.DisplayNameText).Append("', By: ").Append(otherBlockDef.Context.GetNameAndId());
+                }
+
+                ModProblem(defForError, sb.ToString());
+            }
+            else
+            {
+                Log.Error($"Found a pair conflict but then couldn't find more than 1 per size... some bugs here, please report to author with the world (or mods list in the form of sandbox_config.sbc).");
+            }
+        }
+
         void CheckVoxelMaterials()
         {
             int voxelMats = MyDefinitionManager.Static.VoxelMaterialCount;
@@ -1551,6 +1739,16 @@ namespace Digi.BuildInfo.Features.ModderHelp
             ModProblems++;
         }
 
+        public void SharedProblem(string text)
+        {
+            var fakeContext = new MyModContext();
+            fakeContext.Init("(multiple mods)", "");
+            MyDefinitionErrors.Add(fakeContext, $"{CustomMsg}{text}", TErrorSeverity.Error, writeToLog: false);
+            MyLog.Default.WriteLine($"BuildInfo ModderHelp: {text}");
+            Log.Info($"[ModderHelp] {text}");
+            ModProblems++;
+        }
+
         public void ModHint(MyDefinitionBase def, string text)
         {
             string message = $"Hint for '{GetDefId(def)}': {text}";
@@ -1576,13 +1774,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
         public override void UpdateAfterSim(int tick)
         {
-            if(CheckDelayed)
-            {
-                CheckDelayed = false;
-                CheckSpawnGroupsDelayed();
-            }
-
-            if(Main.Config.ModderHelpAlerts.Value && MyAPIGateway.Input.IsNewKeyPressed(MyKeys.F11) && IsF11MenuAccessible)
+            if(MyAPIGateway.Input.IsNewKeyPressed(MyKeys.F11) && IsF11MenuAccessible)
             {
                 CheckErrorsOnF11();
             }
@@ -1592,8 +1784,8 @@ namespace Digi.BuildInfo.Features.ModderHelp
         {
             if(Main.Config.ModderHelpAlerts.Value)
             {
-                // F11 menu auto-popped up, don't bother writing to chat
-                if(!(IsF11MenuAccessible && F11MenuShownOnLoad))
+                // if F11 menu auto-popped up, don't bother writing to chat
+                if(!(F11MenuShownOnLoad && IsF11MenuAccessible))
                 {
                     if(CompileErrors) // online for published mods
                         Utils.ShowColoredChatMessage(BuildInfoMod.ModName + " ModderHelp", "Mods have compile errors! See game log for details.", FontsHandler.RedSh);
