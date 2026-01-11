@@ -426,6 +426,17 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 return true;
             }
 
+            IMyOffensiveCombatBlock offensiveCombat = TargetBlock as IMyOffensiveCombatBlock;
+            if(offensiveCombat != null)
+            {
+                RenderBoxHeader(sb, blocks.Count);
+
+                sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": first enemy detected\n");
+                sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": no more enemites detected\n");
+                sb.Append("Hint: The same action can be used on both slots by using different pages.\n");
+                return true;
+            }
+
             // IMyTransponder and anything else that uses this component
             IMySignalReceiverEntityComponent transponderComp;
             if(TargetBlock.Components.TryGet(out transponderComp))

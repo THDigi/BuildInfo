@@ -92,6 +92,8 @@ namespace Digi.BuildInfo.Features.Toolbars
             {
                 if(Alerted.Add(TargetBlock.BlockDefinition))
                 {
+                    // note to self: Toolbars\FakeAPI\ToolbarTracker.cs @ BlockAdded + GetToolbarOBFromEntity
+                    //       also in ToolbarInfo\EventToolbarInfo.cs @ RenderBoxContent
                     string msg = $"{TargetBlock.BlockDefinition} not in tracked toolbars! Please inform author.";
                     MyAPIGateway.Utilities.ShowMessage(Log.ModName, msg);
                     Log.Info(msg);

@@ -186,6 +186,15 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
                 }
             }
             {
+                var casted = block as IMyOffensiveCombatBlock;
+                if(casted != null)
+                {
+                    // MyOffensiveCombatBlock.ChangeActions() - overwrites all other
+                    SingleToolbar(block, MyToolbarType.ButtonPanel, 2, 10);
+                    return;
+                }
+            }
+            {
                 MyPathRecorderComponent comp;
                 if(block.Components.TryGet(out comp))
                 {
@@ -391,6 +400,11 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
                 }
                 {
                     var casted = blockOB as MyObjectBuilder_DefensiveCombatBlock;
+                    if(casted != null)
+                        return casted.Toolbar;
+                }
+                {
+                    var casted = blockOB as MyObjectBuilder_OffensiveCombatBlock;
                     if(casted != null)
                         return casted.Toolbar;
                 }
