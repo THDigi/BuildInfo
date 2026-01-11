@@ -60,6 +60,12 @@ namespace Digi.BuildInfo.Features.ModderHelp
                 Log.Info("WARNING: `MyAPIGateway.Session.Config` is null.");
                 MyLog.Default.WriteLine($"{CustomMsg}WARNING: `MyAPIGateway.Session.Config` is null.");
             }
+
+            string sessionName = MyAPIGateway.Session?.Name;
+            if(sessionName != null && sessionName.Length > 0 && char.IsWhiteSpace(sessionName[sessionName.Length - 1]))
+            {
+                Log.Error("World's folder name ends with a space! This will cause problems in all sorts of places.", Log.PRINT_MESSAGE);
+            }
         }
 
         public override void RegisterComponent()
