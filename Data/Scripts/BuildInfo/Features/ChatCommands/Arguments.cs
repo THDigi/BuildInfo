@@ -52,6 +52,10 @@ namespace Digi.BuildInfo.Features.ChatCommands
             return segment.Text.Substring(segment.Start);
         }
 
+        /// <summary>
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns>false if empty or 0 args, which is not an error state.</returns>
         public bool TryParse(string message)
         {
             IndexOffset = 0;

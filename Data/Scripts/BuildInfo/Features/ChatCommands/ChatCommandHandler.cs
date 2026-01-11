@@ -30,7 +30,8 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         public const StringComparison StringCompare = StringComparison.OrdinalIgnoreCase;
 
-        private readonly Arguments args = new Arguments();
+        readonly Arguments args = new Arguments();
+        bool IgnoreChatEvent;
 
         public ChatCommandHandler(BuildInfoMod main) : base(main)
         {
@@ -61,49 +62,69 @@ namespace Digi.BuildInfo.Features.ChatCommands
             new CommandClearCache();
 
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
+            Main.GameConfig.FirstSpawn += FirstSpawn;
         }
 
         public override void UnregisterComponent()
         {
             MyAPIGateway.Utilities.MessageEntered -= MessageEntered;
+
+            if(!Main.ComponentsRegistered)
+                return;
+
+            Main.GameConfig.FirstSpawn -= FirstSpawn;
         }
 
         void MessageEntered(string text, ref bool send)
         {
             try
             {
-                if(text.StartsWith(HelpAlternative, StringCompare))
-                {
-                    CommandHelp.ExecuteNoArgs();
-                    return;
-                }
-
-                if(!text.StartsWith(ModCommandPrefix, StringCompare))
+                if(IgnoreChatEvent)
                     return;
 
-                if(!args.TryParse(text))
-                    return;
-
-                send = false;
-
-                string alias = (args.Count > 1 ? args.Get(1) : "");
-                Command cmd;
-
-                if(AliasToCommand.TryGetValue(alias, out cmd))
+                if(!EnteredMessage(text))
                 {
-                    args.IndexOffset = 2; // skip past main and sub-command so that parameters start from index 0
-                    cmd.Execute(args);
-                }
-                else
-                {
-                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, $"Unknown command: {ModCommandPrefix} {alias}", FontsHandler.RedSh);
-                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, $"For commands list, type: {ModCommandPrefix}", FontsHandler.RedSh);
+                    send = false;
                 }
             }
             catch(Exception e)
             {
                 Log.Error(e);
             }
+        }
+
+        /// <summary>
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns>whether the entered message is to be sent/shown</returns>
+        bool EnteredMessage(string text)
+        {
+            if(text.StartsWith(HelpAlternative, StringCompare))
+            {
+                CommandHelp.ExecuteNoArgs();
+                return false;
+            }
+
+            if(!text.StartsWith(ModCommandPrefix, StringCompare))
+                return true; // not this mod's commands, skip
+
+            if(!args.TryParse(text))
+                return true; // empty text or no args
+
+            string alias = (args.Count > 1 ? args.Get(1) : "");
+            Command cmd;
+
+            if(AliasToCommand.TryGetValue(alias, out cmd))
+            {
+                args.IndexOffset = 2; // skip past main and sub-command so that parameters start from index 0
+                cmd.Execute(args);
+            }
+            else
+            {
+                Utils.ShowColoredChatMessage(BuildInfoMod.ModName, $"Unknown command: {ModCommandPrefix} {alias}", FontsHandler.RedSh);
+                Utils.ShowColoredChatMessage(BuildInfoMod.ModName, $"For commands list, type: {ModCommandPrefix}", FontsHandler.RedSh);
+            }
+            return false;
         }
 
         /// <summary>
@@ -123,6 +144,60 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 }
 
                 AliasToCommand.Add(alias, cmd);
+            }
+        }
+
+        void FirstSpawn()
+        {
+            try
+            {
+                IgnoreChatEvent = true;
+                CheckChatMessageForcing();
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+            finally
+            {
+                IgnoreChatEvent = false;
+            }
+        }
+
+        void CheckChatMessageForcing()
+        {
+            // normally this starts true, we're just checking if a mod sets it true for any random message
+            bool send = false;
+
+            // this only calls the modAPI events, it does not send any actual message
+            MyAPIUtilities.Static.EnterMessage(MyAPIGateway.Multiplayer.MyId, ModCommandPrefix, ref send);
+
+            if(send) // a mod set this to true which is not ok, report...
+            {
+                const string Prefix = "A mod is forcing chat commands to be visible!";
+
+                const string MessageChat = Prefix + " The SE log has further instructions.";
+
+                const string MessageLog = Prefix + "\n" +
+                                          "Cannot identify it programatically because of lack of access, however, you can probably do it manually:\n" +
+                                          " 1. Have something that can find text in multiple files, Notepad++ can do this for example.\n" +
+                                          " 2. Now find-in-files for:\n" +
+                                          "   - Text: Utilities.MessageEntered\n" +
+                                          "   - File filter: *.cs\n" +
+                                          "   - Folder: nagivate to Steam folder then inside \\steamapps\\workshop\n" +
+                                          " 3. Now you have a list of files that mess with the chat event, make a list of all the mod workshop IDs:" +
+                                          "   Example path you might see: C:\\Steam\\steamapps\\workshop\\content\\244850\\514062285\\Data\\Scripts\\BuildInfo\\Features\\ChatCommands\\ChatCommandHandler.cs\n" +
+                                          "   This is for this very mod, the mod's workshopId is right after 244850\\, make a list of all of the unique ones.\n" +
+                                          "   If you can understand general programming terms, you could try to find the offending mod, the thing to look for is the 'ref bool' from the parameters if it's being set to true.\n" +
+                                          "   Otherwise you can narrow it down by having BuildInfo + all of those mods, then binary search by removing half of the mods (except BuildInfo) and loading the world to see if that half has it, if yes then repeat, otherwise replace with the other half of mods and repeat." +
+                                          "   You can also contact me (@m_digi on discord) and send me the above list of mods and I can check them for you.";
+
+                Log.Error(MessageLog, null);
+                Utils.ShowColoredChatMessage(BuildInfoMod.ModName, MessageChat, FontsHandler.RedSh);
+            }
+            else
+            {
+                Log.Info("Checked chat handlers that might force chat messages to be visible, no problems found.");
             }
         }
     }
