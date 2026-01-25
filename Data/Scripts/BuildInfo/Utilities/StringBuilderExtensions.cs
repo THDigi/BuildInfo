@@ -943,7 +943,8 @@ namespace Digi.BuildInfo.Utilities
             return s.InventoryFormat(volume, invComp, items: items);
         }
 
-        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyInventoryComponentDefinition invComp, HashSet<MyObjectBuilderType> types = null, HashSet<MyDefinitionId> items = null, bool isWhitelist = true)
+        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyInventoryComponentDefinition invComp,
+            HashSet<MyObjectBuilderType> types = null, HashSet<MyDefinitionId> items = null, bool isWhitelist = true)
         {
             if(volume == 0)
             {
@@ -998,7 +999,7 @@ namespace Digi.BuildInfo.Utilities
                     || (items != null && isWhitelist == items.Contains(physDef.Id)))
                     {
                         if(physDef.HasIntegralAmounts)
-                            itemMass *= (int)Math.Floor(volume / itemVolume);
+                            itemMass *= (float)Math.Floor(volume / itemVolume);
                         else
                             itemMass *= (volume / itemVolume);
 
@@ -1009,7 +1010,7 @@ namespace Digi.BuildInfo.Utilities
                         }
                         else
                         {
-                            Log.Error($"fillMass close to zero for {physDef.Id}: fillMass={itemMass:0.##############}; mass={physDef.Mass}; itemVolume={itemVolume}; cargoVolume={volume}; integral={physDef.HasIntegralAmounts}");
+                            Log.Error($"fillMass zero or negative for {physDef.Id}: fillMass={itemMass:0.##############}; mass={physDef.Mass}; itemVolume={itemVolume}; cargoVolume={volume}; integral={physDef.HasIntegralAmounts}");
                         }
                     }
                 }
