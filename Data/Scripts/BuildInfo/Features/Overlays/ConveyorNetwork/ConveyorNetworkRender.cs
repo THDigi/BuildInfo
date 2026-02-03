@@ -33,6 +33,8 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
         public static readonly Vector4 IsolatedColor = new Color(100, 0, 0).ToVector4().ToLinearRGB();
         public static readonly Vector4 BrokenColor = new Color(255, 0, 0).ToVector4().ToLinearRGB();
         public static readonly Vector4 ShadowColor = Color.Black.ToVector4().ToLinearRGB();
+        public static readonly Color NoPowerColorSRGB = new Color(235, 20, 20);
+        public static readonly Vector4 NoPowerColor = NoPowerColorSRGB.ToVector4().ToLinearRGB();
 
         public const float InventoryBoxOpacity = 0.25f; // note that it's on linear space now
         public const float BoxSizeSG = 0.18f;
@@ -440,10 +442,10 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                                         * (isShadow ? LineShadowThickMul : LineThickMul)
                                         * DepthRatio;
 
+                        Vector4 color = (isShadow ? ShadowColor : line.Color);
+
                         if((line.Flags & RenderFlags.Pulse) != 0)
                             thickness *= Pulse;
-
-                        Vector4 color = (isShadow ? ShadowColor : line.Color);
 
                         Vector3D fromClose = camPos + ((from - camPos) * DepthRatio);
                         Vector3D toClose = camPos + ((to - camPos) * DepthRatio);

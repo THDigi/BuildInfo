@@ -228,7 +228,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                 foreach(IMyCubeGrid grid in Compute.GridsForEvents)
                 {
                     var state = grid.ResourceDistributor.ResourceState;
-                    bool hasPower = (state == MyResourceStateEnum.Ok || state == MyResourceStateEnum.OverloadAdaptible);
+                    bool hasPower = (state == MyResourceStateEnum.Ok | state == MyResourceStateEnum.OverloadAdaptible);
 
                     if(hasPower)
                         somePowered = true;
@@ -239,9 +239,9 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                 if(!allPowered)
                 {
                     if(somePowered)
-                        sb.Color(Color.Red).Append("Warning: some grids are not powered!");
+                        sb.Color(ConveyorNetworkRender.NoPowerColorSRGB).Append("Warning: some grids are not powered, conveyors will not work!");
                     else
-                        sb.Color(Color.Red).Append("Warning: ship is not powered!");
+                        sb.Color(ConveyorNetworkRender.NoPowerColorSRGB).Append("Warning: ship is not powered, conveyors will not work!");
                 }
 
                 sb.Length -= 1; // remove last newline

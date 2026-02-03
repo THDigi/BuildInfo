@@ -637,7 +637,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         PortPos portPos = port.TransformToGrid(block.SlimBlock);
 
                         Vector3 portCellCenter = portPos.Position * block.CubeGrid.GridSize;
-                        Vector3 portEdgeOffset = Base6Directions.GetVector(portPos.Direction) * block.CubeGrid.GridSizeHalf;
+                        Vector3 portEdgeOffset = Base6Directions.GetVector(portPos.Direction) * (block.CubeGrid.GridSizeHalf * 0.8f); // slightly shorter lines to not be mistaken for connected
                         Vector3 portLocalPos = portCellCenter + portEdgeOffset;
 
                         bool isSmall = (port.Flags & ConveyorFlags.Small) != 0;
