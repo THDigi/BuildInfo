@@ -66,6 +66,8 @@ namespace Digi.BuildInfo.Features.ModderHelp
             {
                 Log.Error("World's folder name ends with a space! This will cause problems in all sorts of places.", Log.PRINT_MESSAGE);
             }
+
+            UpdateOrder = 10000; // for Draw() mainly, to render the F11 menu backdrop over everything else
         }
 
         public override void RegisterComponent()
@@ -1814,13 +1816,14 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     Color color = new Color(37, 46, 53);
 
                     ErrorsMenuBackdrop = new HudAPIv2.BillBoardHUDMessage(material, Vector2D.Zero, color, HideHud: false);
-                    ErrorsMenuBackdrop.Width = 1000; // fullscreen-est fullscreen xD
+                    ErrorsMenuBackdrop.Width = 1000; // fullscreen-est fullscreen!
                     ErrorsMenuBackdrop.Height = 1000;
+                    ErrorsMenuBackdrop.Options = HudAPIv2.Options.None;
+                    ErrorsMenuBackdrop.Visible = false;
                 }
 
-                ErrorsMenuBackdrop.Visible = true;
-
                 Main.GameConfig.TempHideHUD(nameof(ModderHelpMain), true);
+                SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
             }
         }
 
@@ -1828,9 +1831,15 @@ namespace Digi.BuildInfo.Features.ModderHelp
         {
             if(ErrorsMenuBackdrop != null && screenType.EndsWith(ErrorsGUITypeName))
             {
-                ErrorsMenuBackdrop.Visible = false;
+                SetUpdateMethods(UpdateFlags.UPDATE_DRAW, false);
                 Main.GameConfig.TempHideHUD(nameof(ModderHelpMain), false);
             }
+        }
+
+        public override void UpdateDraw()
+        {
+            /// doing it this way to allow it to use <see cref="UpdateOrder"/> to render it last, therefore over everything else from this mod (issue was with conveyorvis)
+            ErrorsMenuBackdrop?.Draw();
         }
         #endregion
 
