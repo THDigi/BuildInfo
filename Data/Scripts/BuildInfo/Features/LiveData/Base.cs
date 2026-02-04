@@ -356,6 +356,7 @@ namespace Digi.BuildInfo.Features.LiveData
                 StringSegment part1 = GetNextSection(name, ref index); // detector_conveyorline_<here>_in
                 StringSegment part2 = GetNextSection(name, ref index); // detector_conveyorline_small_<here>
 
+                // HACK: from MyConveyorLine.GetBlockLinePositions()
                 if(detectorPtr.StartsWithCaseInsensitive("conveyor"))
                 {
                     if(!typeHasConveyorSupport)
@@ -366,15 +367,31 @@ namespace Digi.BuildInfo.Features.LiveData
 
                     ConveyorFlags flags = ConveyorFlags.None;
 
-                    // from MyConveyorLine.GetBlockLinePositions()
                     if(part1.EqualsIgnoreCase("small"))
                         flags |= ConveyorFlags.Small;
+                    else if(showModderAlerts && isModModel)
+                    {
+                        var part1Str = part1.ToString();
+                        if(part1Str.StartsWith("small"))
+                            Main.ModderHelpMain.ModProblem(def, $"Conveyor port '{dummy.Name}' is NOT a small port because the 3rd section of the name is '{part1Str}'!" +
+                                                                "\nEnsure the sections of the name are properly isolated by the _ character, e.g. detector_conveyor_small_002");
+                    }
 
                     // same logic order: 'out' overrides 'in'
                     if(part1.EqualsIgnoreCase("out") || part2.EqualsIgnoreCase("out"))
                         flags |= ConveyorFlags.Out;
                     else if(part1.EqualsIgnoreCase("in") || part2.EqualsIgnoreCase("in"))
                         flags |= ConveyorFlags.In;
+                    else if(showModderAlerts && isModModel)
+                    {
+                        var part1Str = part1.ToString();
+                        var part2Str = part2.ToString();
+                        if(part1Str.StartsWith("in") || part2Str.StartsWith("in") || part1Str.StartsWith("out") || part2Str.StartsWith("out"))
+                        {
+                            Main.ModderHelpMain.ModProblem(def, $"Conveyor port '{dummy.Name}' is NOT directional because the 2nd or 3rd section part of the name is '{part1Str}'!" +
+                                                                "\nEnsure the sections of the name are properly isolated by the _ character, e.g. detector_conveyor_small_in_002");
+                        }
+                    }
 
                     bool isInteractive = !detectorPtr.StartsWithCaseInsensitive("conveyorline");
                     if(isInteractive)
@@ -382,6 +399,12 @@ namespace Digi.BuildInfo.Features.LiveData
                         flags |= ConveyorFlags.Interactive;
                         Has |= BlockHas.PhysicalTerminalAccess;
                     }
+
+                    //if(showModderAlerts && isModModel && !detectorType.EqualsIgnoreCase("conveyor") && !detectorType.EqualsIgnoreCase("conveyorline"))
+                    //{
+                    //    Main.ModderHelpMain.ModHint(def, $"Conveyor port '{dummy.Name}' will work but it's not recommended to keep this format where the second section is '{detectorType}'." +
+                    //                                     "\nEnsure the sections of the name are properly isolated by the _ character, e.g. detector_conveyor_small_002");
+                    //}
 
                     Vector3 portLocalPos = matrix.Translation + sizeMetric; // + blockDef.ModelOffset  (already done to port matrix)
                     Vector3I clamped = Vector3I.Clamp(Vector3I.Floor(portLocalPos / cellSize), Vector3I.Zero, def.Size - Vector3I.One);
