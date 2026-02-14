@@ -240,16 +240,18 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
                 string errors = sb.ToString();
 
+                const string KeyWord = "VSLP events";
+
                 sb.Clear();
-                sb.AppendLine($"Another mod is overriding or leaking MyVisualScriptLogicProvider events! (preAssigned={preAssigned}; erased={erased}; total events={count})");
+                sb.AppendLine($"A mod is overriding/leaking {KeyWord}! (MyVisualScriptLogicProvider) (preAssigned={preAssigned}; erased={erased}; total events={count})");
                 sb.AppendLine("What to do:");
                 sb.AppendLine("- if you can identify the mod(s) below then send all this info to the author.");
                 sb.AppendLine("- if you're the author, fix it by finding all the mentioned events and ensure you're using += to hook and -= to unhook, don't use = on them.");
-                sb.AppendLine("- if the mods cannot be identified, contact BuildInfo's author to get help in identifying them.");
+                sb.AppendLine("- if the mods cannot be identified, contact BuildInfo's author to get help in identifying the mods.");
                 sb.AppendLine();
                 sb.AppendLine("The problematic events: ");
                 sb.Append(errors);
-                sb.AppendLine("PS: If there's any leaked events, ensure you fully close the game before testing any fixes.");
+                sb.AppendLine("PS: If there's any leaked events (as opposed to overridden), ensure you fully close the game before testing any fixes.");
 
                 string text = sb.ToString();
                 Inform(text);
@@ -257,13 +259,10 @@ namespace Digi.BuildInfo.Features.ModderHelp
                 // not really necessary as null would print unknown in both... but I like doing it :P
                 var fakeContext = new MyModContext();
                 fakeContext.Init("Unknown mod", "Unknown script");
-
                 MyDefinitionErrors.Add(fakeContext, text, TErrorSeverity.Error, writeToLog: false);
 
-                if(BuildInfoMod.Instance.ModderHelpMain.IsF11MenuAccessible)
-                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "A mod is overriding/leaking VSLP events! F11 menu or SE log have further instructions.", FontsHandler.RedSh);
-                else
-                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "A mod is overriding/leaking VSLP events! SE Log has further instructions.", FontsHandler.RedSh);
+                bool hasF11 = BuildInfoMod.Instance.ModderHelpMain.IsF11MenuAccessible;
+                Utils.ShowColoredChatMessage(BuildInfoMod.ModName, $"A mod is overriding/leaking VSLP events! Further instructions in the {(hasF11 ? "F11 menu or " : "")}SE log (search for '{KeyWord}').", FontsHandler.RedSh);
             }
         }
 
