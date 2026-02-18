@@ -456,10 +456,8 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
             ListReader<MyDefinitionErrors.Error> errors = MyDefinitionErrors.GetErrors();
 
-            for(int i = 0; i < errors.Count; i++)
+            foreach(MyDefinitionErrors.Error error in errors)
             {
-                MyDefinitionErrors.Error error = errors[i];
-
                 bool isLocal = CheckEverything || localMods.Contains(error.ModName);
 
                 // chat message when LOCAL mods have definition errors
@@ -514,6 +512,33 @@ namespace Digi.BuildInfo.Features.ModderHelp
                             error.Message += $"\n{AppendMsg}If you intend on referencing game sounds, you can only do with .wav files by using original relative path and removing the .wav extension.";
                             continue;
                         }
+
+                        continue;
+                    }
+                }
+
+                {
+                    // https://support.keenswh.com/spaceengineers/pc/topic/49190-modding-icons-will-not-load-if-defined-as-dds-or-png-upper-case
+                    // MyDefinitionManager.ProcessContentFilePath()
+                    // "File extension of: {contentFile} is not supported."
+                    const string FileExtensionOf = "File extension of:";
+                    if(error.Message.StartsWith(FileExtensionOf))
+                    {
+                        error.Severity = TErrorSeverity.Error; // bump up the severity
+
+                        const string Suffix = "is not supported.";
+                        string file = error.Message.Substring(FileExtensionOf.Length, error.Message.Length - FileExtensionOf.Length - Suffix.Length).Trim();
+                        string ext = Path.GetExtension(file);
+                        for(int i = 0; i < ext.Length; i++)
+                        {
+                            if(char.IsUpper(ext[i]))
+                            {
+                                error.Message += $"\n{AppendMsg}The upper case letters in the extension are the issue, use '{ext.ToLower()}' instead.";
+                                break;
+                            }
+                        }
+
+                        continue;
                     }
                 }
 
@@ -786,8 +811,24 @@ namespace Digi.BuildInfo.Features.ModderHelp
                 MyModContext modContext = (MyModContext)modItem.GetModContext();
                 string dataPath = modContext.ModPathData;
 
-                // NOTE: this only allows to read in game folder and local mods folder, therefore it cannot work on published mods.
-                string[] files = PathUtils.GetFilesRecursively(dataPath, "*");
+                string[] files;
+                try
+                {
+                    // NOTE: this only allows to read in game folder and local mods folder, therefore it cannot work on published mods.
+                    files = PathUtils.GetFilesRecursively(dataPath, "*");
+                }
+                catch(Exception e)
+                {
+                    if(e.GetType().Name == "DirectoryNotFoundException") // because the class is prohibited
+                    {
+                        ModProblem(modContext, "The mod is missing the required Data folder! It's required even if empty.");
+                    }
+                    else
+                    {
+                        Log.Error(e);
+                    }
+                    continue;
+                }
 
                 foreach(string filePath in files)
                 {
@@ -838,7 +879,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     continue;
 
                 if(comp.Id.SubtypeName == "YourModNameHere")
-                    ModProblem(comp, "You should really change this subtype.");
+                    ModProblem(comp, "This subtype should really be changed!");
             }
 
             if(BuildInfoMod.IsDevMod)
@@ -846,23 +887,22 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
             foreach(MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
             {
-                if(def == null)
-                    continue;
+                if(def == null) continue;
 
                 if(def.Context == null)
                 {
                     // HACK: the generated LCD texture defs by the game have null Context
                     if(!(def is MyLCDTextureDefinition))
                         ModHint(def.Context, $"'{GetDefId(def)}' has null Context, a script probably set it like this?");
-
                     continue;
                 }
 
                 MyCubeBlockDefinition blockDef = def as MyCubeBlockDefinition;
 
-                if(BuildInfoMod.IsDevMod && def.Context.IsBaseGame)
+                if(blockDef != null)
                 {
-                    if(blockDef?.MountPoints != null && blockDef.MountPoints.Length > 0)
+                    #region Check vanilla mountpoints for new masks
+                    if(BuildInfoMod.IsDevMod && def.Context.IsBaseGame && blockDef.MountPoints != null)
                     {
                         foreach(MyCubeBlockDefinition.MountPoint mount in blockDef.MountPoints)
                         {
@@ -872,11 +912,9 @@ namespace Digi.BuildInfo.Features.ModderHelp
                             }
                         }
                     }
-                }
+                    #endregion
 
-                #region Check BlockPairName violations, must include ALL blocks, modded or not
-                if(blockDef != null)
-                {
+                    #region Check BlockPairName violations, must include ALL blocks, modded or not
                     int cubeSizeInt = (int)blockDef.CubeSize;
                     if(cubeSizeInt < 0 || cubeSizeInt >= pairs.Length)
                     {
@@ -890,8 +928,22 @@ namespace Digi.BuildInfo.Features.ModderHelp
                             ReportBlockPairError(blockDef);
                         }
                     }
+                    #endregion
+
+                    #region Check lack of overlay texture which can crash
+                    // cryo and searchlight do not crash if lacking overlay
+                    {
+                        var turretDef = blockDef as MyLargeTurretBaseDefinition;
+                        if(turretDef != null)
+                            turretDef.OverlayTexture = CheckOverlayFile(def, turretDef.OverlayTexture, nameof(turretDef.OverlayTexture));
+                    }
+                    {
+                        var camDef = blockDef as MyCameraBlockDefinition;
+                        if(camDef != null)
+                            camDef.OverlayTexture = CheckOverlayFile(def, camDef.OverlayTexture, nameof(camDef.OverlayTexture));
+                    }
+                    #endregion
                 }
-                #endregion
 
                 if(!CheckEverything)
                 {
@@ -909,28 +961,6 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     ModHint(def, "has empty subtype, is this intended?");
                 }
 
-                // this is only for icons, would need an insane amount of checking to catch all the use cases... maybe wait for keen to fix it
-                // https://support.keenswh.com/spaceengineers/pc/topic/49190-modding-icons-will-not-load-if-defined-as-dds-or-png-upper-case
-                if(def.Icons != null && def.Icons.Length > 0)
-                {
-                    foreach(var iconPath in def.Icons)
-                    {
-                        var ext = Path.GetExtension(iconPath);
-                        if(string.IsNullOrEmpty(ext))
-                        {
-                            ModHint(def, $"Icon path does not have any extension, is this intended?");
-                        }
-                        else
-                        {
-                            if((ext.Equals(".dds", StringComparison.OrdinalIgnoreCase) && ext != ".dds")
-                            || (ext.Equals(".png", StringComparison.OrdinalIgnoreCase) && ext != ".png"))
-                            {
-                                ModHint(def, $"File extensions for .dds or .png MUST be all lower case otherwise it won't find the file!");
-                            }
-                        }
-                    }
-                }
-
                 if(blockDef != null)
                 {
                     if(blockDef.Size.X <= 0 || blockDef.Size.Y <= 0 || blockDef.Size.Z <= 0)
@@ -940,14 +970,6 @@ namespace Digi.BuildInfo.Features.ModderHelp
                     else
                     {
                         Vector3I maxCenter = blockDef.Size - 1;
-
-                        // TODO find a way to check if Center has changed in same game session and warn!
-                        /* CONTEXT: I confirmed it too, it's because keen are processing conveyor stuff relative to <Center> and 
-                         * storing them in a static dictionary (MyConveyorLine.m_blockLinePositions).
-                         * reloading world won't clear them so they persist until you restart game.
-                         * and if you change <Center> without restarting, it breaks conveyors 😆
-                         */
-                        // maybe also try to identify if a model that has empties was changed?
 
                         if(blockDef.Center.X < 0 || blockDef.Center.Y < 0 || blockDef.Center.Z < 0)
                         {
@@ -1198,8 +1220,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
             foreach(var def in MyDefinitionManager.Static.GetAllDefinitions<MyDefinitionBase>())
             {
-                if(def == null)
-                    continue;
+                if(def == null) continue;
 
                 var szSkin = def as MySafeZoneTexturesDefinition;
                 if(szSkin != null)
@@ -1222,12 +1243,10 @@ namespace Digi.BuildInfo.Features.ModderHelp
                 if(!CheckEverything)
                 {
                     // ignore untouched definitions
-                    if(def.Context.IsBaseGame)
-                        continue;
+                    if(def.Context.IsBaseGame) continue;
 
-                    // ignore workshop mods
-                    if(def.Context.ModItem.PublishedFileId != 0)
-                        continue;
+                    // --- local mods only from here onwards -------------------------------------------------------------------------------
+                    if(def.Context.ModItem.PublishedFileId != 0) continue;
                 }
 
                 if(def.Id.SubtypeId == MyStringHash.NullOrEmpty)
@@ -1240,22 +1259,27 @@ namespace Digi.BuildInfo.Features.ModderHelp
                 {
                     // as per MyBreakableEnvironmentProxy.CreateDebris() - where the broken model is not actually optional.
 
+                    if(string.IsNullOrWhiteSpace(treeDef.Model) || !treeDef.Model.EndsWith(".mwm"))
+                        continue;
+
                     string brokenModel = treeDef.Model.Insert(treeDef.Model.Length - 4, "_broken");
 
-                    bool isPathInMod = brokenModel.StartsWith(def.Context.ModPath);
-                    bool brokenModelExists;
+                    string reason;
+                    bool? brokenModelExists = Utils.FileExists(brokenModel, def.Context, out reason);
 
-                    if(isPathInMod)
-                        brokenModelExists = MyAPIGateway.Utilities.FileExistsInModLocation(brokenModel, def.Context.ModItem);
-                    else
-                        brokenModelExists = MyAPIGateway.Utilities.FileExistsInGameContent(brokenModel);
-
-                    if(!brokenModelExists)
+                    if(brokenModelExists == null)
                     {
-                        string relativePath = (isPathInMod ? brokenModel.Substring(def.Context.ModPath.Length + 1) : brokenModel);
-                        ModProblem(def, $"Does not have a \"_broken\" version of the model in the folder, which means when this tree is destroyed it will spawn a 1m gray cube.\nTo fix, copy/create a _broken-suffixed model, for example on this specific definition it would be: {relativePath}");
+                        ModHint(def, $"Could not check if \"_broken\" model exists: {reason}; File: '{brokenModel}'." +
+                            $"\nMake sure it exists and test by breaking the tree in-game, if you see a 1m black cube appear then the game cannot find it either.");
                     }
+                    else if(brokenModelExists == false)
+                    {
+                        bool isPathInMod = brokenModel.StartsWith(def.Context.ModPath);
+                        string relativePath = (isPathInMod ? brokenModel.Substring(def.Context.ModPath.Length + 1) : brokenModel);
 
+                        ModProblem(def, $"Does not have a \"_broken\" version of the model in the folder, which means when this tree is destroyed it will spawn a 1m gray cube." +
+                            $"\nTo fix, copy/create a _broken-suffixed model, for example on this specific definition it would be: {relativePath}");
+                    }
                     continue;
                 }
             }
@@ -1267,10 +1291,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
                 if(bpDef.Context == null)
                 {
-                    // HACK: the generated LCD texture defs by the game have null Context
-                    if(!(bpDef is MyLCDTextureDefinition))
-                        ModHint(bpDef.Context, $"'{GetDefId(bpDef)}' has null Context, a script probably set it like this?");
-
+                    ModHint(bpDef.Context, $"'{GetDefId(bpDef)}' has null Context, a script probably set it like this?");
                     continue;
                 }
 
@@ -1609,6 +1630,26 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
                 // spawnGroup.FactionSubEncounters does not call TryGetOwnerId() as they're same owner as the primary encounter
             }
+        }
+
+        string CheckOverlayFile(MyDefinitionBase def, string file, string elementName)
+        {
+            // https://support.keenswh.com/spaceengineers/pc/topic/52376-graphics-crash-from-no-overlay-in-turrets-but-only-when-loading-into-it-controlled
+
+            string reason;
+            bool? res = Utils.FileExists(file, def.Context, out reason);
+
+            if(res == true)
+                return file;
+
+            if(res == null)
+            {
+                ModHint(def, $"<{elementName}>'s file could not be checked if it exists: {reason}; File: '{file}'.\nMake sure the game always finds the file otherwise it might crash with a very generic stacktrace and 'graphics driver crash'.");
+                return file;
+            }
+
+            ModProblem(def, $"<{elementName}>'s file could not be found: {reason}; File: '{file}'\nReplaced path with an empty texture to avoid crashing, but please fix or contact author about this!");
+            return Utils.GetModFullPath(@"Textures\Blank.dds");
         }
 
         void CheckResourceGroup(MyDefinitionBase def, string group) => CheckResourceGroup(def, MyStringHash.GetOrCompute(group));
