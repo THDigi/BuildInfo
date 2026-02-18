@@ -157,7 +157,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     if(LabelRender.CanDrawLabel())
                     {
                         dir = Vector3.TransformNormal(def.ModelOffset, drawMatrix);
-                        LabelRender.DrawLineLabel(LabelType.ModelOffset, drawMatrix.Translation + dir, dir, color, "Center", 0);
+                        LabelRender.DrawLineLabel(LabelType.ModelOffset, drawMatrix.Translation + dir, Vector3.CalculatePerpendicularVector(dir), color, "ModelOffset changes position to here", alwaysOnTop: true);
                     }
                 }
                 #endregion
