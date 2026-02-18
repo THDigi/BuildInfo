@@ -1297,7 +1297,7 @@ namespace Digi.BuildInfo.Utilities
                 return s;
             }
 
-            string name = def.DisplayNameText;
+            string name = def.GetDisplayName();
             if(!string.IsNullOrWhiteSpace(name) && name[0] != '\n')
             {
                 int newLineIdx = name.IndexOf('\n');

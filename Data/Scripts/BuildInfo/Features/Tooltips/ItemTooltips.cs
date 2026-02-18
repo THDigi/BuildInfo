@@ -672,7 +672,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
                 if(detailed)
                 {
-                    string nameNoTooltip = bp.DisplayNameText;
+                    string nameNoTooltip = bp.GetDisplayName();
                     if(nameNoTooltip == null && bp.Results != null && bp.Results.Length > 0)
                     {
                         var resultItemDef = MyDefinitionManager.Static.TryGetPhysicalItemDefinition(bp.Results[0].Id);

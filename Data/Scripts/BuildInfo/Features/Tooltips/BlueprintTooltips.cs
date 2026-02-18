@@ -86,8 +86,31 @@ namespace Digi.BuildInfo.Features.Tooltips
             }
         }
 
+        int NoRefreshMessageUntilTick = 0;
+        bool PrevItemTooltipAdditions;
+
         void Setup(bool generate)
         {
+            if(generate) // mostly means first call, any false values would be config reloads/changes
+            {
+                PrevItemTooltipAdditions = Main.Config.ItemTooltipAdditions.Value;
+            }
+            else
+            {
+                if(PrevItemTooltipAdditions != Main.Config.ItemTooltipAdditions.Value)
+                {
+                    PrevItemTooltipAdditions = Main.Config.ItemTooltipAdditions.Value;
+
+                    if(NoRefreshMessageUntilTick <= Main.Tick)
+                    {
+                        NoRefreshMessageUntilTick = Main.Tick + Constants.TicksPerSecond * 60;
+
+                        // HACK...
+                        Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "Because of a game change, tooltips cannot be refreshed for blueprints (seen in production tab), it will apply after a world reload/rejoin.", FontsHandler.YellowSh, Color.Yellow);
+                    }
+                }
+            }
+
             foreach(MyBlueprintDefinitionBase bpBaseDef in MyDefinitionManager.Static.GetBlueprintDefinitions())
             {
                 try
@@ -146,7 +169,8 @@ namespace Digi.BuildInfo.Features.Tooltips
             }
 
             SB.Clear();
-            SB.Append(bpBaseDef.DisplayNameText).TrimEndWhitespace(); // get existing text, then replace/append to it as needed
+
+            SB.Append(bpBaseDef.GetDisplayName()).TrimEndWhitespace(); // get existing text, then replace/append to it as needed
 
             if(tooltip != null)
             {
@@ -440,7 +464,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                     string defDisplayName = def.DisplayNameText;
 
                     // get only the first line in the display name
-                    string bpDisplayName = bpBaseDef.DisplayNameText;
+                    string bpDisplayName = bpBaseDef.GetDisplayName();
                     int newLineIdx = bpDisplayName.IndexOf('\n');
                     if(newLineIdx != -1)
                         bpDisplayName = bpDisplayName.Substring(0, newLineIdx);
@@ -465,7 +489,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                     {
                         /// NOTE: this is before <see cref="ItemTooltips"/> appends stuff to it.
                         string tooltip = physDef.ExtraInventoryTooltipLine?.ToString().Trim(); // game adds some leading newlines
-                        string bpTooltip = bpBaseDef.DisplayNameText;
+                        string bpTooltip = bpBaseDef.GetDisplayName();
 
                         if(!string.IsNullOrWhiteSpace(desc))
                         {
@@ -570,7 +594,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                     }
                 }
 
-                SB.Append(bpBaseDef.DisplayNameText);
+                SB.Append(bpBaseDef.GetDisplayName());
                 SB.Append('\n');
 
                 BuildTime(SB, bpBaseDef, Main.TooltipHandler.BlueprintPlannerBlocks);
