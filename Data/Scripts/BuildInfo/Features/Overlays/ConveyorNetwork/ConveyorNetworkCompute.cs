@@ -252,9 +252,11 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
 
             List<MyDefinitionId> missingBData = new List<MyDefinitionId>();
 
+            bool skipFriendlyCheck = ConveyorNetworkView.SkipFriendlyCheck;
+
             foreach(MyCubeGrid grid in grids)
             {
-                if(!Utils.IsGridFriendly(grid))
+                if(!skipFriendlyCheck && !Utils.IsGridFriendly(grid))
                     continue;
 
                 friendlyGrids.Add(grid);
@@ -383,7 +385,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
             if(grid == CurrentGridRender?.Grid)
                 return true;
 
-            if(!Utils.IsGridFriendly(grid))
+            if(!ConveyorNetworkView.SkipFriendlyCheck && !Utils.IsGridFriendly(grid))
                 return false;
 
             if(!Render.RenderGrids.TryGetValue(grid, out CurrentGridRender))

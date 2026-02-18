@@ -73,7 +73,7 @@ namespace Digi.BuildInfo.Features.MultiTool.Instruments
 
                     if(aimedGrid != null)
                     {
-                        Main.ConveyorNetworkView.ShowFor(aimedGrid, notify: false);
+                        Main.ConveyorNetworkView.ShowFor(aimedGrid, notify: true);
                     }
                     else
                     {

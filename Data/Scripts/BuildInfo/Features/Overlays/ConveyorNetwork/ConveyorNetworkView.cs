@@ -19,6 +19,8 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
         internal ConveyorNetworkCompute Compute;
         internal ConveyorNetworkRender Render;
 
+        public static bool SkipFriendlyCheck => MyAPIGateway.Session.IsUserUseAllTerminals(MyAPIGateway.Multiplayer.MyId);
+
         internal HashSet<IMyCubeGrid> TempGrids = new HashSet<IMyCubeGrid>();
 
         IMyCubeGrid TargetGrid;
@@ -83,7 +85,9 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
             int tick = MyAPIGateway.Session.GameplayFrameCounter;
             if(tick < CooldownUntil)
             {
-                Notify("Cooldown...", 1000, FontsHandler.GraySh);
+                if(notify)
+                    Notify("Cooldown...", 1000, FontsHandler.GraySh);
+
                 return;
             }
             CooldownUntil = tick + 30;
@@ -94,10 +98,11 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
             try
             {
                 MyAPIGateway.GridGroups.GetGroup(grid, GridLinkTypeEnum.Physical, TempGrids);
-                if(!Utils.IsShipFriendly(TempGrids))
+
+                if(!SkipFriendlyCheck && !Utils.IsShipFriendly(TempGrids))
                 {
-                    //if(notify)
-                    Notify("Cannot show, unfriendly ship!", 4000, FontsHandler.RedSh);
+                    if(notify)
+                        Notify("Cannot show, unfriendly ship!", 4000, FontsHandler.RedSh);
                     return;
                 }
 

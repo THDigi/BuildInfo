@@ -6,6 +6,7 @@ using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
+using VRage.Utils;
 using VRageMath;
 using static VRageRender.MyBillboard;
 
@@ -100,6 +101,8 @@ namespace Digi.BuildInfo.Features.Overlays
                 TempEntities.Clear();
                 MyGamePruningStructure.GetAllTopMostEntitiesInSphere(ref sphere, TempEntities, MyEntityQueryType.Both);
 
+                bool skipFriendlyCheck = MyAPIGateway.Session.IsUserUseAllTerminals(MyAPIGateway.Multiplayer.MyId);
+
                 foreach(MyEntity ent in TempEntities)
                 {
                     IMyCubeGrid grid = ent as IMyCubeGrid;
@@ -111,12 +114,20 @@ namespace Digi.BuildInfo.Features.Overlays
                     if(distSq > radius * radius)
                         continue;
 
-                    IMyGridGroupData group = grid.GetGridGroup(GridLinkTypeEnum.Physical);
-                    if(group == null)
+                    IMyGridGroupData ship = grid.GetGridGroup(GridLinkTypeEnum.Physical);
+                    if(ship == null)
                         throw new System.Exception($"{grid} ({grid.EntityId.ToString()}) returns null physical grid-group for some reason.");
 
-                    TempShips.Add(group);
+                    TempGrids.Clear();
+                    ship.GetGrids(TempGrids);
+                    if(!skipFriendlyCheck && !Utils.IsShipFriendly(TempGrids))
+                        continue;
+
+                    TempShips.Add(ship);
                 }
+
+                TempGrids.Clear();
+                TempEntities.Clear();
             }
 
             TempGridInfo.Clear();
@@ -137,10 +148,6 @@ namespace Digi.BuildInfo.Features.Overlays
                 {
                     TempGrids.Clear();
                     ship.GetGrids(TempGrids);
-
-                    // TODO: optimize by checking more rarely
-                    if(!Utils.IsShipFriendly(TempGrids))
-                        continue;
 
                     // has known weird issues so I'd rather just compute it myself when I can
                     //Vector3D shipCoM = MyGridPhysicalGroupData.GetGroupSharedProperties((MyCubeGrid)Grids[0]).CoMWorld;
