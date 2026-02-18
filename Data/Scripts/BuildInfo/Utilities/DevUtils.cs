@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Sandbox.ModAPI;
 using VRage;
@@ -7,6 +8,7 @@ using VRage.Game;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRage.Input;
+using VRage.Utils;
 using VRageMath;
 
 namespace Digi
@@ -36,7 +38,7 @@ namespace Digi
                 stored = new Stored();
                 stored.Initial = (MyFixedPoint)initial;
                 stored.Value = stored.Initial;
-                stored.Digit = -2;
+                stored.Digit = GetDefaultDigitToModify(stored.Value);
                 Values.Add(id, stored);
             }
 
@@ -66,7 +68,7 @@ namespace Digi
             if(MyAPIGateway.Input.IsNewKeyPressed(MyKeys.R))
             {
                 stored.Value = stored.Initial;
-                stored.Digit = -2;
+                stored.Digit = GetDefaultDigitToModify(stored.Value);
                 returnValue = (double)stored.Value;
 
                 return returnValue;
@@ -105,7 +107,7 @@ namespace Digi
                 TempSB.Append(id).Append(" = ");
 
                 if(returnValue < 0)
-                    TempSB.Append('-');
+                    TempSB.Append("[–]"); // yellow and longer dash too
 
                 bool foundDot = false;
                 int thousandsSeparator = MaxIntegers;
@@ -116,13 +118,7 @@ namespace Digi
                     char next = ((i + 1) < value.Length ? value[i + 1] : '_');
 
                     thousandsSeparator--;
-
-                    if(next == '.')
-                        foundDot = true;
-
-                    // strip leading zeros up to digit
-                    //if(!foundDot && c == '0' && digit < i)
-                    //    continue;
+                    foundDot |= next == '.';
 
                     if(i == markIndex)
                         TempSB.Append('[');
@@ -148,6 +144,24 @@ namespace Digi
             }
 
             return returnValue;
+        }
+
+        static int GetDefaultDigitToModify(MyFixedPoint value)
+        {
+            double v = (double)value;
+
+            string str = v.ToString("0.0#####");
+            int dotAt = str.IndexOf('.');
+
+            // go through the number from right to left
+            for(int i = str.Length - 1; i >= 0; i--)
+            {
+                var c = str[i];
+                if(c != '.' & c != '0')
+                    return MathHelper.Clamp(dotAt - i - 1, -MaxDecimals, MaxIntegers - 1);
+            }
+
+            return -2;
         }
 
         public static double GetValue(string id)

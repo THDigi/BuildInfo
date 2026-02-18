@@ -1086,51 +1086,52 @@ namespace Digi.BuildInfo.VanillaData
             Matrix.Invert(Matrix.CreateFromDir(Vector3.Backward, Vector3.Up) * Matrix.CreateScale(-1f, 1f, 1f))
         };
 
-        // from MyCubeGrid.UpgradeCubeBlock()
+        /// <summary>
+        /// from MyCubeGrid.UpgradeCubeBlock()
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="newDef"></param>
+        /// <returns>true if it got replaced</returns>
         public static bool IsBlockReplaced(MyDefinitionId id, out MyCubeBlockDefinition newDef)
         {
-            if(MyDefinitionManager.Static.TryGetCubeBlockDefinition(id, out newDef))
+            if(id.TypeId == typeof(MyObjectBuilder_Ladder))
             {
-                return false;
+                newDef = MyDefinitionManager.Static.GetCubeBlockDefinition(new MyDefinitionId(typeof(MyObjectBuilder_Passage), id.SubtypeId));
+                return true;
             }
-            else
+
+            if(MyDefinitionManager.Static.TryGetCubeBlockDefinition(id, out newDef))
+                return false;
+
+            // from MyCubeGrid.FindDefinitionUpgrade()
+            foreach(var d in BuildInfoMod.Instance.Caches.BlockDefs)
             {
-                // from MyCubeGrid.FindDefinitionUpgrade()
-                foreach(MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
+                if(d.Id.SubtypeId == id.SubtypeId && !string.IsNullOrEmpty(id.SubtypeName))
                 {
-                    MyCubeBlockDefinition blockDef = def as MyCubeBlockDefinition;
-                    if(blockDef == null)
-                        continue;
-
-                    if(blockDef.Id.SubtypeId == id.SubtypeId && !string.IsNullOrEmpty(id.SubtypeName))
-                    {
-                        newDef = blockDef;
-                        return true;
-                    }
+                    newDef = d;
+                    return true;
                 }
+            }
 
-                string[] array = new string[7]
-                {
-                    "Red",
-                    "Yellow",
-                    "Blue",
-                    "Green",
-                    "Black",
-                    "White",
-                    "Gray"
-                };
+            string[] array = new string[7]
+            {
+                "Red",
+                "Yellow",
+                "Blue",
+                "Green",
+                "Black",
+                "White",
+                "Gray"
+            };
 
-                for(int i = 0; i < array.Length; i++)
+            for(int i = 0; i < array.Length; i++)
+            {
+                if(id.SubtypeName.EndsWith(array[i], StringComparison.InvariantCultureIgnoreCase))
                 {
-                    if(id.SubtypeName.EndsWith(array[i], StringComparison.InvariantCultureIgnoreCase))
+                    string subtypeName = id.SubtypeName.Substring(0, id.SubtypeName.Length - array[i].Length);
+                    if(MyDefinitionManager.Static.TryGetCubeBlockDefinition(new MyDefinitionId(id.TypeId, subtypeName), out newDef))
                     {
-                        string subtypeName = id.SubtypeName.Substring(0, id.SubtypeName.Length - array[i].Length);
-                        MyDefinitionId defId = new MyDefinitionId(id.TypeId, subtypeName);
-
-                        if(MyDefinitionManager.Static.TryGetCubeBlockDefinition(defId, out newDef))
-                        {
-                            return true;
-                        }
+                        return true;
                     }
                 }
             }

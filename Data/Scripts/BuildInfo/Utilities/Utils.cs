@@ -113,7 +113,7 @@ namespace Digi.BuildInfo.Utilities
 
         public static string GetModFullPath(string relativePath)
         {
-            if(relativePath.StartsWith("\\") || relativePath.StartsWith("/"))
+            if(relativePath.Length > 0 && (relativePath[0] == '\\' | relativePath[0] == '/'))
                 relativePath = relativePath.Substring(1); // remove leading slashes
 
             if(!MyAPIGateway.Utilities.FileExistsInModLocation(relativePath, BuildInfoMod.Instance.Session.ModContext.ModItem))
@@ -122,6 +122,64 @@ namespace Digi.BuildInfo.Utilities
             }
 
             return Path.Combine(BuildInfoMod.Instance.Session.ModContext.ModPath, relativePath);
+        }
+
+        /// <summary>
+        /// Checks if file exists with given context.
+        /// </summary>
+        /// <param name="file">full or relative, just drop it in from a definition or whatever</param>
+        /// <param name="context">mod context, used if it's a full path</param>
+        /// <param name="reason">reason for failure, only if method returns false or null</param>
+        /// <returns>true/false self-explanatory, null if it couldn't check!</returns>
+        public static bool? FileExists(string file, IMyModContext context, out string reason)
+        {
+            try
+            {
+                if(string.IsNullOrEmpty(file))
+                {
+                    reason = "blank path";
+                    return false;
+                }
+
+                if(file.Contains("..\\") || file.Contains("../"))
+                {
+                    reason = "path contains backwards travel";
+                    return null;
+                }
+
+                if(Path.IsPathRooted(file))
+                {
+                    if(context == null)
+                    {
+                        reason = "file is full path but no mod context given";
+                        return null;
+                    }
+
+                    string relativeFile = file.Substring(context.ModPath.Length + 1);
+                    if(!MyAPIGateway.Utilities.FileExistsInModLocation(relativeFile, context.ModItem))
+                    {
+                        reason = $"not found in mod: {context.GetNameAndId()}";
+                        return false;
+                    }
+                }
+                else
+                {
+                    if(!MyAPIGateway.Utilities.FileExistsInGameContent(file))
+                    {
+                        reason = "not found in game folder";
+                        return false;
+                    }
+                }
+
+                reason = "found";
+                return true;
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+                reason = "ERROR, SE log has details";
+                return null;
+            }
         }
 
         public static string GetModLink(string serviceName, ulong publishedId)
@@ -210,7 +268,9 @@ namespace Digi.BuildInfo.Utilities
         {
             ulong steamId = MyAPIGateway.Session?.Player?.SteamUserId ?? 0;
             MyCubeGrid grid = (MyCubeGrid)block.CubeGrid;
-            BoundingBoxD box = new BoundingBoxD(block.Min * grid.GridSize - grid.GridSizeHalfVector, block.Max * grid.GridSize + grid.GridSizeHalfVector).TransformFast(grid.PositionComp.WorldMatrixRef);
+            BoundingBoxD box = new BoundingBoxD(block.Min * grid.GridSize - grid.GridSizeHalfVector,
+                                                block.Max * grid.GridSize + grid.GridSizeHalfVector);
+            box = box.TransformFast(grid.PositionComp.WorldMatrixRef);
             return MySessionComponentSafeZones.IsActionAllowed(box, CastHax(MySessionComponentSafeZones.AllowedActions, actionId), sourceEntityId, steamId);
         }
 

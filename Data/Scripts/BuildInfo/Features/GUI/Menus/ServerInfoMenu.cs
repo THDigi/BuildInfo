@@ -934,7 +934,9 @@ namespace Digi.BuildInfo.Features.GUI
 
                 //PrintSetting(sb, nameof(settings.ResetOwnership), settings.ResetOwnership, defaults.ResetOwnership, false,
                 //    "Reset Ownership", "");
+                // these turn themselves off after load
                 KnownFields.Add("ResetOwnership");
+                KnownFields.Add("RandomizeSeed");
 
                 //PrintSetting(sb, nameof(settings.EnableSaving), settings.EnableSaving, defaults.EnableSaving, false,
                 //    "Allow saving from menu", "Enables saving from the menu.");

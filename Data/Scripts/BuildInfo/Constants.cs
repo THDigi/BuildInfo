@@ -23,6 +23,11 @@ namespace Digi.BuildInfo
 
         public const int TicksPerSecond = (int)MyEngineConstants.UPDATE_STEPS_PER_SECOND;
 
+        /// <summary>
+        /// Multiply your proper time by this to get the real time that's going to happen because of the game using a 960ms/sec timing method
+        /// </summary>
+        public const double BadGameTimeAdjust = 1000d / 960d;
+
         public static readonly MyStringId Mat_Square = MyStringId.GetOrCompute("BuildInfo_Square");
 
         public static readonly MyStringId Mat_LineShadow = MyStringId.GetOrCompute("BuildInfo_ShadowedLine");

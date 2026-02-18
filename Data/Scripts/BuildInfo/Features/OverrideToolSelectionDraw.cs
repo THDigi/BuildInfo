@@ -230,7 +230,10 @@ namespace Digi.BuildInfo.Features
 
             Matrix localMatrix;
             block.Orientation.GetMatrix(out localMatrix);
-            localMatrix.Translation = (block.Max + block.Min) * grid.GridSizeHalf; // local block float-center
+            Vector3D center;
+            block.ComputeScaledCenter(out center);
+            localMatrix.Translation = center;
+
             fillData.BlockMatrix = localMatrix * grid.WorldMatrix;
 
             if(fatBlock != null && def.BlockTopology == MyBlockTopology.TriangleMesh && !(def is MyParachuteDefinition))

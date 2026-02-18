@@ -91,10 +91,13 @@ namespace Digi.BuildInfo.Utilities
                 DrawOBB(obb, color, draw, BlendTypeEnum.AdditiveTop, extraSeeThrough: false);
         }
 
-        public static void DrawSphere(BoundingSphereD sphere, Color color, MySimpleObjectRasterizer draw = MySimpleObjectRasterizer.SolidAndWireframe, BlendTypeEnum blend = BlendTypeEnum.PostPP)
+        public static void DrawSphere(BoundingSphereD sphere, Color color, MySimpleObjectRasterizer draw = MySimpleObjectRasterizer.SolidAndWireframe, BlendTypeEnum blend = BlendTypeEnum.PostPP, bool extraSeeThrough = true)
         {
             MatrixD wm = MatrixD.CreateTranslation(sphere.Center);
             MySimpleObjectDraw.DrawTransparentSphere(ref wm, (float)sphere.Radius, ref color, draw, 24, MaterialSquare, MaterialSquare, 0.01f, blendType: blend);
+
+            if(extraSeeThrough)
+                DrawSphere(sphere, color, draw, BlendTypeEnum.AdditiveTop, extraSeeThrough: false);
         }
 
         public static void DrawFrustum(BoundingFrustumD frustum, float scale = 1f, MySimpleObjectRasterizer draw = MySimpleObjectRasterizer.SolidAndWireframe, BlendTypeEnum blend = BlendTypeEnum.PostPP, bool extraSeeThrough = true)

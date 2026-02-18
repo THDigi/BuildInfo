@@ -270,6 +270,14 @@ namespace Digi.BuildInfo.Features.GUI.Elements
             }
         }
 
+        public void SetOptions(HudAPIv2.Options options)
+        {
+            foreach(Element element in Elements)
+            {
+                element.Billboard.Options = options;
+            }
+        }
+
         /// <summary>
         /// Manual draw for one frame regardless of visible state
         /// </summary>

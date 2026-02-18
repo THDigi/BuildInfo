@@ -487,6 +487,8 @@ namespace Digi.BuildInfo.Features
             comp.StockpileCount = stockpile - comp.MountedCount;
         }
 
+        //float PrevBarRatio;
+
         public override void UpdateDraw()
         {
             MyHudBlockInfo hud = MyHud.BlockInfo;
@@ -560,9 +562,52 @@ namespace Digi.BuildInfo.Features
 
                 int criticalCompIndex = blockDef.CriticalGroup;
 
-                if(debugMode)
-                    if(!MyAPIGateway.Input.IsKeyPress(MyKeys.Q))
-                        criticalCompIndex = (int)Dev.GetValueScroll("set criticalCompIndex", 0, MyKeys.Control);
+                if(debugMode && !MyAPIGateway.Input.IsKeyPress(MyKeys.Q))
+                    criticalCompIndex = (int)Dev.GetValueScroll("set criticalCompIndex", 0, MyKeys.Control);
+
+                // testing bar% and red/blue lines aligning with components list...
+                // problems: jumps all over, can't change % individually, inventory full would be problematic, damage is problematic
+                // video: https://discord.com/channels/125011928711036928/126460115204308993/1472861153582514311
+#if false
+                float newBarRatio = 1f;
+                float realIntegrity = hud.m_blockIntegrityChecked;
+                for(int i = 0; i < hudComps.Count; i++)
+                {
+                    MyHudBlockInfo.ComponentInfo comp = hudComps[i];
+                    if(comp.InstalledCount == comp.TotalCount)
+                        continue;
+
+                    float subBar = comp.InstalledCount / (float)comp.TotalCount;
+                    newBarRatio = (i + subBar) / (float)hudComps.Count;
+                    break;
+                }
+
+                float smooth = (float)Dev.GetValueScroll("smooth", 0.1, MyKeys.NumPad1);
+
+                hud.m_blockIntegrity = MathHelper.SmoothStep(PrevBarRatio, newBarRatio, smooth);
+                PrevBarRatio = hud.m_blockIntegrity;
+
+                //if(Dev.GetValueScroll("no block integrity", 0, MyKeys.D3) > 0)
+                //    hud.m_blockIntegrity = 0;
+
+                if(criticalCompIndex >= (scrollIdx - 1) && criticalCompIndex <= maxScrollIdx)// within scroll limits
+                {
+                    int redLineVisualIdx = criticalCompIndex + scrollIdxOffset;
+                    if(redLineVisualIdx >= 0 && redLineVisualIdx < totalComps) // within total limits
+                    {
+                        hud.CriticalIntegrity = (redLineVisualIdx + 1) / (float)totalComps;
+                    }
+                }
+
+                if(OwnershipComponentIndex.HasValue && OwnershipComponentIndex.Value >= (scrollIdx - 1) && OwnershipComponentIndex.Value <= maxScrollIdx) // within scroll limits
+                {
+                    int blueLineVisualIdx = OwnershipComponentIndex.Value + scrollIdxOffset;
+                    if(blueLineVisualIdx >= 0 && blueLineVisualIdx < totalComps) // within total limits
+                    {
+                        hud.OwnershipIntegrity = (blueLineVisualIdx + 1) / (float)totalComps;
+                    }
+                }
+#endif
 
                 #region red functionality line
                 if(criticalCompIndex >= (scrollIdx - 1) && criticalCompIndex <= maxScrollIdx)// within scroll limits

@@ -52,6 +52,8 @@ namespace Digi.BuildInfo.Features
         public const char CharMiddleDot = '·';
         public const char CharBullet = '•';
         public const char CharDegree = '°';
+        public const char CharMidLine = '–';
+        public const char CharLongLine = '—';
 
         static readonly bool DoExportSpecialChars = false;
 

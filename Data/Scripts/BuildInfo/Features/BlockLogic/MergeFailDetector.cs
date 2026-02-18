@@ -268,8 +268,10 @@ namespace Digi.BuildInfo.Features.BlockLogic
             BoundingBoxD boundaries = new BoundingBoxD(-halfSize, halfSize);
 
             Matrix localMatrix;
+            Vector3D center;
             block.Orientation.GetMatrix(out localMatrix);
-            localMatrix.Translation = (block.Max + block.Min) * grid.GridSizeHalf; // local block float-center
+            block.ComputeScaledCenter(out center);
+            localMatrix.Translation = center;
             MatrixD blockMatrix = localMatrix * grid.WorldMatrix;
 
             MySimpleObjectDraw.DrawTransparentBox(ref blockMatrix, ref boundaries, ref color,

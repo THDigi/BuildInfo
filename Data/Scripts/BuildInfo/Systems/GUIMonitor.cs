@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Features;
+using Digi.ComponentLib;
 using Sandbox.ModAPI;
 using VRage.Collections;
 using VRage.Game.ModAPI;
@@ -11,6 +12,8 @@ namespace Digi.BuildInfo.Systems
 {
     public class GUIMonitor : ModComponent
     {
+        const bool LogEvents = false;
+
         public bool InAnyToolbarGUI { get; private set; }
 
         /// <summary>
@@ -46,9 +49,16 @@ namespace Digi.BuildInfo.Systems
         readonly List<string> _screens = new List<string>();
 
         public delegate void ScreenDel(string screenName);
-
         public event ScreenDel ScreenAdded;
         public event ScreenDel ScreenRemoved;
+
+        public delegate void ActiveScreenChangedDel(string prevScreenName, string screenName);
+
+        /// <summary>
+        /// Works when <see cref="ScreenAdded"/>&<see cref="ScreenRemoved"/> events don't.
+        /// Names are from screen type's GetFriendlyName() (or hardcoded to MyGuiScreenTerminal)
+        /// </summary>
+        public event ActiveScreenChangedDel ActiveScreenChanged;
 
         public event Action FirstScreenOpen;
         public event Action LastScreenClose;
@@ -56,17 +66,11 @@ namespace Digi.BuildInfo.Systems
         public event Action OptionsMenuClosed;
         public event Action ResolutionChanged;
 
-        readonly bool LogEvents = false;
-
         public GUIMonitor(BuildInfoMod main) : base(main)
         {
             Screens = new ListReader<string>(_screens);
 
-            //if(BuildInfoMod.IsDevMod)
-            //{
-            //    LogEvents = true;
-            //    UpdateMethods = ComponentLib.UpdateFlags.UPDATE_AFTER_SIM;
-            //}
+            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
         public override void RegisterComponent()
@@ -182,8 +186,12 @@ namespace Digi.BuildInfo.Systems
             string activeScreen = MyAPIGateway.Gui.ActiveGamePlayScreen;
             if(activeScreen != LastScreen)
             {
+                var prev = LastScreen;
                 LastScreen = activeScreen;
-                DebugLog.PrintHUD(this, $"ActiveScreen changed: {activeScreen ?? "(null)"}", log: true);
+                ActiveScreenChanged?.Invoke(prev, activeScreen);
+
+                if(LogEvents)
+                    DebugLog.PrintHUD(this, $"ActiveScreen changed: {activeScreen ?? "(null)"}", log: true);
             }
         }
 

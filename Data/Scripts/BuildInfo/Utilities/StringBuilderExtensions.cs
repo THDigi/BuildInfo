@@ -201,6 +201,27 @@ namespace Digi.BuildInfo.Utilities
             return sb.Append(color.R).Append(", ").Append(color.G).Append(", ").Append(color.B).Append(", ").Append(color.A);
         }
 
+        /// <summary>
+        /// </summary>
+        /// <param name="sb"></param>
+        /// <param name="controlId"><see cref="MyControlsSpace"/> for control IDs</param>
+        /// <returns>the <paramref name="sb"/> reference, for chaining</returns>
+        public static StringBuilder AppendInput(this StringBuilder sb, MyStringId controlId, bool colored = true)
+        {
+            var prevColor = CurrentColor;
+            if(colored)
+                sb.Color(new Color(255, 245, 55, prevColor.A));
+
+            // strip the leading [ and trailing ]
+            string text = MyTexts.GetString("{CONTROL:" + controlId.String + "}");
+            sb.Append(text, 1, text.Length - 2);
+
+            if(colored)
+                sb.Color(prevColor);
+
+            return sb;
+        }
+
         public static StringBuilder AppendMaxLength(this StringBuilder s, string text, int maxLength, bool addDots = true, bool noNewLines = true, bool fillWhitespace = false)
         {
             if(text == null)

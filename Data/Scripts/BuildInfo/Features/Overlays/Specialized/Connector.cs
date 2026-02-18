@@ -47,7 +47,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             float baseRadius = (float)Math.Tan(Hardcoded.Connector_ConnectAngleOffAxis * Hardcoded.Connector_ConnectMaxDistance);
             float coneHeight = Hardcoded.Connector_ConnectMaxDistance;
 
-            Utils.DrawTransparentCone(ref coneMatrix, baseRadius, coneHeight, ref ColorShape, MySimpleObjectRasterizer.Solid, RoundedQualityMed, MaterialSquare, blendType: BlendType);
+            Utils.DrawTransparentCone(ref coneMatrix, baseRadius, coneHeight, ref ColorShape, MySimpleObjectRasterizer.Solid, 360 / RoundedQualityMed, MaterialSquare, blendType: BlendType);
             MyTransparentGeometry.AddPointBillboard(MaterialDot, Color, coneMatrix.Translation, 0.05f, 0, blendType: BlendType);
 
             if(drawInstance.LabelRender.CanDrawLabel())

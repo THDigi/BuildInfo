@@ -4,6 +4,7 @@ using System.Text;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.ModAPI;
+using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
 
@@ -466,7 +467,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     }
                     catch(Exception e)
                     {
-                        Log.Error($"Error in status override :: block={item.Block.BlockDefinition.ToString()}; action={item.ActionId}; index={item.Index.ToString()}; group={item.GroupId}\n{e.ToString()}");
+                        var shortId = (item.Block == null ? "NULL" : item.Block.BlockDefinition.ToString().Substring("MyObjectBuilder_".Length));
+                        Log.Error($"Error in status override\nblock={shortId}; action={item.ActionId}; index={item.Index}; group={item.GroupId}\n{e}");
                         sb.Clear().Append(IconBad).Append("Mod\nError\nSee Log");
                         overrideStatus = true;
                     }

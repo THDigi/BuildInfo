@@ -26,6 +26,7 @@ using Whiplash.WeaponFramework;
 
 // TODO: compute jumpdrive obstacles and show them? ... code looks nasty xD
 // TODO: find all hidden vanilla controls and show them grayed out instead?
+// TODO: localization support for this mod's texts
 
 namespace Digi.BuildInfo
 {
