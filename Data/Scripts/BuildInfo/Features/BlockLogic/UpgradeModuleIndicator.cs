@@ -27,6 +27,15 @@ namespace Digi.BuildInfo.Features.BlockLogic
         public override void Added()
         {
             Module = (IMyUpgradeModule)Block;
+
+            var def = Module.SlimBlock.BlockDefinition as MyUpgradeModuleDefinition;
+            if(def == null || def.Upgrades == null || def.Upgrades.Length == 0)
+            {
+                Module = null;
+                //Log.Info($"{Module.BlockDefinition} has no upgrades defined, skipping.");
+                return;
+            }
+
             Module.CubeGridChanged += ModuleMoved;
             ModuleMoved(oldGrid: null);
         }
