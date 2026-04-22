@@ -5,8 +5,10 @@ using Digi.BuildInfo.Features.ModderHelp;
 using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
+using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
+using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
@@ -297,7 +299,9 @@ namespace Digi.BuildInfo.Features.LiveData
         {
             MyCubeBlock internalBlock = (MyCubeBlock)block;
 
-            if(BuildInfoMod.Instance.LiveDataHandler.ConveyorSupportTypes.GetValueOrDefault(block.BlockDefinition.TypeId, false))
+            // HACK: GetConveyorEndpointBlock() doesn't work for MyObjectBuilder_ConveyorConnector (doesn't look for IMyConveyorSegmentBlock)
+            if(block.BlockDefinition.TypeId == typeof(MyObjectBuilder_ConveyorConnector)
+            || MyResourceDistributorComponent.GetConveyorEndpointBlock(block) != null)
                 Has |= BlockHas.ConveyorSupport;
 
             if(block is IMyTerminalBlock)

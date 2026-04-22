@@ -161,7 +161,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         MyCubeBlockDefinition blockDef = block.BlockDefinition;
                         MyObjectBuilderType typeId = blockDef.Id.TypeId;
 
-                        if(typeId == cubeBlockType || !LiveData.ConveyorSupportTypes[typeId]) // expected to be present, if somehow not, do error
+                        if(typeId == cubeBlockType) // MyCubeGridSystems.RegisterInSystems() excludes it
                             continue;
 
                         BData_Base data = LiveData.Get<BData_Base>(blockDef);
@@ -266,7 +266,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                     MyCubeBlockDefinition blockDef = block.BlockDefinition;
                     MyObjectBuilderType typeId = blockDef.Id.TypeId;
 
-                    if(typeId == cubeBlockType || !LiveData.ConveyorSupportTypes[typeId]) // expected to be present, if somehow not, do error
+                    if(typeId == cubeBlockType) // MyCubeGridSystems.RegisterInSystems() excludes it
                         continue;
 
                     BData_Base data = LiveData.Get<BData_Base>(blockDef);

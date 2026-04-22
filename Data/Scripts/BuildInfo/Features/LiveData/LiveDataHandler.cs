@@ -4,8 +4,6 @@ using Digi.BuildInfo.VanillaData;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
-using Sandbox.Game.EntityComponents;
-using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
@@ -21,11 +19,6 @@ namespace Digi.BuildInfo.Features.LiveData
         /// Use <see cref="Get{T}(MyCubeBlockDefinition, Cache)"/> to get or spawn (which will be returning null and have the data for next time).
         /// </summary>
         public readonly Dictionary<MyDefinitionId, BData_Base> BlockData = new Dictionary<MyDefinitionId, BData_Base>(MyDefinitionId.Comparer);
-
-        /// <summary>
-        /// Computed as block types spawn, regardless of build stage or <see cref="Get{T}(MyCubeBlockDefinition, Cache)"/> being called.
-        /// </summary>
-        public readonly Dictionary<MyObjectBuilderType, bool> ConveyorSupportTypes = new Dictionary<MyObjectBuilderType, bool>(MyObjectBuilderType.Comparer);
 
         public event Action<MyDefinitionId, BData_Base> DataGenerated;
 
@@ -102,9 +95,6 @@ namespace Digi.BuildInfo.Features.LiveData
 
             // every other block type is going to use BData_Base
             Main.BlockMonitor.BlockAdded += BlockMonitor_BlockAdded;
-
-            // HACK: because GetConveyorEndpointBlock() doesn't include this (IMyConveyorSegmentBlock)
-            ConveyorSupportTypes.Add(typeof(MyObjectBuilder_ConveyorConnector), true);
         }
 
         public override void RegisterComponent()
@@ -164,9 +154,6 @@ namespace Digi.BuildInfo.Features.LiveData
             IMyCubeBlock block = slimBlock?.FatBlock;
             if(block == null)
                 return; // ignore deformable armor
-
-            // separate process as it needs different kind of caching, and must happen before.
-            CheckConveyorSupport(block);
 
             MyDefinitionId defId = slimBlock.BlockDefinition.Id;
             if(BlockData.ContainsKey(defId))
@@ -252,56 +239,5 @@ namespace Digi.BuildInfo.Features.LiveData
         //    MyDefinitionId defId = slimBlock.BlockDefinition.Id;
         //
         //}
-
-        Type ConveyorEndpointInterface = null;
-        Type ConveyorSegmentInterface = null;
-
-        void CheckConveyorSupport(IMyCubeBlock block)
-        {
-            if(ConveyorSupportTypes.ContainsKey(block.BlockDefinition.TypeId))
-                return;
-
-            bool supportsConveyors = false;
-
-#if VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 || VERSION_206 // HACK: backwards compatible
-            Type[] interfaces = MyAPIGateway.Reflection.GetInterfaces(block.GetType());
-
-            if(ConveyorEndpointInterface == null || ConveyorSegmentInterface == null)
-            {
-                for(int i = (interfaces.Length - 1); i >= 0; i--)
-                {
-                    Type iface = interfaces[i];
-                    if(iface.Name == "IMyConveyorEndpointBlock")
-                    {
-                        ConveyorEndpointInterface = iface;
-                        supportsConveyors = true;
-                        break;
-                    }
-                    else if(iface.Name == "IMyConveyorSegmentBlock")
-                    {
-                        ConveyorSegmentInterface = iface;
-                        supportsConveyors = true;
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                for(int i = (interfaces.Length - 1); i >= 0; i--)
-                {
-                    Type iface = interfaces[i];
-                    if(iface == ConveyorEndpointInterface || iface == ConveyorSegmentInterface)
-                    {
-                        supportsConveyors = true;
-                        break;
-                    }
-                }
-            }
-#else
-            supportsConveyors = MyResourceDistributorComponent.GetConveyorEndpointBlock(block) != null;
-#endif
-
-            ConveyorSupportTypes.Add(block.BlockDefinition.TypeId, supportsConveyors);
-        }
     }
 }
