@@ -22,6 +22,7 @@ using CollisionLayers = Sandbox.Engine.Physics.MyPhysics.CollisionLayers;
 
 namespace Digi.BuildInfo.Utilities
 {
+    // TODO: no longer needed as of SE v208, but keeping for a few majors for backwards compatibility...
     // values from MySafeZoneAction, cloned as object for CastHax.
     public static class SafeZoneAction
     {
@@ -936,20 +937,20 @@ namespace Digi.BuildInfo.Utilities
 
         /// <summary>
         /// Get entity component of specified <typeparamref name="TDef"/> type (inhereting <see cref="MyComponentDefinitionBase"/>) from given definitionId.
-        /// <para>NOTE: <paramref name="componentObType"/> must be MyObjectBuilder_TheTypeHere, without Definition suffix!</para>
+        /// <para>NOTE: If given, <paramref name="componentObType"/> must be MyObjectBuilder_TheTypeHere, without Definition suffix!</para>
         /// </summary>
-        public static TDef GetEntityComponentFromDef<TDef>(MyDefinitionId defId, MyObjectBuilderType componentObType) where TDef : MyComponentDefinitionBase
+        public static TDef GetEntityComponentFromDef<TDef>(MyDefinitionId defId, MyObjectBuilderType? componentObType = null) where TDef : MyComponentDefinitionBase
         {
             MyContainerDefinition containerDef;
-            if(MyComponentContainerExtension.TryGetContainerDefinition(defId.TypeId, defId.SubtypeId, out containerDef) && containerDef.DefaultComponents != null)
+            if(MyDefinitionManager.Static.TryGetContainerDefinition(defId.TypeId, defId.SubtypeId, out containerDef) && containerDef.DefaultComponents != null)
             {
                 foreach(MyContainerDefinition.DefaultComponent compPointer in containerDef.DefaultComponents)
                 {
-                    if(compPointer.BuilderType != componentObType)
+                    if(componentObType.HasValue && compPointer.BuilderType != componentObType.Value)
                         continue;
 
                     MyComponentDefinitionBase compDefBase;
-                    if(MyComponentContainerExtension.TryGetComponentDefinition(compPointer.BuilderType, compPointer.SubtypeId.GetValueOrDefault(defId.SubtypeId), out compDefBase))
+                    if(MyDefinitionManager.Static.TryGetComponentDefinition(compPointer.BuilderType, compPointer.SubtypeId.GetValueOrDefault(defId.SubtypeId), out compDefBase))
                     {
                         TDef comp = compDefBase as TDef;
                         if(comp != null)
@@ -964,7 +965,7 @@ namespace Digi.BuildInfo.Utilities
         public static bool IsEntityComponentPresent(MyDefinitionId defId, MyObjectBuilderType componentObType)
         {
             MyContainerDefinition containerDef;
-            if(MyComponentContainerExtension.TryGetContainerDefinition(defId.TypeId, defId.SubtypeId, out containerDef) && containerDef.DefaultComponents != null)
+            if(MyDefinitionManager.Static.TryGetContainerDefinition(defId.TypeId, defId.SubtypeId, out containerDef) && containerDef.DefaultComponents != null)
             {
                 foreach(MyContainerDefinition.DefaultComponent compPointer in containerDef.DefaultComponents)
                 {

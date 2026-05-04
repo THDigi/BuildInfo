@@ -82,6 +82,8 @@ namespace Digi
             handler = null;
         }
 
+        static FastResourceLock HandlerLock = new FastResourceLock();
+
         static void EnsureHandlerCreated(string intendedMessage = null)
         {
             if(unloaded)
@@ -90,8 +92,14 @@ namespace Digi
 
             if(handler == null)
             {
-                handler = new Handler();
-                dateStarted = DateTime.Now.Ticks;
+                using(HandlerLock.AcquireExclusiveUsing())
+                {
+                    if(handler == null)
+                    {
+                        handler = new Handler();
+                        dateStarted = DateTime.Now.Ticks;
+                    }
+                }
             }
         }
         #endregion Handling of handler
@@ -222,7 +230,7 @@ namespace Digi
         /// <param name="task">The task to check for errors.</param>
         /// <param name="taskName">Used in the reports.</param>
         /// <returns>true if errors found, false otherwise.</returns>
-        public static bool TaskHasErrors(Task task, string taskName)
+        public static bool ReportTaskErrors(Task task, string taskName)
         {
             EnsureHandlerCreated();
 

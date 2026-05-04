@@ -29,7 +29,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
             Hardcoded.TextSurfaceInfo info = Hardcoded.TextSurface_GetInfo(width, height, res);
 
-            PrintChat($"LCD surface size: {info.SurfaceSize.X.ToString("0.######")} x {info.SurfaceSize.Y.ToString("0.######")}", FontsHandler.GreenSh);
+            PrintChat($"LCD surface size: {info.SurfaceSize.X.ToString("0.######")} x {info.SurfaceSize.Y.ToString("0.######")} | Allocated texture size: {info.TextureSize.X}x{info.TextureSize.Y})", FontsHandler.GreenSh);
 
             if(width <= 0 || height <= 0 || res <= 0)
                 PrintChat($"Using negative or 0 values can cause problems.", FontsHandler.YellowSh);

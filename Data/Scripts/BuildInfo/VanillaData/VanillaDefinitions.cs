@@ -177,7 +177,7 @@ namespace Digi.BuildInfo.VanillaData
 
         void FinishedTask()
         {
-            bool hadErrors = Log.TaskHasErrors(Task, nameof(VanillaDefinitions));
+            bool hadErrors = Log.ReportTaskErrors(Task, nameof(VanillaDefinitions));
 
             if(BuildInfoMod.IsDevMod)
             {

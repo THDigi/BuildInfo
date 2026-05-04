@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
@@ -922,22 +923,11 @@ namespace Digi.BuildInfo.VanillaData
                 // where MyMultiTextPanelComponent.Init() is called in MyFunctionalBlock.InitLcdComponent() and MyCockpit.Init()
                 info.RenderDistanceRaw = 120f;
 
-                MyContainerDefinition containerDef;
-                if(MyComponentContainerExtension.TryGetContainerDefinition(def.Id.TypeId, def.Id.SubtypeId, out containerDef) && containerDef.DefaultComponents != null)
+                var multiLcdCompDef = Utils.GetEntityComponentFromDef<MyMultiTextPanelComponentDefinition>(def.Id);
+                if(multiLcdCompDef != null)
                 {
-                    foreach(MyContainerDefinition.DefaultComponent compPointer in containerDef.DefaultComponents)
-                    {
-                        MyComponentDefinitionBase compDefBase;
-                        if(!MyComponentContainerExtension.TryGetComponentDefinition(compPointer.BuilderType, compPointer.SubtypeId ?? def.Id.SubtypeId, out compDefBase))
-                            continue;
-
-                        var multiLcdCompDef = compDefBase as MyMultiTextPanelComponentDefinition;
-                        if(multiLcdCompDef != null)
-                        {
-                            info.RenderDistanceRaw = multiLcdCompDef.MaxRenderDistance;
-                            break;
-                        }
-                    }
+                    // TODO check if changing this component actually works?
+                    info.RenderDistanceRaw = multiLcdCompDef.MaxRenderDistance;
                 }
             }
 

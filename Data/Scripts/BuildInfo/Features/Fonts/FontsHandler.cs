@@ -160,7 +160,7 @@ namespace Digi.BuildInfo.Features
             if(Unloaded)
                 return;
 
-            if(Log.TaskHasErrors(Task, $"{nameof(FontsHandler)} Parse XML"))
+            if(Log.ReportTaskErrors(Task, $"{nameof(FontsHandler)} Parse XML"))
                 return;
         }
 

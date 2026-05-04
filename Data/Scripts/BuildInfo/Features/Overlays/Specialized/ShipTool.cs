@@ -30,13 +30,9 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             MatrixD blockWorldMatrix = drawMatrix;
             blockWorldMatrix.Translation = Vector3D.Transform(def.ModelOffset, blockWorldMatrix);
 
-            MyShipToolDefinition toolDef = (MyShipToolDefinition)def;
-            Vector3 sensorCenter = data.DummyMatrix.Translation + data.DummyMatrix.Forward * toolDef.SensorOffset;
-
             MatrixD sensorMatrix = blockWorldMatrix;
-            sensorMatrix.Translation = Vector3D.Transform(sensorCenter, sensorMatrix);
-
-            float radius = toolDef.SensorRadius;
+            sensorMatrix.Translation = Vector3D.Transform(data.SensorLocal.Center, sensorMatrix);
+            float radius = data.SensorLocal.Radius;
 
             Utils.DrawSphere(ref sensorMatrix, radius, LineEveryDeg,
                wireColor: ColorLines, wireMaterial: MaterialLaser, wireThickness: LineThickness, wireBlend: BlendType);

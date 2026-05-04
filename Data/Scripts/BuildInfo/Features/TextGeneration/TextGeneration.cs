@@ -2293,31 +2293,35 @@ namespace Digi.BuildInfo.Features
                 //}
                 #endregion
 
-                MyContainerDefinition containerDef;
-                if(MyComponentContainerExtension.TryGetContainerDefinition(def.Id.TypeId, def.Id.SubtypeId, out containerDef) && containerDef.DefaultComponents != null)
+                if(BuildInfoMod.IsDevMod && MyAPIGateway.Input.IsAnyShiftKeyPressed())
                 {
-                    //foreach(MyContainerDefinition.DefaultComponent compInfo in containerDef.DefaultComponents)
-                    //{
-                    //    if(compInfo.BuilderType == typeof(MyObjectBuilder_RadiationSourceEntityComponent))
-                    //    {
-                    //        AddLine().Color(COLOR_WARNING).Label("Radioactive").Append(compInfo.SubtypeId);
-                    //        SimpleTooltip("This block contains a RadiationSourceEntityComponent but the API for it is not whitelisted." +
-                    //                      "\nTherefore this mod can only warn that it exists and which ID it uses, but no actual numbers.");
-                    //    }
-                    //}
-
-                    if(BuildInfoMod.IsDevMod && MyAPIGateway.Input.IsAnyShiftKeyPressed())
+                    MyContainerDefinition containerDef;
+                    if(MyDefinitionManager.Static.TryGetContainerDefinition(def.Id.TypeId, def.Id.SubtypeId, out containerDef) && containerDef.DefaultComponents != null)
                     {
+                        //foreach(MyContainerDefinition.DefaultComponent compInfo in containerDef.DefaultComponents)
+                        //{
+                        //    if(compInfo.BuilderType == typeof(MyObjectBuilder_RadiationSourceEntityComponent))
+                        //    {
+                        //        AddLine().Color(COLOR_WARNING).Label("Radioactive").Append(compInfo.SubtypeId);
+                        //        SimpleTooltip("This block contains a RadiationSourceEntityComponent but the API for it is not whitelisted." +
+                        //                      "\nTherefore this mod can only warn that it exists and which ID it uses, but no actual numbers.");
+                        //    }
+                        //}
+
                         foreach(MyContainerDefinition.DefaultComponent compInfo in containerDef.DefaultComponents)
                         {
                             AddLine().Append($"{compInfo.BuilderType} / {compInfo.InstanceType} / {compInfo.SubtypeId}; forceCreate={compInfo.ForceCreate}");
                             MyStringHash subtype = compInfo.SubtypeId.GetValueOrDefault(def.Id.SubtypeId);
                             MyComponentDefinitionBase compBase;
-                            if(MyComponentContainerExtension.TryGetComponentDefinition(compInfo.BuilderType, subtype, out compBase))
+                            if(MyDefinitionManager.Static.TryGetComponentDefinition(compInfo.BuilderType, subtype, out compBase))
                             {
                                 GetLine().Append($" - {compBase.GetType().Name}");
                             }
                         }
+                    }
+                    else
+                    {
+                        AddLine().Append("No EntityContainer found!");
                     }
                 }
             }
@@ -6166,12 +6170,12 @@ namespace Digi.BuildInfo.Features
             MyPathRecorderComponentDefinition pathRecordDef = null;
 
             MyContainerDefinition containerDef;
-            if(MyComponentContainerExtension.TryGetContainerDefinition(def.Id.TypeId, def.Id.SubtypeId, out containerDef) && containerDef.DefaultComponents != null)
+            if(MyDefinitionManager.Static.TryGetContainerDefinition(def.Id.TypeId, def.Id.SubtypeId, out containerDef) && containerDef.DefaultComponents != null)
             {
                 foreach(MyContainerDefinition.DefaultComponent compPointer in containerDef.DefaultComponents)
                 {
                     MyComponentDefinitionBase compDefBase;
-                    if(!MyComponentContainerExtension.TryGetComponentDefinition(compPointer.BuilderType, compPointer.SubtypeId.GetValueOrDefault(def.Id.SubtypeId), out compDefBase))
+                    if(!MyDefinitionManager.Static.TryGetComponentDefinition(compPointer.BuilderType, compPointer.SubtypeId.GetValueOrDefault(def.Id.SubtypeId), out compDefBase))
                         continue;
 
                     if(tlbDef == null) // && compPointer.BuilderType == typeof(MyObjectBuilder_TargetLockingBlockComponent))
