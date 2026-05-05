@@ -6,7 +6,6 @@ using Digi.ComponentLib;
 using Digi.Input;
 using Digi.Input.Devices;
 using Sandbox.Definitions;
-using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game;
@@ -94,8 +93,19 @@ namespace Digi.BuildInfo.Features
             bool showInfo = Main.EquipmentMonitor.IsCubeBuilder && (drawBox || Main.Config.CubeBuilderSelectionInfoMode.ValueEnum != CubeBuilderSelectionInfo.Off);
 
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, showInfo);
+            SetUpdateMethods(UpdateFlags.UPDATE_INPUT, Main.EquipmentMonitor.IsCubeBuilder);
 
             MyCubeBuilder.Static.ShowRemoveGizmo = !(showInfo && drawBox);
+        }
+
+        public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        {
+            // HACK: fix for crash https://steamcommunity.com/workshop/filedetails/discussion/514062285/767437998196281957/
+            if(MyAPIGateway.CubeBuilder.IsActivated && MyCubeBuilder.Static.FreezeGizmo && MyCubeBuilder.Static.HitInfo == null && Utils.CreativeToolsEnabled)
+            {
+                MyCubeBuilder.Static.FreezeGizmo = false;
+                MyAPIGateway.Utilities.ShowNotification("Un-frozen because crashes from aiming away and using plane/line build.", 5000, MyFontEnum.Red);
+            }
         }
 
         public override void UpdateDraw()
@@ -106,9 +116,14 @@ namespace Digi.BuildInfo.Features
             if(Main.GameConfig == null) throw new Exception("Main.GameConfig is null!");
             if(Main.Config == null) throw new Exception("Main.Config is null!");
 
-            // ignore drag-to-build/drag-to-remove
-            if(!MyAPIGateway.Gui.IsCursorVisible && !MyAPIGateway.Gui.ChatEntryVisible && (InputWrapper.IsControlPressed(ControlIds.PRIMARY_TOOL_ACTION) || InputWrapper.IsControlPressed(ControlIds.SECONDARY_TOOL_ACTION)))
+            if(MyAPIGateway.Gui.IsCursorVisible)
+                return; // ignore GUIs being open
+
+            if(MyAPIGateway.Gui.ChatEntryVisible)
                 return;
+
+            if(InputWrapper.IsControlPressed(ControlIds.PRIMARY_TOOL_ACTION) || InputWrapper.IsControlPressed(ControlIds.SECONDARY_TOOL_ACTION))
+                return; // ignore drag-to-build/drag-to-remove
 
             IMySlimBlock aimedBlock = Main.EquipmentMonitor.BuilderAimedBlock;
             if(aimedBlock == null)
