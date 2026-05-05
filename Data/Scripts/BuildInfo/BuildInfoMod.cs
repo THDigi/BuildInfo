@@ -100,6 +100,7 @@ namespace Digi.BuildInfo
         public readonly ShipToolInventoryBar ShipToolInventoryBar;
         public readonly BlockInfoScrollComponents BlockInfoScrollComponents;
         public readonly InventoryHints InventoryHints;
+        public readonly PBEditorHints PBEditorHints;
         public readonly WhatsNew WhatsNew;
         public readonly TooltipHandler TooltipHandler;
         public readonly BlueprintTooltips BlueprintTooltips;
@@ -207,6 +208,7 @@ namespace Digi.BuildInfo
             WeaponModeIndicator = new WeaponModeIndicator(this);
             WhatsNew = new WhatsNew(this);
             InventoryHints = new InventoryHints(this);
+            PBEditorHints = new PBEditorHints(this);
             TooltipHandler = new TooltipHandler(this);
             BlueprintTooltips = new BlueprintTooltips(this);
             BlockDescriptions = new BlockDescriptions(this);

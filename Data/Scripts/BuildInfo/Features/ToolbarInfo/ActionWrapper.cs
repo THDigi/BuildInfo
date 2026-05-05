@@ -419,10 +419,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     return Utils.GetModFullPath(@"Textures\ActionIcons\Rotation.dds");
 
                 case "Run": return Utils.GetModFullPath(@"Textures\ActionIcons\Script.dds");
+                case "RunWithDefaultArgument": return Utils.GetModFullPath(@"Textures\ActionIcons\Detonate.dds"); // this icon because action is not recommended
 
-                case "RunWithDefaultArgument":
-                case "Start":
-                    return Utils.GetModFullPath(@"Textures\ActionIcons\PlayButton.dds");
+                case "Start": return Utils.GetModFullPath(@"Textures\ActionIcons\PlayButton.dds");
 
                 case "Stop": return Utils.GetModFullPath(@"Textures\ActionIcons\StopButton.dds");
                 case "TriggerNow": return Utils.GetModFullPath(@"Textures\ActionIcons\TriggerNow.dds");
