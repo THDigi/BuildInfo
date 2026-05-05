@@ -21,6 +21,7 @@ using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
+using Sandbox.ModAPI;
 using VRage.Game.Components;
 using Whiplash.WeaponFramework;
 
@@ -135,11 +136,18 @@ namespace Digi.BuildInfo
 
         public static int MainThreadId { get; private set; } = 1;
 
+        public static bool IsLinux { get; private set; } = false;
+
         public BuildInfoMod(BuildInfo_GameSession session) : base(ModName, session, MyUpdateOrder.AfterSimulation)
         {
             IsDevMod = (IsLocalMod && session?.ModContext?.ModId == "BuildInfo.dev");
 
             MainThreadId = Environment.CurrentManagedThreadId;
+
+            // not very reliable but good enough for now
+            string gamePath = MyAPIGateway.Utilities.GamePaths.ContentPath;
+            IsLinux = gamePath.IndexOf("steamuser", StringComparison.OrdinalIgnoreCase) != -1
+                   || gamePath.IndexOf(".steam", StringComparison.OrdinalIgnoreCase) != -1;
 
             // Utils
             Caches = new Caches(this);

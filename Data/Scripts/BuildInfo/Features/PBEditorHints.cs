@@ -134,7 +134,7 @@ namespace Digi.BuildInfo.Features
                         Utils.OpenLink("https://support.keenswh.com/spaceengineers/pc/topic/42011-programmable-block-left-click-bug-on-any-button-on-the-edit-menu", external: true);
                 }, pivot: Align.BottomLeft, directDraw: true, debugPivot: DebugPivots),
 
-                LinuxCompile = new Button("On Linux the \"Check Code\" might not see any errors", null, Tooltip, (b) =>
+                LinuxCompile = new Button("On Linux the \"Check Code\" might never show any errors", null, Tooltip, (b) =>
                 {
                 }, pivot: Align.BottomLeft, directDraw: true, debugPivot: DebugPivots),
             };
@@ -172,7 +172,10 @@ namespace Digi.BuildInfo.Features
 
             PBAPIGuide.Update(mouseOnScreen);
             UnclickableButtons.Update(mouseOnScreen);
-            LinuxCompile.Update(mouseOnScreen);
+
+            if(BuildInfoMod.IsLinux)
+                LinuxCompile.Update(mouseOnScreen);
+
             Tooltip.Draw(mouseOnScreen, drawNow: true);
         }
     }
