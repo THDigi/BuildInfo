@@ -67,7 +67,7 @@ namespace Digi.BuildInfo.Features.GUI
             }
 
             // tooltip's Draw() needs to happen after all the buttons's Draw().
-            DrawThisTick = true;
+            DrawThisTick = TextSize.X > 0;
         }
 
         public void HoverEnd()
