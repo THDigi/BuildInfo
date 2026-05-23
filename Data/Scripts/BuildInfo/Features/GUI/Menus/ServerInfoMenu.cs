@@ -31,822 +31,186 @@ namespace Digi.BuildInfo.Features.GUI
 {
     public class ServerInfoMenu : Menu
     {
-        public static void Test()
-        {
-            try
-            {
-                if(BuildInfoMod.IsDevMod)
-                {
-                    ServerInfoMenu menu = new ServerInfoMenu(testMode: true);
-                    menu.CheckSettings();
-                    //Menu.Dispose();
-                }
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-
-        bool Visible;
-
-        HashSet<string> KnownFields = new HashSet<string>();
-        bool TestRun = false;
-        MyObjectBuilder_SessionSettings DefaultSettings;
-        string DefaultFrom;
-        MyEnvironmentDefinition DefaultEnvDef = null;
-
-        HudAPIv2.BillBoardHUDMessage WindowBG;
-        Button CloseButton;
-        //HudAPIv2.BillBoardHUDMessage ButtonDebug;
-        Vector2D PrevMousePos;
-        Column.Tooltip? HoveredTooltip = null;
-        ITooltipHandler TooltipHandler;
-        HudAPIv2.BillBoardHUDMessage TooltipSelectionBox;
-
-        Column[] Columns = new Column[5];
-        Column CurrentColumn;
-        int ColumnIndex;
-
-        ScrollableSection ScrollableBlockLimits = new ScrollableSection(5);
-        ScrollableSection ScrollableModsList = new ScrollableSection(35);
-        ScrollableSection ScrollableWarnings = new ScrollableSection(10);
-        List<ScrollableSection> ScrollableSections;
-
-        BuildInfoMod Main;
-
-        static float LineHeight;
-        static float SpaceWidth;
-
-        const double TextScale = 0.8;
-        const string LabelPrefix = "  ";
-        static readonly Color HeaderColor = new Color(155, 220, 255);
-        static readonly Color LabelColor = new Color(230, 240, 255);
-        static readonly Color LabelColorDisabled = Color.Gray;
-        static readonly Color ValueColorDefault = new Color(200, 255, 200);
-        static readonly Color ValueColorChanged = new Color(255, 230, 180);
-        static readonly Color ValueColorDisabled = Color.Gray;
-        static readonly Color ValueColorWarning = new Color(255, 60, 25);
-        static readonly Color NewSettingColor = new Color(100, 255, 155);
-        static readonly Color SearchBgColor = new Color(60, 76, 82);
-        const bool DebugDrawBoxes = false;
-        const float CloseButtonScale = 1.2f;
-
-        const string NewSettingTag = "NEW:";
-
-        bool ShowInternal => true; // Main.Config.InternalInfo.Value;
-
-        const string TooltipSettingModdable = "\n<color=gray>This is only changeable using mods.<reset>";
-        //const string TooltipSettingGameUI = "\n<color=gray>This is a world setting. This in particular can be changed in the world options screen.<reset>";
-        //const string TooltipSettingDSUI = "\n<color=gray>This is a world setting. This in particular can be changed in dedicated server UI or in sandbox_config.sbc file.<reset>";
-        //const string TooltipSettingSaveFile = "\n<color=gray>This is a world setting. This in particular can only be changed in the sandbox_config.sbc file.<reset>";
-
-        public ServerInfoMenu(bool testMode = false)
-        {
-            Main = BuildInfoMod.Instance;
-
-            if(!testMode || BuildInfoMod.IsDevMod)
-                ReadDefaults();
-        }
-
-        void ReadDefaults()
-        {
-            const string WorldForDefaults = @"CustomWorlds\Star System\sandbox_config.sbc";
-            var worldConfig = ReadGameXML<MyObjectBuilder_WorldConfiguration>(WorldForDefaults);
-            if(worldConfig != null)
-            {
-                DefaultSettings = worldConfig.Settings;
-                DefaultFrom = "Star System template";
-            }
-            else
-            {
-                DefaultSettings = new MyObjectBuilder_SessionSettings();
-                DefaultFrom = "(ERROR)";
-                // errors will be logged by ReadGameXML() 
-            }
-
-            const string EnvSBC = @"Data\Environment.sbc";
-            var envDef = ReadGameXML<MyObjectBuilder_Definitions>(EnvSBC);
-            if(envDef != null)
-            {
-                var defOB = envDef.Definitions[0] as MyObjectBuilder_EnvironmentDefinition;
-                if(defOB != null)
-                {
-                    DefaultEnvDef = new MyEnvironmentDefinition();
-                    DefaultEnvDef.Init(defOB, MyModContext.BaseGame);
-                }
-                else
-                {
-                    Log.Error($"Game's '{EnvSBC}' does not contain the expected EnvironmentDefinition!");
-                }
-            }
-
-            if(DefaultEnvDef == null)
-                DefaultEnvDef = MyDefinitionManager.Static.EnvironmentDefinition;
-        }
-
-        /*
-        public void Dispose()
-        {
-            if(WindowBG == null)
-                return;
-
-            WindowBG.DeleteMessage();
-            WindowBG = null;
-
-            foreach(Column column in Columns)
-            {
-                column.Render.Text.DeleteMessage();
-            }
-
-            Columns = null;
-
-            foreach(ScrollableSection section in ScrollableSections)
-            {
-                section.Dispose();
-            }
-            ScrollableSections = null;
-
-            CloseButton.Dispose();
-            CloseButton = null;
-
-            TooltipRender.Dispose();
-            TooltipRender = null;
-        }
-        */
-
-        void CreateUIObjects()
-        {
-            MyStringId material = Constants.MatUI_Square;
-
-            //Color bgColor = new Color(41, 54, 62);
-            Color bgColor = new Color(37, 46, 53);
-
-            WindowBG = TextAPI.CreateHUDTexture(material, bgColor, Vector2D.Zero, false);
-
-            for(int i = 0; i < Columns.Length; i++)
-            {
-                Columns[i] = new Column(i, DebugDrawBoxes);
-            }
-
-            Columns[0].Render.TextStringBuilder.Append("aAgGqQjJ!W");
-            LineHeight = (float)Math.Abs(Columns[0].Render.Text.GetTextLength().Y);
-            Columns[0].Render.TextStringBuilder.Append(" ");
-            SpaceWidth = (float)Math.Abs(Columns[0].Render.Text.GetTextLength().Y);
-
-            ScrollableSections = new List<ScrollableSection>()
-            {
-                ScrollableBlockLimits,
-                ScrollableModsList,
-                ScrollableWarnings,
-            };
-
-            foreach(ScrollableSection section in ScrollableSections)
-            {
-                section.CreateUIObjects();
-            }
-
-            CloseButton = new Button("Close",
-                tooltip: null, tooltipHandler: null,
-                hover: (button) =>
-                {
-                    if(MyAPIGateway.Input.IsNewLeftMouseReleased())
-                        CloseMenu();
-                },
-                hoverEnd: null,
-                pivot: Align.BottomRight);
-            //CloseButton.DefaultColor = new Color(155, 155, 155);
-            CloseButton.Scale = CloseButtonScale;
-            CloseButton.Refresh(Vector2D.Zero);
-
-            SearchBar = new TextPackage(128, false, Constants.MatUI_Square);
-            SearchBar.Background.BillBoardColor = SearchBgColor;
-            SearchBar.HideWithHUD = false;
-            SearchBar.Position = new Vector2D(-0.9, 0.4);
-            SearchBar.Font = FontsHandler.TextAPI_OutlinedFont;
-
-            TooltipHandler = new TooltipHandler();
-
-            TooltipSelectionBox = TextAPI.CreateHUDTexture(material, Color.Lime * 0.2f, Vector2D.Zero);
-        }
-
-        public void ToggleMenu()
-        {
-            try
-            {
-                if(Visible)
-                {
-                    CloseMenu();
-                    return;
-                }
-
-                if(!Main.TextAPI.WasDetected)
-                {
-                    Utils.ShowColoredChatMessage(Log.ModName, "TextAPI not yet initialized, please wait... or bugreport if it persists.", FontsHandler.YellowSh);
-                    return;
-                }
-
-                TestRun = false;
-
-                if(WindowBG == null)
-                    CreateUIObjects();
-
-                GenerateMenuContents();
-
-                Vector2D pxSize = HudAPIv2.APIinfo.ScreenPositionOnePX;
-
-                const double PosX = 0.2; // right-offset to reduce overlap with chat
-                const float BorderPaddingPx = 20; // on each side
-                const float ColumnSpacingPx = 16; // between columns only
-                Vector2D columnSize = new Vector2D(0, 0);
-                Vector2D windowSize = new Vector2D(0, 0);
-
-                for(int i = 0; i < Columns.Length; i++)
-                {
-                    Column column = Columns[i];
-                    if(!column.Render.Visible)
-                        break;
-
-                    column.TextSize = column.Render.Text.GetTextLength();
-
-                    column.Render.Position = new Vector2D(PosX + columnSize.X, 0);
-
-                    columnSize.X += column.TextSize.X + pxSize.X * ColumnSpacingPx;
-                    columnSize.Y = -column.TextSize.Y;
-
-                    windowSize = Vector2D.Max(windowSize, columnSize);
-                }
-
-                windowSize.X -= pxSize.X * ColumnSpacingPx; // remove last column space
-
-                for(int i = 0; i < Columns.Length; i++)
-                {
-                    Column column = Columns[i];
-                    if(!column.Render.Visible)
-                        break;
-
-                    column.Render.Position -= new Vector2D(windowSize.X / 2, windowSize.Y / -2);
-
-                    if(DebugDrawBoxes)
-                        column.Render.UpdateBackgroundSize(0f);
-                }
-
-                // with close button centered and enlarging window
-                /*
-                float closeButtonHeight = (float)Math.Abs(CloseButton.Label.Text.GetTextLength().Y) + BorderPadding;
-
-                WindowBG.Origin = new Vector2D(PosX, -(closeButtonHeight - Padding));
-                WindowBG.Width = (float)windowSize.X + Padding;
-                WindowBG.Height = (float)windowSize.Y + Padding + closeButtonHeight + Padding;
-                WindowBG.Visible = true;
-
-                Vector2D closePos = new Vector2D(PosX, -(WindowBG.Height / 2 + closeButtonHeight - Padding - Padding));
-                CloseButton.Refresh(closePos, CloseButtonScale);
-                CloseButton.Visible = true;
-                CloseButton.Label.Visible = true;
-                */
-
-                WindowBG.Origin = new Vector2D(PosX, 0);
-                WindowBG.Width = (float)(windowSize.X + pxSize.X * BorderPaddingPx * 2);
-                WindowBG.Height = (float)(windowSize.Y + pxSize.Y * BorderPaddingPx * 2);
-                WindowBG.Visible = true;
-
-                // bottom-left
-                //Vector2D closePos = WindowBG.Origin - new Vector2D(WindowBG.Width, -WindowBG.Height) / 2;
-                //closePos += new Vector2D(CloseButton.Label.Background.Width, 0);
-                //closePos += pxSize * BorderPaddingPx;
-
-                Vector2D closePos = WindowBG.Origin + new Vector2D(WindowBG.Width, -WindowBG.Height) / 2;
-                closePos += new Vector2D(-pxSize.X * BorderPaddingPx, pxSize.Y * BorderPaddingPx);
-
-                //if(ButtonDebug == null)
-                //{
-                //    ButtonDebug = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("Square"), Vector2D.Zero, Color.Red);
-                //    ButtonDebug.Width = (float)pxSize.X * 4;
-                //    ButtonDebug.Height = (float)Math.Abs(pxSize.Y) * 4;
-                //}
-                //ButtonDebug.Origin = closePos;
-
-                CloseButton.Scale = CloseButtonScale;
-                CloseButton.Refresh(closePos);
-                CloseButton.SetVisible(true);
-
-                Main.MenuHandler.AddCursorRequest(GetType().Name,
-                    escapeCallback: () => CloseMenu(escPressed: true),
-                    blockMoveAndRoll: true,
-                    blockViewXY: true,
-                    blockClicks: true);
-
-                Main.MenuHandler.SetUpdateMenu(this, true);
-                Visible = true;
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-
-                CloseMenu(false);
-            }
-        }
-
-        void CloseMenu(bool escPressed = false)
-        {
-            Visible = false;
-            Main.MenuHandler.RemoveCursorRequest(GetType().Name);
-            Main.MenuHandler.SetUpdateMenu(this, false);
-
-            SearchBarClosed();
-
-            if(WindowBG == null)
-                return;
-
-            WindowBG.Visible = false;
-            CloseButton.SetVisible(false);
-            TooltipHandler.SetVisible(false);
-            TooltipSelectionBox.Visible = false;
-
-            foreach(ScrollableSection section in ScrollableSections)
-            {
-                section.SetVisible(false, false);
-            }
-
-            foreach(Column column in Columns)
-            {
-                column.Reset();
-            }
-
-            HideHighlighters();
-        }
-
-        public override void UpdateDraw()
-        {
-            Vector2D mousePos = MenuHandler.GetMousePositionGUI();
-            CloseButton.Update(mousePos);
-
-            if(!Visible)
-                return;
-
-            bool scrolled = false;
-
-            foreach(ScrollableSection section in ScrollableSections)
-            {
-                scrolled |= section.Update(mousePos);
-            }
-
-            if(scrolled || PrevMousePos != mousePos)
-            {
-                PrevMousePos = mousePos;
-                HoveredTooltip = null;
-                UpdateTooltip(mousePos);
-            }
-
-            if(!MyAPIGateway.Gui.IsCursorVisible)
-            {
-                if(HoveredTooltip?.ClickAction != null && MyAPIGateway.Input.IsNewLeftMousePressed())
-                {
-                    HoveredTooltip.Value.ClickAction.Invoke();
-                }
-            }
-
-            if(MyAPIGateway.Gui.ChatEntryVisible)
-            {
-                ListReader<char> input = MyAPIGateway.Input.TextInput;
-                if(input.Count > 0 || !SearchBar.Visible)
-                {
-                    ChatTyped(input);
-                }
-                else if(scrolled)
-                {
-                    SearchText();
-                }
-            }
-            else
-            {
-                SearchBarClosed();
-            }
-        }
-
-        #region In-window searching
-        const int MinCharsToSearch = 2;
-        int HighlighterIndex = -1;
-        List<HudAPIv2.BillBoardHUDMessage> Highlighters = new List<HudAPIv2.BillBoardHUDMessage>();
-        List<char> TextInput = new List<char>(64);
-        TextPackage SearchBar;
-        HashSet<Vector2I> LinesHighlighted = new HashSet<Vector2I>();
-
-        void ChatTyped(ListReader<char> input)
-        {
-            foreach(char c in input)
-            {
-                // TODO: maybe some day we'll get the exact chat text, but right now we only have hax
-                if(char.IsControl(c))
-                {
-                    if(c == '\r')
-                        continue;
-
-                    if(c == 1 || c == 127) // ctrl+a or ctrl+backspace
-                    {
-                        TextInput.Clear();
-                        break;
-                    }
-
-                    if(c == '\b') // backspace
-                    {
-                        if(TextInput.Count > 0)
-                            TextInput.RemoveAt(TextInput.Count - 1);
-                    }
-
-                    if(c == 22) // ctrl+v
-                    {
-                        // cannot read clipboard, would be a security problem.
-                    }
-
-                    continue;
-                }
-
-                TextInput.Add(c);
-            }
-
-            StringBuilder sb = SearchBar.TextStringBuilder.Clear();
-            sb.Append("Searching for: '");
-            foreach(char c in TextInput)
-                sb.Append(c);
-            sb.Append("'");
-
-            if(TextInput.Count < MinCharsToSearch)
-                sb.Append(" <color=gray>(min ").Append(MinCharsToSearch).Append(")");
-
-            SearchBar.Visible = true;
-            SearchBar.UpdateBackgroundSize();
-
-            SearchText();
-        }
-
-        void SearchBarClosed()
-        {
-            TextInput.Clear();
-
-            if(SearchBar != null)
-                SearchBar.Visible = false;
-        }
-
-        void HideHighlighters()
-        {
-            for(int i = 0; i <= HighlighterIndex; i++)
-            {
-                Highlighters[i].Visible = false;
-            }
-
-            HighlighterIndex = -1;
-        }
-
-        void SearchText()
-        {
-            HideHighlighters();
-
-            if(WindowBG == null)
-                return;
-
-            if(TextInput.Count < MinCharsToSearch)
-                return;
-
-            LinesHighlighted.Clear();
-
-            string findTextUpper = string.Join("", TextInput).ToUpperInvariant();
-            int findLength = findTextUpper.Length;
-
-            foreach(var scrollable in ScrollableSections)
-            {
-                scrollable.SearchAndScroll(findTextUpper, LinesHighlighted);
-            }
-
-            for(int columnIdx = 0; columnIdx < Columns.Length; columnIdx++)
-            {
-                Column column = Columns[columnIdx];
-
-                // search content
-                {
-                    StringBuilder sb = column.Render.TextStringBuilder;
-
-                    int line = 0;
-                    int maxSearchLength = (sb.Length - findLength) + 1;
-
-                    for(int i = 0; i < maxSearchLength; i++)
-                    {
-                        char chr = sb[i];
-
-                        if(chr == '\n')
-                        {
-                            line++;
-                            continue;
-                        }
-
-                        #region skip over TextAPI formatting
-                        if(chr == '<')
-                        {
-                            int x = i;
-
-                            if(i + 6 <= sb.Length)
-                            {
-                                if(sb[++x] == 'c'
-                                && sb[++x] == 'o'
-                                && sb[++x] == 'l'
-                                && sb[++x] == 'o'
-                                && sb[++x] == 'r'
-                                && sb[++x] == '=')
-                                {
-                                    // seek ahead for end char
-                                    int endChar = -1;
-                                    for(int s = i + 6; s < sb.Length; s++)
-                                    {
-                                        if(sb[s] == '>')
-                                        {
-                                            endChar = s;
-                                            break;
-                                        }
-                                    }
-
-                                    if(endChar != -1)
-                                    {
-                                        i = endChar;
-                                        continue;
-                                    }
-                                }
-                            }
-
-                            if(SkipOverString(sb, ref i, "<reset>")
-                            || SkipOverString(sb, ref i, "<i>")
-                            || SkipOverString(sb, ref i, "</i>"))
-                                continue;
-                        }
-                        #endregion
-
-                        if(char.ToUpperInvariant(chr) == findTextUpper[0])
-                        {
-                            int foundChars = 1;
-                            while(foundChars < findLength)
-                            {
-                                if(char.ToUpperInvariant(sb[i + foundChars]) != findTextUpper[foundChars])
-                                    break;
-
-                                foundChars++;
-                            }
-
-                            if(foundChars == findLength)
-                            {
-                                LinesHighlighted.Add(new Vector2I(columnIdx, line));
-                                HighlightLine(column, line);
-
-                                // we got a match on this line, now skip to next line to avoid re-highlighting this one
-                                int lineEnd = sb.IndexOf('\n', i);
-                                if(lineEnd == -1)
-                                    break;
-
-                                // -1 required so that the next iteration lands on \n and executes the new line condition
-                                i = lineEnd - 1;
-                                continue;
-                            }
-                        }
-                    }
-                }
-
-                // search tooltips too
-                foreach(KeyValuePair<int, Column.Tooltip> kv in column.Tooltips)
-                {
-                    int line = kv.Key;
-                    Vector2I id = new Vector2I(columnIdx, line);
-                    if(LinesHighlighted.Contains(id))
-                        continue;
-
-                    string tooltipText = kv.Value.Text;
-
-                    if(tooltipText.IndexOf(findTextUpper, StringComparison.OrdinalIgnoreCase) != -1)
-                    {
-                        LinesHighlighted.Add(id);
-                        HighlightLine(column, line);
-                    }
-                }
-            }
-        }
-
-        static bool SkipOverString(StringBuilder sb, ref int i, string str)
-        {
-            if(sb.IndexOf(str, i, i + str.Length - 1, true) != -1)
-            {
-                i += str.Length - 1;
-                return true;
-            }
-
-            return false;
-        }
-
-        void HighlightLine(Column column, int line)
-        {
-            Vector2D columnMin = column.Render.Text.Origin + column.Render.Text.Offset;
-            Vector2D columnMax = columnMin + column.TextSize;
-            BoundingBox2D columnBB = new BoundingBox2D(Vector2D.Min(columnMin, columnMax), Vector2D.Max(columnMin, columnMax));
-
-            Vector2D start = new Vector2D(columnBB.Min.X, columnBB.Max.Y - ((line + 1) * LineHeight));
-            var area = new BoundingBox2D(start, start + new Vector2D(columnBB.Size.X, LineHeight));
-
-            HudAPIv2.BillBoardHUDMessage hl;
-
-            HighlighterIndex++;
-            if(Highlighters.Count <= HighlighterIndex)
-            {
-                hl = new HudAPIv2.BillBoardHUDMessage(Constants.MatUI_Square, Vector2D.Zero, Color.Yellow * 0.25f);
-                Highlighters.Add(hl);
-            }
-            else
-            {
-                hl = Highlighters[HighlighterIndex];
-            }
-
-            hl.Origin = area.Center;
-            hl.Width = (float)area.Width;
-            hl.Height = (float)area.Height;
-            hl.Visible = true;
-        }
-        #endregion
-
-        void UpdateTooltip(Vector2D mousePos)
-        {
-            BoundingBox2D highlightArea = default(BoundingBox2D);
-
-            for(int i = 0; i < Columns.Length; i++)
-            {
-                Column column = Columns[i];
-                Vector2D columnMin = column.Render.Text.Origin + column.Render.Text.Offset;
-                Vector2D columnMax = columnMin + column.TextSize;
-                BoundingBox2D columnBB = new BoundingBox2D(Vector2D.Min(columnMin, columnMax), Vector2D.Max(columnMin, columnMax));
-
-                if(columnBB.Contains(mousePos) == ContainmentType.Disjoint)
-                    continue;
-
-                int line = (int)Math.Ceiling(Math.Abs(mousePos.Y - columnMin.Y) / LineHeight) - 1;
-
-                Column.Tooltip tooltip;
-                if(column.Tooltips.TryGetValue(line, out tooltip))
-                {
-                    HoveredTooltip = tooltip;
-
-                    Vector2D start = new Vector2D(columnBB.Min.X, columnBB.Max.Y - ((line + 1) * LineHeight));
-                    highlightArea = new BoundingBox2D(start, start + new Vector2D(columnBB.Size.X, LineHeight));
-
-                    break;
-                }
-            }
-
-            if(HoveredTooltip == null && SearchBar != null && SearchBar.Visible)
-            {
-                Vector2D center = SearchBar.Background.Origin + SearchBar.Background.Offset;
-                Vector2D halfExtent = new Vector2D(SearchBar.Background.Width, SearchBar.Background.Height) * 0.5;
-                BoundingBox2D bb = new BoundingBox2D(center - halfExtent, center + halfExtent);
-
-                if(bb.Contains(mousePos) != ContainmentType.Disjoint)
-                {
-                    HoveredTooltip = new Column.Tooltip()
-                    {
-                        Text = "See exactly what is searched for when using chat.\nThis does not match 1:1 with chat because I'd have to reimplement all the textbox input features like arrows, clicking, etc.",
-                    };
-
-                    highlightArea = bb;
-                }
-            }
-
-            //if(HoveredTooltip == null)
-            //{
-            //    HoveredTooltip = new Tooltip()
-            //    {
-            //        Text = "Random tooltip\nWith newlines\nAnd really long lines or whatever else we might think of here to write to make it long yes.",
-            //    };
-            //}
-
-            if(HoveredTooltip != null)
-            {
-                TooltipSelectionBox.Origin = highlightArea.Center;
-                TooltipSelectionBox.Width = (float)highlightArea.Width;
-                TooltipSelectionBox.Height = (float)highlightArea.Height;
-                TooltipSelectionBox.Visible = true;
-
-                TooltipHandler.Hover(HoveredTooltip.Value.Text);
-                TooltipHandler.Draw(mousePos, drawNow: false);
-                TooltipHandler.SetVisible(true);
-            }
-            else
-            {
-                TooltipSelectionBox.Visible = false;
-
-                TooltipHandler.HoverEnd();
-                TooltipHandler.SetVisible(false);
-            }
-        }
-
+        const string NewSettingTag = "NEW:"; // internal data, not visible; use this to tag new settings which will get the below symbol visually
+        const string NewSettingVisual = "*<reset>";
+        const string NewSettingSummary = NewSettingVisual + " new settings in SE v1.209\n";
+
+        const string UndisclosedSettingsList = "\n- SyncDistance" +
+                                               "\n- OptimalSpawnDistance" +
+                                               "\n- MaxBackupSaves" +
+                                               "\n- ResetOwnership (would always be false anyway)" +
+                                               "\n- EnableSaving" +
+                                               "\n- MinimumWorldSize (it's completely useless)";
+
+        const string GeneratorVersioning = "\nVersioning allows devs to change things that would break existing worlds without breaking existing worlds." +
+                                           "\nHigher numbers don't necessarily mean newer or better, it could be a less intensive variant for lower-end hardware for example." +
+                                           "\nExisting worlds should not modify this number. It is shown here for awareness.";
+
+        #region Window design
         void GenerateMenuContents()
         {
             ResetFormat();
-
             AppendSettings();
-
             //StringBuilder sb = NextColumn();
-
             AppendModsList();
-
             FinishColumnFormat();
         }
 
-        void AppendModsList()
+        void AppendSettings()
         {
-            StringBuilder sb = CurrentColumn.Render.TextStringBuilder;
-
-            Header(sb, "Mods");
-            CurrentColumn.SetTooltip(0, "Mods at the top are loaded last therefore they override other ones below them." +
-                                       "\nNote: in files like sandbox_config.sbc the mods order is the load order, flipped compared to the GUI and here.");
-
-            List<MyObjectBuilder_Checkpoint.ModItem> mods = MyAPIGateway.Session.Mods;
-
-            if(mods.Count == 0)
+            #region Ignored settings, only for test run
+            if(TestRun)
             {
-                sb.Append("<color=gray>(No mods)");
+                //PrintTrashFlags(sb, nameof(settings.TrashFlagsValue), (MyTrashRemovalFlags)settings.TrashFlagsValue, (MyTrashRemovalFlags)DefSettings.TrashFlagsValue, false,
+                //    "Trash Removal Flags", "Defines flags for trash removal system.", () => settings.TrashRemovalEnabled);
+                KnownFields.Add("TrashFlagsValue"); // individual relevant flags are shown instead
 
-                CurrentColumn.AddTooltip(sb, "No mods in the actual server/world, but clearly this mod is here which means it's brought in by PluginLoader.");
+                //PrintSetting(sb, nameof(settings.MaxBackupSaves), settings.MaxBackupSaves, defaults.MaxBackupSaves, false,
+                //    "Max Backup Saves", "The maximum number of backup saves.");
+                KnownFields.Add("MaxBackupSaves");
 
-                sb.Append('\n');
+                //PrintSetting(sb, nameof(settings.ResetOwnership), settings.ResetOwnership, defaults.ResetOwnership, false,
+                //    "Reset Ownership", "");
+                // these turn themselves off after load
+                KnownFields.Add("ResetOwnership");
+                KnownFields.Add("RandomizeSeed");
+
+                //PrintSetting(sb, nameof(settings.EnableSaving), settings.EnableSaving, defaults.EnableSaving, false,
+                //    "Allow saving from menu", "Enables saving from the menu.");
+                KnownFields.Add("EnableSaving");
+
+                //PrintFormattedNumber(sb, nameof(settings.FloraDensityMultiplier), settings.FloraDensityMultiplier, DefaultSettings.FloraDensityMultiplier, true,
+                //    "Flora Density Multiplier", "x", "");
+                KnownFields.Add("FloraDensityMultiplier"); // unused
+
+                //PrintSetting(sb, nameof(settings.MinimumWorldSize), settings.MinimumWorldSize, DefaultSettings.MinimumWorldSize, false, "Minimum world size [km]", "World size can't be selected lower than this value");
+                KnownFields.Add("MinimumWorldSize"); // does not affect anything in the actual world, it only affects world's creation GUI
+
+                KnownFields.Add("OptimalSpawnDistance"); // it's not ok for players to know this
+                KnownFields.Add("SyncDistance"); // server owners would not like this exposed
+
+                // unknown purpose, used in MySpaceRespawnComponent.UpdateBeforeSimulation()
+                //PrintSetting(sb, nameof(settings.UpdateRespawnDictionary), settings.UpdateRespawnDictionary, DefaultSettings.UpdateRespawnDictionary, false,
+                //    "UpdateRespawnDictionary", "", () => settings.EnableMatchComponent);
+                KnownFields.Add("UpdateRespawnDictionary");
+
+                // obsolete/unused
+                KnownFields.Add("Scenario");
+                KnownFields.Add("ScenarioEditMode");
+                KnownFields.Add("CanJoinRunning");
+
+                KnownFields.Add("AutoSave"); // points to AutoSaveInMinutes
+                KnownFields.Add("ClientCanSave"); // always false
+                KnownFields.Add("TrashFlags"); // points to TrashFlagsValue
+
+                // from medieval engineers (deleted in 207)
+                KnownFields.Add("MaxActiveFracturePieces");
+                KnownFields.Add("EnableStructuralSimulation");
             }
-            else
-            {
-                ScrollableModsList.Reset();
-                int sbIndex = sb.Length;
+            #endregion
 
-#if false // for testing mods list
-                {
-                    int totalMods = 167 - mods.Count;
-                    var fakeMods = new List<MyObjectBuilder_Checkpoint.ModItem>(totalMods + mods.Count);
+            StringBuilder sb;
 
-                    for(int i = 0; i <= totalMods; i++)
-                    {
-                        string modName = "";
-                        int len = MyRandom.Instance.Next(5, 100);
-                        for(int n = 0; n < len; n++)
-                        {
-                            if(MyRandom.Instance.Next(0, 100) <= 10)
-                                modName += ' ';
-                            else
-                                modName += (char)MyRandom.Instance.Next('a', 'z');
-                        }
+            // can't print DS settings because client does not receive them from server
+            //IMyConfigDedicated dsConfig = MyAPIGateway.Utilities.ConfigDedicated; // is null for non-DS
+            //var dsConfigDefault = new MyConfigDedicatedData<MyObjectBuilder_SessionSettings>();
 
-                        fakeMods.Add(new MyObjectBuilder_Checkpoint.ModItem()
-                        {
-                            FriendlyName = modName,
-                            IsDependency = MyRandom.Instance.Next(0, 100) <= 10,
-                            Name = modName,
-                            PublishedFileId = MyRandom.Instance.Next(0, 100) <= 10 ? 0 : (ulong)MyRandom.Instance.NextLong(),
-                            PublishedServiceName = "steam",
-                        });
-                    }
+            sb = NextColumn();
 
-                    fakeMods.AddList(mods);
-                    mods = fakeMods;
-                }
-#endif
+            Section_Summary(sb);
+            Section_General(sb);
+            Section_Characters(sb);
+            Section_Respawn(sb);
+            Section_ShipsAndBlocks(sb);
+            Section_GridStorage(sb);
 
-                bool scrollMods = mods.Count > ScrollableModsList.DisplayLines;
+            sb = NextColumn();
 
-                mods.Reverse(); // to match the GUI
+            Section_Multipliers(sb);
+            Section_Environment(sb);
+            Section_Economy(sb);
+            Section_Encounters(sb);
+            Section_Combat(sb);
+            Section_Bots(sb);
 
-                for(int i = 0; i < mods.Count; i++)
-                {
-                    MyObjectBuilder_Checkpoint.ModItem mod = mods[i];
+            sb = NextColumn();
 
-                    string tooltip = mod.FriendlyName + "\n"
-                                   + (mod.PublishedFileId != 0 ? $"{mod.PublishedServiceName}:{mod.PublishedFileId}\nClick to open workshop page" : "Local mod")
-                                   + (mod.IsDependency ? "\n(Mod added by another mod as dependency)" : "");
+            Section_Limits(sb);
+            Section_Cleanup(sb);
+            Section_GridsCleanup(sb);
+            Section_VoxelCleanup(sb);
+            Section_Performance(sb);
 
-                    Action clickAction = null;
+            sb = NextColumn();
 
-                    if(mod.PublishedFileId > 0)
-                    {
-                        clickAction = () => Utils.OpenModPage(mod.PublishedServiceName, mod.PublishedFileId);
-                    }
+            Section_PvP(sb);
+            Section_Misc(sb);
+            Section_Stats(sb);
+        }
 
-                    int startIdx = sb.Length;
-                    sb.Append(LabelPrefix).Append(i + 1).Append(". ").AppendMaxLength(mod.FriendlyName, 32);
+        void Section_Summary(StringBuilder sb)
+        {
+            if(sb == null)
+                return; // is null in test mode
 
-                    if(scrollMods)
-                    {
-                        int len = sb.Length - startIdx;
-                        ScrollableModsList.Add(sb.ToString(startIdx, len), tooltip, clickAction);
-                        sb.Length -= len; // erase!
-                    }
-                    else
-                    {
-                        CurrentColumn.AddTooltip(sb, tooltip, clickAction);
+            sb.Color(ValueColorDefault).Append("(").Append(DefaultFrom).Append("'s default)\n");
+            sb.Color(ValueColorChanged).Append("(Different)\n");
+            sb.Color(ValueColorDisabled).Append("(Requires something else)\n");
+            sb.Color(NewSettingColor).Append(NewSettingSummary); // find all 'NewSettingTag +' and remove, then add to the new ones if any
+                                                                 //sb.Append("\n<reset>");
+            sb.Color(Color.Yellow).Append("Search<reset> by opening chat.\n");
+        }
 
-                        sb.Append('\n');
-                    }
-                }
+        void Section_General(StringBuilder sb)
+        {
+            Header(sb, "General");
 
-                ScrollableModsList.Finish(CurrentColumn, sbIndex);
-            }
+            PrintSetting(sb, nameof(settings.GameMode), settings.GameMode, DefaultSettings.GameMode, true,
+                "Game Mode");
+            PrintSetting(sb, nameof(settings.OnlineMode), settings.OnlineMode.ToString(), null, false,
+                "Online Mode", "Offline means multiplayer is disabled (and local mods are allowed), while other values determine if and what players can join." +
+                               "\nThe mode can be changed in F3 menu if not offline nor dedicated server.");
+            PrintSetting(sb, nameof(settings.MaxPlayers), settings.MaxPlayers.ToString(), null, true,
+                "Max Players", "The maximum number of players that can play at the same time in this server.",
+                GrayIfFalse(settings.OnlineMode != MyOnlineModeEnum.OFFLINE && settings.OnlineMode != MyOnlineModeEnum.PRIVATE));
+            PrintFormattedNumber(sb, nameof(settings.AutoSaveInMinutes), settings.AutoSaveInMinutes, DefaultSettings.AutoSaveInMinutes, true,
+                "Autosave interval", " min", "Defines autosave interval in minutes. 0 disables.", valueForZero: FalseValue);
+            PrintSetting(sb, nameof(settings.ExperimentalMode), settings.ExperimentalMode, DefaultSettings.ExperimentalMode, false,
+                "Experimental (hover for reason)", GetExperimentalTooltip());
+            PrintSetting(sb, nameof(settings.FamilySharing), settings.FamilySharing, DefaultSettings.FamilySharing, false,
+                "Family Sharing Accounts", "Allow players that have the game from family sharing (they don't own it themselves) to join this server.");
+            PrintSetting(sb, nameof(settings.Enable3rdPersonView), settings.Enable3rdPersonView, DefaultSettings.Enable3rdPersonView, true,
+                "3rd Person Camera", "Enables 3rd person camera.");
+            PrintSetting(sb, nameof(settings.EnableGoodBotHints), settings.EnableGoodBotHints, DefaultSettings.EnableGoodBotHints, false,
+                "Good.bot Hints", "Enables Good.bot hints in the world. If user has disabled hints, this will not override that.");
+            //PrintDSSetting(sb, dsConfig?.ServerDescription, dsConfigDefault.ServerDescription,
+            //    "Description");
+            //PrintDSSetting(sb, dsConfig?.PauseGameWhenEmpty, dsConfigDefault.PauseGameWhenEmpty,
+            //    "Pause Game When Empty", "Game is paused when there are no players online.");
+            //PrintDSSetting(sb, dsConfig?.NetworkType, dsConfigDefault.NetworkType,
+            //    "Network type", null);
+            //PrintDSSetting(sb, dsConfig?.ConsoleCompatibility, dsConfigDefault.ConsoleCompatibility,
+            //    "Console Compatibility", null);
+            PrintSetting(sb, nameof(settings.BlueprintShare), settings.BlueprintShare, DefaultSettings.BlueprintShare, false,
+                "Blueprint Share", "Allows players to send local blueprints to a specific player in this server using the blueprint menu (F10).");
+            PrintFormattedNumber(sb, nameof(settings.BlueprintShareTimeout), settings.BlueprintShareTimeout, DefaultSettings.BlueprintShareTimeout, false,
+                "Blueprint Share Timeout", " sec", "Time until player can send another blueprint.",
+                GrayIfFalse(settings.BlueprintShare), valueForZero: FalseValue);
+
+            //Header(sb, "Chat");
+
+            PrintSetting(sb, nameof(settings.MaxHudChatMessageCount), settings.MaxHudChatMessageCount, DefaultSettings.MaxHudChatMessageCount, false,
+                "Max messages in HUD chat", "Maximum number of messages displayed in HUD chat");
+            PrintSetting(sb, nameof(settings.OffensiveWordsFiltering), settings.OffensiveWordsFiltering, DefaultSettings.OffensiveWordsFiltering, false,
+                "Offensive Words Filtering", "Filter offensive words from all input methods.");
+            //PrintDSSetting(sb, dsConfig?.ChatAntiSpamEnabled, dsConfigDefault.ChatAntiSpamEnabled,
+            //    "Chat Anti-Spam", "Whether chat anti spam is enabled");
+            //PrintDSSetting(sb, dsConfig?.SameMessageTimeout, dsConfigDefault.SpamMessagesTimeout,
+            //    "Same message timeout", "The timeout for the same message, it cannot be sent again sooner than this (seconds)");
+            //PrintDSSetting(sb, dsConfig?.SpamMessagesTime, dsConfigDefault.SpamMessagesTime,
+            //    "Spam messages time", "The time threshold for spam. If elapsed time between messages is less they are considered spam (seconds)");
+            //PrintDSSetting(sb, dsConfig?.SpamMessagesTimeout, dsConfigDefault.SpamMessagesTimeout,
+            //    "Spam messages timeout", "If player is considered a spammer based on SpamMessagesTime they cannot send any messages for the duration of this timeout (seconds)");
         }
 
         string GetExperimentalTooltip()
@@ -913,143 +277,8 @@ namespace Digi.BuildInfo.Features.GUI
             return sb.ToString();
         }
 
-        void AppendSettings()
+        void Section_Characters(StringBuilder sb)
         {
-            const string UndisclosedSettingsList = "\n- SyncDistance" +
-                                                   "\n- OptimalSpawnDistance" +
-                                                   "\n- MaxBackupSaves" +
-                                                   "\n- ResetOwnership (would always be false anyway)" +
-                                                   "\n- EnableSaving" +
-                                                   "\n- MinimumWorldSize (it's completely useless)";
-
-            if(TestRun)
-            {
-                //PrintTrashFlags(sb, nameof(settings.TrashFlagsValue), (MyTrashRemovalFlags)settings.TrashFlagsValue, (MyTrashRemovalFlags)DefSettings.TrashFlagsValue, false,
-                //    "Trash Removal Flags", "Defines flags for trash removal system.", () => settings.TrashRemovalEnabled);
-                KnownFields.Add("TrashFlagsValue"); // individual relevant flags are shown instead
-
-                //PrintSetting(sb, nameof(settings.MaxBackupSaves), settings.MaxBackupSaves, defaults.MaxBackupSaves, false,
-                //    "Max Backup Saves", "The maximum number of backup saves.");
-                KnownFields.Add("MaxBackupSaves");
-
-                //PrintSetting(sb, nameof(settings.ResetOwnership), settings.ResetOwnership, defaults.ResetOwnership, false,
-                //    "Reset Ownership", "");
-                // these turn themselves off after load
-                KnownFields.Add("ResetOwnership");
-                KnownFields.Add("RandomizeSeed");
-
-                //PrintSetting(sb, nameof(settings.EnableSaving), settings.EnableSaving, defaults.EnableSaving, false,
-                //    "Allow saving from menu", "Enables saving from the menu.");
-                KnownFields.Add("EnableSaving");
-
-                //PrintFormattedNumber(sb, nameof(settings.FloraDensityMultiplier), settings.FloraDensityMultiplier, DefaultSettings.FloraDensityMultiplier, true,
-                //    "Flora Density Multiplier", "x", "");
-                KnownFields.Add("FloraDensityMultiplier"); // unused
-
-                //PrintSetting(sb, nameof(settings.MinimumWorldSize), settings.MinimumWorldSize, DefaultSettings.MinimumWorldSize, false, "Minimum world size [km]", "World size can't be selected lower than this value");
-                KnownFields.Add("MinimumWorldSize"); // does not affect anything in the actual world, it only affects world's creation GUI
-
-                KnownFields.Add("OptimalSpawnDistance"); // it's not ok for players to know this
-                KnownFields.Add("SyncDistance"); // server owners would not like this exposed
-
-                // unknown purpose, used in MySpaceRespawnComponent.UpdateBeforeSimulation()
-                //PrintSetting(sb, nameof(settings.UpdateRespawnDictionary), settings.UpdateRespawnDictionary, DefaultSettings.UpdateRespawnDictionary, false,
-                //    "UpdateRespawnDictionary", "", () => settings.EnableMatchComponent);
-                KnownFields.Add("UpdateRespawnDictionary");
-
-                // obsolete/unused
-                KnownFields.Add("Scenario");
-                KnownFields.Add("ScenarioEditMode");
-                KnownFields.Add("CanJoinRunning");
-
-                KnownFields.Add("AutoSave"); // points to AutoSaveInMinutes
-                KnownFields.Add("ClientCanSave"); // always false
-                KnownFields.Add("TrashFlags"); // points to TrashFlagsValue
-
-                // from medieval engineers (deleted in 207)
-                KnownFields.Add("MaxActiveFracturePieces");
-                KnownFields.Add("EnableStructuralSimulation");
-            }
-
-
-            MyObjectBuilder_SessionSettings settings = MyAPIGateway.Session.SessionSettings;
-            StringBuilder sb;
-
-            // can't print DS settings because client does not receive them from server
-            //IMyConfigDedicated dsConfig = MyAPIGateway.Utilities.ConfigDedicated; // is null for non-DS
-            //var dsConfigDefault = new MyConfigDedicatedData<MyObjectBuilder_SessionSettings>();
-
-            bool globalEncountersOn = settings.GlobalEncounterCap > 0;
-
-            sb = NextColumn();
-
-
-            #region Summary
-            if(sb != null)
-            {
-                sb.Color(ValueColorDefault).Append("(").Append(DefaultFrom).Append("'s default)\n");
-                sb.Color(ValueColorChanged).Append("(Different)\n");
-                sb.Color(ValueColorDisabled).Append("(Requires something else)\n");
-                sb.Color(NewSettingColor).Append("*<reset> new settings in SE v1.207\n"); // find all 'NewSettingTag +' and remove, then add to the new ones if any
-                //sb.Append("\n<reset>");
-                sb.Color(Color.Yellow).Append("Search<reset> by opening chat.\n");
-            }
-            #endregion
-
-
-            #region General
-            Header(sb, "General");
-
-            PrintSetting(sb, nameof(settings.GameMode), settings.GameMode, DefaultSettings.GameMode, true,
-                "Game Mode");
-            PrintSetting(sb, nameof(settings.OnlineMode), settings.OnlineMode.ToString(), null, false,
-                "Online Mode", "Offline means multiplayer is disabled (and local mods are allowed), while other values determine if and what players can join." +
-                               "\nThe mode can be changed in F3 menu if not offline nor dedicated server.");
-            PrintSetting(sb, nameof(settings.MaxPlayers), settings.MaxPlayers.ToString(), null, true,
-                "Max Players", "The maximum number of players that can play at the same time in this server.",
-                GrayIfFalse(settings.OnlineMode != MyOnlineModeEnum.OFFLINE && settings.OnlineMode != MyOnlineModeEnum.PRIVATE));
-            PrintFormattedNumber(sb, nameof(settings.AutoSaveInMinutes), settings.AutoSaveInMinutes, DefaultSettings.AutoSaveInMinutes, true,
-                "Autosave interval", " min", "Defines autosave interval in minutes. 0 disables.", valueForZero: FalseValue);
-            PrintSetting(sb, nameof(settings.ExperimentalMode), settings.ExperimentalMode, DefaultSettings.ExperimentalMode, false,
-                "Experimental (hover for reason)", GetExperimentalTooltip());
-            PrintSetting(sb, nameof(settings.FamilySharing), settings.FamilySharing, DefaultSettings.FamilySharing, false,
-                "Family Sharing Accounts", "Allow players that have the game from family sharing (they don't own it themselves) to join this server.");
-            PrintSetting(sb, nameof(settings.Enable3rdPersonView), settings.Enable3rdPersonView, DefaultSettings.Enable3rdPersonView, true,
-                "3rd Person Camera", "Enables 3rd person camera.");
-            PrintSetting(sb, nameof(settings.EnableGoodBotHints), settings.EnableGoodBotHints, DefaultSettings.EnableGoodBotHints, false,
-                "Good.bot Hints", "Enables Good.bot hints in the world. If user has disabled hints, this will not override that.");
-            //PrintDSSetting(sb, dsConfig?.ServerDescription, dsConfigDefault.ServerDescription,
-            //    "Description");
-            //PrintDSSetting(sb, dsConfig?.PauseGameWhenEmpty, dsConfigDefault.PauseGameWhenEmpty,
-            //    "Pause Game When Empty", "Game is paused when there are no players online.");
-            //PrintDSSetting(sb, dsConfig?.NetworkType, dsConfigDefault.NetworkType,
-            //    "Network type", null);
-            //PrintDSSetting(sb, dsConfig?.ConsoleCompatibility, dsConfigDefault.ConsoleCompatibility,
-            //    "Console Compatibility", null);
-            PrintSetting(sb, nameof(settings.BlueprintShare), settings.BlueprintShare, DefaultSettings.BlueprintShare, false,
-                "Blueprint Share", "Allows players to send local blueprints to a specific player in this server using the blueprint menu (F10).");
-            PrintFormattedNumber(sb, nameof(settings.BlueprintShareTimeout), settings.BlueprintShareTimeout, DefaultSettings.BlueprintShareTimeout, false,
-                "Blueprint Share Timeout", " sec", "Time until player can send another blueprint.",
-                GrayIfFalse(settings.BlueprintShare), valueForZero: FalseValue);
-
-            //Header(sb, "Chat");
-
-            PrintSetting(sb, nameof(settings.MaxHudChatMessageCount), settings.MaxHudChatMessageCount, DefaultSettings.MaxHudChatMessageCount, false,
-                "Max messages in HUD chat", "Maximum number of messages displayed in HUD chat");
-            PrintSetting(sb, nameof(settings.OffensiveWordsFiltering), settings.OffensiveWordsFiltering, DefaultSettings.OffensiveWordsFiltering, false,
-                "Offensive Words Filtering", "Filter offensive words from all input methods.");
-            //PrintDSSetting(sb, dsConfig?.ChatAntiSpamEnabled, dsConfigDefault.ChatAntiSpamEnabled,
-            //    "Chat Anti-Spam", "Whether chat anti spam is enabled");
-            //PrintDSSetting(sb, dsConfig?.SameMessageTimeout, dsConfigDefault.SpamMessagesTimeout,
-            //    "Same message timeout", "The timeout for the same message, it cannot be sent again sooner than this (seconds)");
-            //PrintDSSetting(sb, dsConfig?.SpamMessagesTime, dsConfigDefault.SpamMessagesTime,
-            //    "Spam messages time", "The time threshold for spam. If elapsed time between messages is less they are considered spam (seconds)");
-            //PrintDSSetting(sb, dsConfig?.SpamMessagesTimeout, dsConfigDefault.SpamMessagesTimeout,
-            //    "Spam messages timeout", "If player is considered a spammer based on SpamMessagesTime they cannot send any messages for the duration of this timeout (seconds)");
-            #endregion General
-
-
-            #region Characters
             Header(sb, "Characters");
 
             PrintSetting(sb, nameof(settings.EnableJetpack), settings.EnableJetpack, DefaultSettings.EnableJetpack, true,
@@ -1074,15 +303,15 @@ namespace Digi.BuildInfo.Features.GUI
 
 #if !(VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 || VERSION_206) // HACK: backwards compatible
             PrintSetting(sb, nameof(settings.EnableSurvivalBuffs), settings.EnableSurvivalBuffs, DefaultSettings.EnableSurvivalBuffs, false,
-                NewSettingTag + "Enable Survival Buffs", "Enable buffs and enhancements which player characters earn over time. These benefits are lost if the player respawns.");
+                "Enable Survival Buffs", "Enable buffs and enhancements which player characters earn over time. These benefits are lost if the player respawns.");
 
             PrintSetting(sb, nameof(settings.EnableReducedStatsOnRespawn), settings.EnableReducedStatsOnRespawn, DefaultSettings.EnableReducedStatsOnRespawn, false,
-                NewSettingTag + "Enable Reduced Stats", "Upon respawning, all players will have their health, oxygen, gas tank levels, and other stats set to critically low levels.");
+                "Enable Reduced Stats", "Upon respawning, all players will have their health, oxygen, gas tank levels, and other stats set to critically low levels.");
 #endif
-            #endregion Characters
+        }
 
-
-            #region Respawn
+        void Section_Respawn(StringBuilder sb)
+        {
             Header(sb, "Respawn");
 
             PrintSetting(sb, nameof(settings.PermanentDeath), settings.PermanentDeath, DefaultSettings.PermanentDeath, true,
@@ -1102,10 +331,10 @@ namespace Digi.BuildInfo.Features.GUI
             PrintSetting(sb, nameof(settings.RespawnShipDelete), settings.RespawnShipDelete, DefaultSettings.RespawnShipDelete, true,
                 "Remove Respawn Ships on Logoff", "When enabled, respawn ship is removed after player logout.",
                 GrayIfFalse(settings.EnableRespawnShips));
-            #endregion Respawn
+        }
 
-
-            #region Ships & blocks
+        void Section_ShipsAndBlocks(StringBuilder sb)
+        {
             Header(sb, "Ships & blocks");
 
             MyEnvironmentDefinition envDef = MyDefinitionManager.Static.EnvironmentDefinition;
@@ -1175,25 +404,68 @@ namespace Digi.BuildInfo.Features.GUI
                  "Allow Unsafe Piston Impulses", "Allows pistons to use forces past the safe amount.\nIf turned off it will cap on all existing blocks too.");
             PrintSetting(sb, nameof(settings.EnableUnsafeRotorTorques), settings.EnableUnsafeRotorTorques, DefaultSettings.EnableUnsafeRotorTorques, true,
                  "Allow Unsafe Rotor Torques", "Allows rotors/hinges to use torques past the safe amount.\nIf turned off it will cap on all existing blocks too.");
-            #endregion Ships & blocks
+        }
 
+        void Section_GridStorage(StringBuilder sb)
+        {
+#if !(VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 || VERSION_206 || VERSION_207 || VERSION_208) // HACK: backwards compatible
+            Header(sb, "Grid Storage");
 
-            #region Bots
-            Header(sb, "Bots");
+            bool canStoreGrids = settings.GridStorageMaxPerPlayer > 0;
+            const string RetrievalFormula = "\nRetrieval time formula: (MinimumTime + MinutesPerPCU * StoredShipPCU) / RetrievalTimeDivider";
 
-            PrintSetting(sb, nameof(settings.TotalBotLimit), settings.TotalBotLimit, DefaultSettings.TotalBotLimit, true,
-                "Animal NPC Limit", "Maximum number of organic bots in the world");
-            PrintSetting(sb, nameof(settings.EnableSpiders), settings.EnableSpiders, DefaultSettings.EnableSpiders, true,
-                "Spiders", "Enables spawning of spiders in the world.");
-            PrintSetting(sb, nameof(settings.EnableWolfs), settings.EnableWolfs, DefaultSettings.EnableWolfs, true,
-                "Wolves", "Enables spawning of wolves in the world.");
-            #endregion
+            PrintSetting(sb, nameof(settings.GridStorageMaxPerPlayer), settings.GridStorageMaxPerPlayer, DefaultSettings.GridStorageMaxPerPlayer, false,
+                NewSettingTag + "Max Stored Ships", "The maximum number of ships a player can send to storage using a Services Terminal." +
+                                                    "\nSet to 0 to disable grid storage in the world.");
 
+            PrintSetting(sb, nameof(settings.GridStorageAllowsInventory), settings.GridStorageAllowsInventory, DefaultSettings.GridStorageAllowsInventory, false,
+                NewSettingTag + "Allow Items in Stored Grids", "When enabled, grids sent to storage are allowed to have items in their inventory.",
+                GrayIfFalse(canStoreGrids));
 
-            sb = NextColumn(); // ------------------------------------------------------------------------------------------------------------------------------
+            PrintSetting(sb, nameof(settings.GridStorageMinutesPerPCU), settings.GridStorageMinutesPerPCU, DefaultSettings.GridStorageMinutesPerPCU, false,
+                NewSettingTag + "Retrieval Minutes Per PCU", "How many minutes each PCU point will add to the retrieval time." + RetrievalFormula,
+                GrayIfFalse(canStoreGrids));
 
+            PrintFormattedNumber(sb, nameof(settings.GridStorageRetrievalTimeMinMinutes), settings.GridStorageRetrievalTimeMinMinutes, DefaultSettings.GridStorageRetrievalTimeMinMinutes, false,
+                NewSettingTag + "Retrieval Minimum Time", "min", "Starting amount of minutes for retrieval before PCU, but the final time can be lower than this from the divider. " + RetrievalFormula,
+                GrayIfFalse(canStoreGrids));
 
-            #region Multipliers
+            PrintSetting(sb, nameof(settings.GridStorageRetrievalTimeMultiplier), settings.GridStorageRetrievalTimeMultiplier, DefaultSettings.GridStorageRetrievalTimeMultiplier, false,
+                NewSettingTag + "Retrieval Time Divider", "Divides the calculated time to retrieve by this number." +
+                                                          "\nIf this is 0 or negative, the retrieval is instant." + RetrievalFormula,
+                GrayIfFalse(canStoreGrids));
+
+            PrintFormattedNumber(sb, nameof(settings.GridStorageRetrievalTimeMaxMinutes), settings.GridStorageRetrievalTimeMaxMinutes, DefaultSettings.GridStorageRetrievalTimeMaxMinutes, false,
+                NewSettingTag + "Retrieval Maximum Time", "min", "The calculated retrieval time is capped to this many minutes (not affected by the divider).",
+                GrayIfFalse(canStoreGrids));
+
+            PrintSetting(sb, nameof(settings.GridStorageQueueLimit), settings.GridStorageQueueLimit, DefaultSettings.GridStorageQueueLimit, false,
+                NewSettingTag + "Retrieval Max Queue", "Maximum amount of concurrent retrieval orders per-player.",
+                GrayIfFalse(canStoreGrids));
+
+            PrintSetting(sb, nameof(settings.GridStorageExpediteCostPerSecond), settings.GridStorageExpediteCostPerSecond, DefaultSettings.GridStorageExpediteCostPerSecond, false,
+                NewSettingTag + "Expedite Cost Per Second", "Credits cost per remaining second for the 'expedite' feature." +
+                                                            "\nExpedite can only be used once per retrieval.",
+                GrayIfFalse(canStoreGrids));
+
+            PrintSetting(sb, nameof(settings.GridStorageExpediteFactor), settings.GridStorageExpediteFactor, DefaultSettings.GridStorageExpediteFactor, false,
+                NewSettingTag + "Expedite Factor", "Remaining time to retrieve a grid is multiplied by this value when a player uses the 'expedite' feature." +
+                                                   "\nExpedite can only be used once per retrieval.",
+                GrayIfFalse(canStoreGrids));
+
+            //{
+            //    int shipPCU = 10000;
+            //
+            //    float minutes = (settings.GridStorageRetrievalTimeMinMinutes + settings.GridStorageMinutesPerPCU * shipPCU) / settings.GridStorageRetrievalTimeMultiplier;
+            //    minutes = MathHelper.Clamp(minutes, 0f, settings.GridStorageRetrievalTimeMaxMinutes);
+            //
+            //    float seconds = minutes * 60;
+            //}
+#endif
+        }
+
+        void Section_Multipliers(StringBuilder sb)
+        {
             Header(sb, "Multipliers");
 
             PrintFormattedNumber(sb, nameof(settings.BlocksInventorySizeMultiplier), settings.BlocksInventorySizeMultiplier, DefaultSettings.BlocksInventorySizeMultiplier, true,
@@ -1202,7 +474,7 @@ namespace Digi.BuildInfo.Features.GUI
                 "Character Inventory", "x", "Multiplier for character inventory size.");
 #if !(VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 || VERSION_206) // HACK: backwards compatible
             PrintFormattedNumber(sb, nameof(settings.FoodConsumptionRate), settings.FoodConsumptionRate, DefaultSettings.FoodConsumptionRate, true,
-                NewSettingTag + "Food Consumption Rate", "x", "This value impacts how quickly the player becomes hungry, as well as how quickly food production occurs.");
+                "Food Consumption Rate", "x", "This value impacts how quickly the player becomes hungry, as well as how quickly food production occurs.");
 #endif
             PrintFormattedNumber(sb, nameof(settings.WelderSpeedMultiplier), settings.WelderSpeedMultiplier, DefaultSettings.WelderSpeedMultiplier, true,
                 "Welding", "x", "Speed multiplier for welding (both hand and ship).");
@@ -1218,10 +490,10 @@ namespace Digi.BuildInfo.Features.GUI
                 "Assembler Speed", "x", "Speed multiplier for reducing all assembler crafting times, including survival kit.");
             PrintFormattedNumber(sb, nameof(settings.RefinerySpeedMultiplier), settings.RefinerySpeedMultiplier, DefaultSettings.RefinerySpeedMultiplier, true,
                 "Refinery Speed", "x", "Speed multiplier for all refineries.");
-            #endregion Multipliers
+        }
 
-
-            #region Environment
+        void Section_Environment(StringBuilder sb)
+        {
             Header(sb, "Environment");
 
             {
@@ -1255,9 +527,9 @@ namespace Digi.BuildInfo.Features.GUI
                 "Meteorite Showers", $"Enables meteorites, available difficulties: {string.Join(", ", Enum.GetNames(typeof(MyEnvironmentHostilityEnum)))}" + TooltipOriginalName("WorldSettings_EnvironmentHostility"));
 #if !(VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 || VERSION_206) // HACK: backwards compatible
             PrintSetting(sb, nameof(settings.EnableRadiation), settings.EnableRadiation, DefaultSettings.EnableRadiation, false,
-                NewSettingTag + "Enable Radiation", "Enable radiation hazards.");
+                "Enable Radiation", "Enable radiation hazards.");
             PrintSetting(sb, nameof(settings.SolarRadiationIntensity), settings.SolarRadiationIntensity, DefaultSettings.SolarRadiationIntensity, false,
-                NewSettingTag + "Solar Radiation Intensity", "A multiplier for the amount of radiation gained in space from sun exposure.");
+                "Solar Radiation Intensity", "A multiplier for the amount of radiation gained in space from sun exposure.");
 #endif
             PrintSetting(sb, nameof(settings.WeatherLightingDamage), settings.WeatherLightingDamage, DefaultSettings.WeatherLightingDamage, false,
                 "Enable lightning damage", "Lightning strikes from weather can damage grids.");
@@ -1265,10 +537,6 @@ namespace Digi.BuildInfo.Features.GUI
                 "Voxel Destruction", "Enables voxel destructions.");
             PrintSetting(sb, nameof(settings.ProceduralSeed), settings.ProceduralSeed, DefaultSettings.ProceduralSeed, false,
                 "Procedural Content Seed", "Defines unique starting seed for the procedurally generated content (voxels and encounters).");
-
-            const string GeneratorVersioning = "\nVersioning allows devs to change things that would break existing worlds without breaking existing worlds." +
-                                               "\nHigher numbers don't necessarily mean newer or better, it could be a less intensive variant for lower-end hardware for example." +
-                                               "\nExisting worlds should not modify this number. It is shown here for awareness.";
 
             bool proceduralAsteroids = settings.ProceduralDensity > 0;
             PrintSetting(sb, nameof(settings.VoxelGeneratorVersion), settings.VoxelGeneratorVersion, DefaultSettings.VoxelGeneratorVersion, false,
@@ -1283,10 +551,10 @@ namespace Digi.BuildInfo.Features.GUI
             PrintSetting(sb, nameof(settings.DepositSizeDenominator), settings.DepositSizeDenominator, DefaultSettings.DepositSizeDenominator, false,
                 "Deposit Size Denominator", "Resource deposit size denominator for generated world content (voxel generator v3 or higher).",
                 GrayIfFalse(proceduralAsteroids && settings.VoxelGeneratorVersion >= 3));
-            #endregion Environment
+        }
 
-
-            #region Economy
+        void Section_Economy(StringBuilder sb)
+        {
             Header(sb, "Economy");
 
             bool economyOn = settings.EnableEconomy;
@@ -1328,12 +596,17 @@ namespace Digi.BuildInfo.Features.GUI
                 //    "Stations Outer Radius End", "m", "The outer radius [m] (center is in 0,0,0), where stations can spawn. Does not affect planet-bound stations (surface Outposts and Orbital stations).");
             }
 
-            #endregion Economy
+#if !(VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 || VERSION_206 || VERSION_207 || VERSION_208) // HACK: backwards compatible
+            PrintSetting(sb, nameof(settings.ReputationDecayRate), settings.ReputationDecayRate, DefaultSettings.ReputationDecayRate, false,
+                NewSettingTag + "Reputation Decay", "Reputation will decay back to default values over time.");
+#endif
+        }
 
-
-            #region Encounters
+        void Section_Encounters(StringBuilder sb)
+        {
             Header(sb, "Encounters");
 
+            bool globalEncountersOn = settings.GlobalEncounterCap > 0;
             bool encountersOn = settings.EnableEncounters && settings.EncounterDensity > 0f;
 
             PrintSetting(sb, nameof(settings.CargoShipsEnabled), settings.CargoShipsEnabled, DefaultSettings.CargoShipsEnabled, true,
@@ -1470,7 +743,7 @@ namespace Digi.BuildInfo.Features.GUI
             }
 
             PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterTimerFirst), settings.PlanetaryEncounterTimerFirst, DefaultSettings.PlanetaryEncounterTimerFirst, false,
-                NewSettingTag + "PE Timer First", " min", "The first player on world load will get a PE spawed after this many minutes.",
+                "PE Timer First", " min", "The first player on world load will get a PE spawed after this many minutes.",
                 GrayIfFalse(planetaryEncountersOn));
 
             PrintFormattedNumber(sb, nameof(settings.PlanetaryEncounterDesiredSpawnRange), settings.PlanetaryEncounterDesiredSpawnRange, DefaultSettings.PlanetaryEncounterDesiredSpawnRange, false,
@@ -1505,10 +778,10 @@ namespace Digi.BuildInfo.Features.GUI
                 GrayIfFalse(planetaryEncountersOn));
 
             PrintPlanetsHavingEncounters(sb, "PE on Planets", planetaryEncountersOn);
-            #endregion Encounters
+        }
 
-
-            #region Combat
+        void Section_Combat(StringBuilder sb)
+        {
             Header(sb, "Combat");
 
             PrintSetting(sb, nameof(settings.WeaponsEnabled), settings.WeaponsEnabled, DefaultSettings.WeaponsEnabled, true,
@@ -1523,13 +796,22 @@ namespace Digi.BuildInfo.Features.GUI
                 "Enable Scrap Drops", "Allow scrap to be dropped from destroyed blocks");
             PrintSetting(sb, nameof(settings.TemporaryContainers), settings.TemporaryContainers, DefaultSettings.TemporaryContainers, false,
                 "Enable Temporary Containers", "Enable Temporary Containers to spawn after destroying block with inventory.");
-            #endregion Combat
+        }
 
+        void Section_Bots(StringBuilder sb)
+        {
+            Header(sb, "Bots");
 
-            sb = NextColumn(); // ------------------------------------------------------------------------------------------------------------------------------
+            PrintSetting(sb, nameof(settings.TotalBotLimit), settings.TotalBotLimit, DefaultSettings.TotalBotLimit, true,
+                "Animal NPC Limit", "Maximum number of organic bots in the world");
+            PrintSetting(sb, nameof(settings.EnableSpiders), settings.EnableSpiders, DefaultSettings.EnableSpiders, true,
+                "Spiders", "Enables spawning of spiders in the world.");
+            PrintSetting(sb, nameof(settings.EnableWolfs), settings.EnableWolfs, DefaultSettings.EnableWolfs, true,
+                "Wolves", "Enables spawning of wolves in the world.");
+        }
 
-
-            #region Limits
+        void Section_Limits(StringBuilder sb)
+        {
             Header(sb, "Limits");
 
             PrintSetting(sb, nameof(settings.BlockLimitsEnabled), GetLimitsModeName(settings.BlockLimitsEnabled), GetLimitsModeName(DefaultSettings.BlockLimitsEnabled), true,
@@ -1597,13 +879,15 @@ namespace Digi.BuildInfo.Features.GUI
             PrintSetting(sb, nameof(settings.PiratePCU), settings.PiratePCU, DefaultSettings.PiratePCU, true,
                 "PCU for NPCs", "Number of Performance Cost Units allocated for NPCs ships, except Global Encounters.");
 
+            bool globalEncountersOn = settings.GlobalEncounterCap > 0;
+
             PrintSetting(sb, nameof(settings.GlobalEncounterPCU), settings.GlobalEncounterPCU, DefaultSettings.GlobalEncounterPCU, true,
                 "Global Encounters PCU", "Number of Performance Cost Units allocated for Global Encounters.",
                 GrayIfFalse(globalEncountersOn));
-            #endregion Limits
+        }
 
-
-            #region Cleanup
+        void Section_Cleanup(StringBuilder sb)
+        {
             Header(sb, "Cleanup");
 
             PrintSetting(sb, nameof(settings.EnableRemoteBlockRemoval), settings.EnableRemoteBlockRemoval, DefaultSettings.EnableRemoteBlockRemoval, true,
@@ -1640,18 +924,18 @@ namespace Digi.BuildInfo.Features.GUI
 
 #if !(VERSION_200 || VERSION_201 || VERSION_202 || VERSION_203 || VERSION_204 || VERSION_205 || VERSION_206) // HACK: backwards compatible
             PrintSetting(sb, nameof(settings.ResetForageableItems), settings.ResetForageableItems, DefaultSettings.ResetForageableItems, false,
-                NewSettingTag + "Reset forageable items", "Enables reseting forageable items.");
+                "Reset forageable items", "Enables reseting forageable items.");
 
             PrintFormattedNumber(sb, nameof(settings.ResetForageableItemsTimeM), settings.ResetForageableItemsTimeM, DefaultSettings.ResetForageableItemsTimeM, false,
-                NewSettingTag + "Reset forageable items time", " min", "Defines time in minutes after which forageable items are reset.");
+                "Reset forageable items time", " min", "Defines time in minutes after which forageable items are reset.");
 
             PrintFormattedNumber(sb, nameof(settings.ResetForageableItemsDistance), settings.ResetForageableItemsDistance, DefaultSettings.ResetForageableItemsDistance, false,
-                NewSettingTag + "Reset forageable items distance", " m", "Defines minimum distance from player for forageable items to reset.");
+                "Reset forageable items distance", " m", "Defines minimum distance from player for forageable items to reset.");
 #endif
-            #endregion Cleanup
+        }
 
-
-            #region Grids Cleanup
+        void Section_GridsCleanup(StringBuilder sb)
+        {
             Header(sb, "Grids Cleanup");
 
             PrintSetting(sb, nameof(settings.TrashRemovalEnabled), settings.TrashRemovalEnabled, DefaultSettings.TrashRemovalEnabled, false,
@@ -1696,10 +980,10 @@ namespace Digi.BuildInfo.Features.GUI
                                                          "\nWARNING: This will remove all grids that are owned by the player." +
                                                          "\n0 means off.",
                 GrayOrWarn(settings.TrashRemovalEnabled, settings.PlayerInactivityThreshold > 0));
-            #endregion Grids Cleanup
+        }
 
-
-            #region Voxel Cleanup
+        void Section_VoxelCleanup(StringBuilder sb)
+        {
             Header(sb, "Voxel Cleanup");
 
             PrintSetting(sb, nameof(settings.VoxelTrashRemovalEnabled), settings.VoxelTrashRemovalEnabled, DefaultSettings.VoxelTrashRemovalEnabled, false,
@@ -1736,11 +1020,13 @@ namespace Digi.BuildInfo.Features.GUI
             PrintFormattedNumber(sb, nameof(settings.VoxelAgeThreshold), settings.VoxelAgeThreshold, DefaultSettings.VoxelAgeThreshold, false,
                 "Voxel Age", " min", "Voxel chunks older than this will be reverted.",
                 GrayIfFalse(settings.VoxelTrashRemovalEnabled));
-            #endregion Voxel Cleanup
+        }
 
-
-            #region Performance
+        void Section_Performance(StringBuilder sb)
+        {
             Header(sb, "Performance");
+
+            MyEnvironmentDefinition envDef = MyDefinitionManager.Static.EnvironmentDefinition;
 
             PrintEnvGraphicsChanges(sb, envDef, DefaultEnvDef,
                 "LOD&Shadow distances", "This can only be changed by mods.\nInfluences how model detail and shadow graphics option behave.\nThis is merely a notice, compare with mods list to ensure it's intended.");
@@ -1771,13 +1057,10 @@ namespace Digi.BuildInfo.Features.GUI
                 "Prefetch Voxels Range Limit", " m", "Defines at what maximum distance weapons could interact with voxels." +
                                                      "\n\nIn technical terms: prevents MyPlanet.PrefetchShapeOnRay() from prefetching voxels if the line is longer than this." +
                                                      "\nThis call is used by bullet projectiles, targeting systems and mods can use it too.");
-            #endregion Performance
+        }
 
-
-            sb = NextColumn(); // ------------------------------------------------------------------------------------------------------------------------------
-
-
-            #region PvP
+        void Section_PvP(StringBuilder sb)
+        {
             Header(sb, "PvP");
 
             PrintSetting(sb, nameof(settings.EnableMatchComponent), settings.EnableMatchComponent, DefaultSettings.EnableMatchComponent, false,
@@ -1811,10 +1094,10 @@ namespace Digi.BuildInfo.Features.GUI
                 "Gamepad Aim Assist", "Enable aim assist for gamepad.");
             PrintFormattedNumber(sb, nameof(settings.EnemyTargetIndicatorDistance), settings.EnemyTargetIndicatorDistance, DefaultSettings.EnemyTargetIndicatorDistance, false,
                 "Aimed Enemy Indicator Distance", " m", "Max distance to show enemy indicator when aiming at a character.");
-            #endregion PvP
+        }
 
-
-            #region Misc
+        void Section_Misc(StringBuilder sb)
+        {
             Header(sb, "Misc.");
 
             PrintSetting(sb, nameof(settings.EnableSpectator), settings.EnableSpectator, DefaultSettings.EnableSpectator, true,
@@ -1828,10 +1111,10 @@ namespace Digi.BuildInfo.Features.GUI
                 "Suppressed Warnings", "Makes players ignore certain warnings from top-right red box popup, but not from the fully opened Shift+F1 menu.");
             PrintSetting(sb, string.Empty, "(hover)", null, false,
                 "Undisclosed settings", "There are some settings that were intentionally not disclosed in this menu:" + UndisclosedSettingsList);
-            #endregion Misc
+        }
 
-
-            #region Stats
+        void Section_Stats(StringBuilder sb)
+        {
             Header(sb, "Stats");
 
             DateTime date = MyAPIGateway.Session.GameDateTime;
@@ -1848,66 +1131,108 @@ namespace Digi.BuildInfo.Features.GUI
 
             PrintPlainText(sb, "Session", temp.Clear().TimeFormat(sessionTime.TotalSeconds).ToString(),
                 description: "Current session elapsed time, resets on restarts.");
-
-            #endregion
         }
 
-        void CheckSettings()
+        void AppendModsList()
         {
-            Log.Info("[DEV] Checking world settings for new settings...");
+            StringBuilder sb = CurrentColumn.Render.TextStringBuilder;
 
-            TestRun = true;
-            AppendSettings();
-            TestRun = false;
+            Header(sb, "Mods");
+            CurrentColumn.SetTooltip(0, "Mods at the top are loaded last therefore they override other ones below them." +
+                                       "\nNote: in files like sandbox_config.sbc the mods order is the load order, flipped compared to the GUI and here.");
 
-            // ignored members
-            KnownFields.Add("SubtypeId");
-            KnownFields.Add("SubtypeName");
-            KnownFields.Add("TypeId");
+            List<MyObjectBuilder_Checkpoint.ModItem> mods = MyAPIGateway.Session.Mods;
 
-            IEnumerable<MemberInfo> members = TypeExtensions.GetDataMembers(typeof(MyObjectBuilder_SessionSettings), true, true, false, true, false, true, true, false);
-
-            bool foundNewSettings = false;
-
-            foreach(MemberInfo member in members)
+            if(mods.Count == 0)
             {
-                if(!KnownFields.Contains(member.Name))
-                {
-                    foundNewSettings = true;
-                    Log.Info($"New setting: {member.Name}");
-                }
+                sb.Append("<color=gray>(No mods)");
+
+                CurrentColumn.AddTooltip(sb, "No mods in the actual server/world, but clearly this mod is here which means it's brought in by PluginLoader.");
+
+                sb.Append('\n');
             }
-
-            string trashFlagPrefix = nameof(MyTrashRemovalFlags) + ".";
-
-            foreach(MyTrashRemovalFlags flag in MyEnum<MyTrashRemovalFlags>.Values)
-            {
-                switch(flag)
-                {
-                    case MyTrashRemovalFlags.Default:
-                    case MyTrashRemovalFlags.None:
-                    // used by the trash collection to flag grids, not as settings...
-                    case MyTrashRemovalFlags.WithBlockCount:
-                    case MyTrashRemovalFlags.DistanceFromPlayer:
-                    case MyTrashRemovalFlags.Indestructible:
-                        continue;
-                }
-
-                string flagName = MyEnum<MyTrashRemovalFlags>.GetName(flag);
-                if(!KnownFields.Contains(trashFlagPrefix + flagName))
-                {
-                    foundNewSettings = true;
-                    Log.Info($"new TrashFlag: {flagName}");
-                }
-            }
-
-            if(foundNewSettings)
-                Log.Error($"[DEV] Found new server setting(s)! See log.", Log.PRINT_MESSAGE);
             else
-                Log.Info("[DEV] Done, found nothing new.");
+            {
+                ScrollableModsList.Reset();
+                int sbIndex = sb.Length;
+
+#if false // for testing mods list
+                {
+                    int totalMods = 167 - mods.Count;
+                    var fakeMods = new List<MyObjectBuilder_Checkpoint.ModItem>(totalMods + mods.Count);
+
+                    for(int i = 0; i <= totalMods; i++)
+                    {
+                        string modName = "";
+                        int len = MyRandom.Instance.Next(5, 100);
+                        for(int n = 0; n < len; n++)
+                        {
+                            if(MyRandom.Instance.Next(0, 100) <= 10)
+                                modName += ' ';
+                            else
+                                modName += (char)MyRandom.Instance.Next('a', 'z');
+                        }
+
+                        fakeMods.Add(new MyObjectBuilder_Checkpoint.ModItem()
+                        {
+                            FriendlyName = modName,
+                            IsDependency = MyRandom.Instance.Next(0, 100) <= 10,
+                            Name = modName,
+                            PublishedFileId = MyRandom.Instance.Next(0, 100) <= 10 ? 0 : (ulong)MyRandom.Instance.NextLong(),
+                            PublishedServiceName = "steam",
+                        });
+                    }
+
+                    fakeMods.AddList(mods);
+                    mods = fakeMods;
+                }
+#endif
+
+                bool scrollMods = mods.Count > ScrollableModsList.DisplayLines;
+
+                mods.Reverse(); // to match the GUI
+
+                for(int i = 0; i < mods.Count; i++)
+                {
+                    MyObjectBuilder_Checkpoint.ModItem mod = mods[i];
+
+                    string tooltip = mod.FriendlyName + "\n"
+                                   + (mod.PublishedFileId != 0 ? $"{mod.PublishedServiceName}:{mod.PublishedFileId}\nClick to open workshop page" : "Local mod")
+                                   + (mod.IsDependency ? "\n(Mod added by another mod as dependency)" : "");
+
+                    Action clickAction = null;
+
+                    if(mod.PublishedFileId > 0)
+                    {
+                        clickAction = () => Utils.OpenModPage(mod.PublishedServiceName, mod.PublishedFileId);
+                    }
+
+                    int startIdx = sb.Length;
+                    sb.Append(LabelPrefix).Append(i + 1).Append(". ").AppendMaxLength(mod.FriendlyName, 32);
+
+                    if(scrollMods)
+                    {
+                        int len = sb.Length - startIdx;
+                        ScrollableModsList.Add(sb.ToString(startIdx, len), tooltip, clickAction);
+                        sb.Length -= len; // erase!
+                    }
+                    else
+                    {
+                        CurrentColumn.AddTooltip(sb, tooltip, clickAction);
+
+                        sb.Append('\n');
+                    }
+                }
+
+                ScrollableModsList.Finish(CurrentColumn, sbIndex);
+            }
         }
+        #endregion
 
         #region Print setting methods
+        Formatting GrayIfFalse(bool enabled) => !enabled ? Formatting.GrayedOut : Formatting.Normal;
+        Formatting GrayOrWarn(bool enabled, bool warn) => !enabled ? Formatting.GrayedOut : warn ? Formatting.Warning : Formatting.Normal;
+
         const string TrueValue = "on";
         const string FalseValue = "off";
         const string NullValue = "null";
@@ -1919,9 +1244,6 @@ namespace Digi.BuildInfo.Features.GUI
             GrayedOut,
             Warning,
         }
-
-        Formatting GrayIfFalse(bool enabled) => !enabled ? Formatting.GrayedOut : Formatting.Normal;
-        Formatting GrayOrWarn(bool enabled, bool warn) => !enabled ? Formatting.GrayedOut : warn ? Formatting.Warning : Formatting.Normal;
 
         /// <summary>
         /// Note: if value is null, it will not add a newline.
@@ -1979,11 +1301,8 @@ namespace Digi.BuildInfo.Features.GUI
             sb.Append(LabelPrefix);
 
             bool isNew = displayName.StartsWith(NewSettingTag);
-
             if(isNew)
-            {
                 sb.Color(NewSettingColor).Append("*<reset>");
-            }
 
             sb.Color(enabled ? LabelColor : LabelColorDisabled);
 
@@ -2603,6 +1922,776 @@ namespace Digi.BuildInfo.Features.GUI
         //    PrintSetting(sb, string.Empty, valStr, defStr, false, displayName, description, formatting);
         //}
         #endregion Print setting methods
+
+        public static void Test()
+        {
+            try
+            {
+                if(BuildInfoMod.IsDevMod)
+                {
+                    ServerInfoMenu menu = new ServerInfoMenu(testMode: true);
+                    menu.CheckSettings();
+                    //Menu.Dispose();
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+        }
+
+        bool Visible;
+
+        HashSet<string> KnownFields = new HashSet<string>();
+        bool TestRun = false;
+        MyObjectBuilder_SessionSettings DefaultSettings;
+        MyObjectBuilder_SessionSettings settings => MyAPIGateway.Session.SessionSettings;
+
+        string DefaultFrom;
+        MyEnvironmentDefinition DefaultEnvDef = null;
+
+        HudAPIv2.BillBoardHUDMessage WindowBG;
+        Button CloseButton;
+        //HudAPIv2.BillBoardHUDMessage ButtonDebug;
+        Vector2D PrevMousePos;
+        Column.Tooltip? HoveredTooltip = null;
+        ITooltipHandler TooltipHandler;
+        HudAPIv2.BillBoardHUDMessage TooltipSelectionBox;
+
+        Column[] Columns = new Column[5];
+        Column CurrentColumn;
+        int ColumnIndex;
+
+        ScrollableSection ScrollableBlockLimits = new ScrollableSection(5);
+        ScrollableSection ScrollableModsList = new ScrollableSection(35);
+        ScrollableSection ScrollableWarnings = new ScrollableSection(10);
+        List<ScrollableSection> ScrollableSections;
+
+        BuildInfoMod Main;
+
+        static float LineHeight;
+        static float SpaceWidth;
+
+        const double TextScale = 0.8;
+        const string LabelPrefix = "  ";
+        static readonly Color HeaderColor = new Color(155, 220, 255);
+        static readonly Color LabelColor = new Color(230, 240, 255);
+        static readonly Color LabelColorDisabled = Color.Gray;
+        static readonly Color ValueColorDefault = new Color(200, 255, 200);
+        static readonly Color ValueColorChanged = new Color(255, 230, 180);
+        static readonly Color ValueColorDisabled = Color.Gray;
+        static readonly Color ValueColorWarning = new Color(255, 60, 25);
+        static readonly Color NewSettingColor = new Color(100, 255, 155);
+        static readonly Color SearchBgColor = new Color(60, 76, 82);
+        const bool DebugDrawBoxes = false;
+        const float CloseButtonScale = 1.2f;
+
+        bool ShowInternal => true; // Main.Config.InternalInfo.Value;
+
+        const string TooltipSettingModdable = "\n<color=gray>This is only changeable using mods.<reset>";
+        //const string TooltipSettingGameUI = "\n<color=gray>This is a world setting. This in particular can be changed in the world options screen.<reset>";
+        //const string TooltipSettingDSUI = "\n<color=gray>This is a world setting. This in particular can be changed in dedicated server UI or in sandbox_config.sbc file.<reset>";
+        //const string TooltipSettingSaveFile = "\n<color=gray>This is a world setting. This in particular can only be changed in the sandbox_config.sbc file.<reset>";
+
+        public ServerInfoMenu(bool testMode = false)
+        {
+            Main = BuildInfoMod.Instance;
+
+            if(!testMode || BuildInfoMod.IsDevMod)
+                ReadDefaults();
+        }
+
+        /*
+        public void Dispose()
+        {
+            if(WindowBG == null)
+                return;
+
+            WindowBG.DeleteMessage();
+            WindowBG = null;
+
+            foreach(Column column in Columns)
+            {
+                column.Render.Text.DeleteMessage();
+            }
+
+            Columns = null;
+
+            foreach(ScrollableSection section in ScrollableSections)
+            {
+                section.Dispose();
+            }
+            ScrollableSections = null;
+
+            CloseButton.Dispose();
+            CloseButton = null;
+
+            TooltipRender.Dispose();
+            TooltipRender = null;
+        }
+        */
+
+        void ReadDefaults()
+        {
+            const string WorldForDefaults = @"CustomWorlds\Star System\sandbox_config.sbc";
+            var worldConfig = ReadGameXML<MyObjectBuilder_WorldConfiguration>(WorldForDefaults);
+            if(worldConfig != null)
+            {
+                DefaultSettings = worldConfig.Settings;
+                DefaultFrom = "Star System template";
+            }
+            else
+            {
+                DefaultSettings = new MyObjectBuilder_SessionSettings();
+                DefaultFrom = "(ERROR)";
+                // errors will be logged by ReadGameXML() 
+            }
+
+            const string EnvSBC = @"Data\Environment.sbc";
+            var defsOB = ReadGameXML<MyObjectBuilder_Definitions>(EnvSBC);
+            if(defsOB != null)
+            {
+                foreach(var defOB in defsOB.Definitions)
+                {
+                    var envDefOB = defOB as MyObjectBuilder_EnvironmentDefinition;
+                    if(envDefOB != null)
+                    {
+                        DefaultEnvDef = new MyEnvironmentDefinition();
+                        DefaultEnvDef.Init(envDefOB, MyModContext.BaseGame);
+                        break;
+                    }
+                }
+
+                if(DefaultEnvDef == null)
+                {
+                    Log.Error($"Game's '{EnvSBC}' does not contain the expected EnvironmentDefinition!");
+                }
+            }
+
+            if(DefaultEnvDef == null)
+                DefaultEnvDef = MyDefinitionManager.Static.EnvironmentDefinition;
+        }
+
+        void CreateUIObjects()
+        {
+            MyStringId material = Constants.MatUI_Square;
+
+            //Color bgColor = new Color(41, 54, 62);
+            Color bgColor = new Color(37, 46, 53);
+
+            WindowBG = TextAPI.CreateHUDTexture(material, bgColor, Vector2D.Zero, false);
+
+            for(int i = 0; i < Columns.Length; i++)
+            {
+                Columns[i] = new Column(i, DebugDrawBoxes);
+            }
+
+            Columns[0].Render.TextStringBuilder.Append("aAgGqQjJ!W");
+            LineHeight = (float)Math.Abs(Columns[0].Render.Text.GetTextLength().Y);
+            Columns[0].Render.TextStringBuilder.Append(" ");
+            SpaceWidth = (float)Math.Abs(Columns[0].Render.Text.GetTextLength().Y);
+
+            ScrollableSections = new List<ScrollableSection>()
+            {
+                ScrollableBlockLimits,
+                ScrollableModsList,
+                ScrollableWarnings,
+            };
+
+            foreach(ScrollableSection section in ScrollableSections)
+            {
+                section.CreateUIObjects();
+            }
+
+            CloseButton = new Button("Close",
+                tooltip: null, tooltipHandler: null,
+                hover: (button) =>
+                {
+                    if(MyAPIGateway.Input.IsNewLeftMouseReleased())
+                        CloseMenu();
+                },
+                hoverEnd: null,
+                pivot: Align.BottomRight);
+            //CloseButton.DefaultColor = new Color(155, 155, 155);
+            CloseButton.Scale = CloseButtonScale;
+            CloseButton.Refresh(Vector2D.Zero);
+
+            SearchBar = new TextPackage(128, false, Constants.MatUI_Square);
+            SearchBar.Background.BillBoardColor = SearchBgColor;
+            SearchBar.HideWithHUD = false;
+            SearchBar.Position = new Vector2D(-0.9, 0.4);
+            SearchBar.Font = FontsHandler.TextAPI_OutlinedFont;
+
+            TooltipHandler = new TooltipHandler();
+
+            TooltipSelectionBox = TextAPI.CreateHUDTexture(material, Color.Lime * 0.2f, Vector2D.Zero);
+        }
+
+        public void ToggleMenu()
+        {
+            try
+            {
+                if(Visible)
+                {
+                    CloseMenu();
+                    return;
+                }
+
+                if(!Main.TextAPI.WasDetected)
+                {
+                    Utils.ShowColoredChatMessage(Log.ModName, "TextAPI not yet initialized, please wait... or bugreport if it persists.", FontsHandler.YellowSh);
+                    return;
+                }
+
+                TestRun = false;
+
+                if(WindowBG == null)
+                    CreateUIObjects();
+
+                GenerateMenuContents();
+
+                Vector2D pxSize = HudAPIv2.APIinfo.ScreenPositionOnePX;
+
+                const double PosX = 0.2; // right-offset to reduce overlap with chat
+                const float BorderPaddingPx = 20; // on each side
+                const float ColumnSpacingPx = 16; // between columns only
+                Vector2D columnSize = new Vector2D(0, 0);
+                Vector2D windowSize = new Vector2D(0, 0);
+
+                for(int i = 0; i < Columns.Length; i++)
+                {
+                    Column column = Columns[i];
+                    if(!column.Render.Visible)
+                        break;
+
+                    column.TextSize = column.Render.Text.GetTextLength();
+
+                    column.Render.Position = new Vector2D(PosX + columnSize.X, 0);
+
+                    columnSize.X += column.TextSize.X + pxSize.X * ColumnSpacingPx;
+                    columnSize.Y = -column.TextSize.Y;
+
+                    windowSize = Vector2D.Max(windowSize, columnSize);
+                }
+
+                windowSize.X -= pxSize.X * ColumnSpacingPx; // remove last column space
+
+                for(int i = 0; i < Columns.Length; i++)
+                {
+                    Column column = Columns[i];
+                    if(!column.Render.Visible)
+                        break;
+
+                    column.Render.Position -= new Vector2D(windowSize.X / 2, windowSize.Y / -2);
+
+                    if(DebugDrawBoxes)
+                        column.Render.UpdateBackgroundSize(0f);
+                }
+
+                // with close button centered and enlarging window
+                /*
+                float closeButtonHeight = (float)Math.Abs(CloseButton.Label.Text.GetTextLength().Y) + BorderPadding;
+
+                WindowBG.Origin = new Vector2D(PosX, -(closeButtonHeight - Padding));
+                WindowBG.Width = (float)windowSize.X + Padding;
+                WindowBG.Height = (float)windowSize.Y + Padding + closeButtonHeight + Padding;
+                WindowBG.Visible = true;
+
+                Vector2D closePos = new Vector2D(PosX, -(WindowBG.Height / 2 + closeButtonHeight - Padding - Padding));
+                CloseButton.Refresh(closePos, CloseButtonScale);
+                CloseButton.Visible = true;
+                CloseButton.Label.Visible = true;
+                */
+
+                WindowBG.Origin = new Vector2D(PosX, 0);
+                WindowBG.Width = (float)(windowSize.X + pxSize.X * BorderPaddingPx * 2);
+                WindowBG.Height = (float)(windowSize.Y + pxSize.Y * BorderPaddingPx * 2);
+                WindowBG.Visible = true;
+
+                // bottom-left
+                //Vector2D closePos = WindowBG.Origin - new Vector2D(WindowBG.Width, -WindowBG.Height) / 2;
+                //closePos += new Vector2D(CloseButton.Label.Background.Width, 0);
+                //closePos += pxSize * BorderPaddingPx;
+
+                Vector2D closePos = WindowBG.Origin + new Vector2D(WindowBG.Width, -WindowBG.Height) / 2;
+                closePos += new Vector2D(-pxSize.X * BorderPaddingPx, pxSize.Y * BorderPaddingPx);
+
+                //if(ButtonDebug == null)
+                //{
+                //    ButtonDebug = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("Square"), Vector2D.Zero, Color.Red);
+                //    ButtonDebug.Width = (float)pxSize.X * 4;
+                //    ButtonDebug.Height = (float)Math.Abs(pxSize.Y) * 4;
+                //}
+                //ButtonDebug.Origin = closePos;
+
+                CloseButton.Scale = CloseButtonScale;
+                CloseButton.Refresh(closePos);
+                CloseButton.SetVisible(true);
+
+                Main.MenuHandler.AddCursorRequest(GetType().Name,
+                    escapeCallback: () => CloseMenu(escPressed: true),
+                    blockMoveAndRoll: true,
+                    blockViewXY: true,
+                    blockClicks: true);
+
+                Main.MenuHandler.SetUpdateMenu(this, true);
+                Visible = true;
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+
+                CloseMenu(false);
+            }
+        }
+
+        void CloseMenu(bool escPressed = false)
+        {
+            Visible = false;
+            Main.MenuHandler.RemoveCursorRequest(GetType().Name);
+            Main.MenuHandler.SetUpdateMenu(this, false);
+
+            SearchBarClosed();
+
+            if(WindowBG == null)
+                return;
+
+            WindowBG.Visible = false;
+            CloseButton.SetVisible(false);
+            TooltipHandler.SetVisible(false);
+            TooltipSelectionBox.Visible = false;
+
+            foreach(ScrollableSection section in ScrollableSections)
+            {
+                section.SetVisible(false, false);
+            }
+
+            foreach(Column column in Columns)
+            {
+                column.Reset();
+            }
+
+            HideHighlighters();
+        }
+
+        public override void UpdateDraw()
+        {
+            Vector2D mousePos = MenuHandler.GetMousePositionGUI();
+            CloseButton.Update(mousePos);
+
+            if(!Visible)
+                return;
+
+            bool scrolled = false;
+
+            foreach(ScrollableSection section in ScrollableSections)
+            {
+                scrolled |= section.Update(mousePos);
+            }
+
+            if(scrolled || PrevMousePos != mousePos)
+            {
+                PrevMousePos = mousePos;
+                HoveredTooltip = null;
+                UpdateTooltip(mousePos);
+            }
+
+            if(!MyAPIGateway.Gui.IsCursorVisible)
+            {
+                if(HoveredTooltip?.ClickAction != null && MyAPIGateway.Input.IsNewLeftMousePressed())
+                {
+                    HoveredTooltip.Value.ClickAction.Invoke();
+                }
+            }
+
+            if(MyAPIGateway.Gui.ChatEntryVisible)
+            {
+                ListReader<char> input = MyAPIGateway.Input.TextInput;
+                if(input.Count > 0 || !SearchBar.Visible)
+                {
+                    ChatTyped(input);
+                }
+                else if(scrolled)
+                {
+                    SearchText();
+                }
+            }
+            else
+            {
+                SearchBarClosed();
+            }
+        }
+
+        #region In-window searching
+        const int MinCharsToSearch = 2;
+        int HighlighterIndex = -1;
+        List<HudAPIv2.BillBoardHUDMessage> Highlighters = new List<HudAPIv2.BillBoardHUDMessage>();
+        List<char> TextInput = new List<char>(64);
+        TextPackage SearchBar;
+        HashSet<Vector2I> LinesHighlighted = new HashSet<Vector2I>();
+
+        void ChatTyped(ListReader<char> input)
+        {
+            foreach(char c in input)
+            {
+                // TODO: maybe some day we'll get the exact chat text, but right now we only have hax
+                if(char.IsControl(c))
+                {
+                    if(c == '\r')
+                        continue;
+
+                    if(c == 1 || c == 127) // ctrl+a or ctrl+backspace
+                    {
+                        TextInput.Clear();
+                        break;
+                    }
+
+                    if(c == '\b') // backspace
+                    {
+                        if(TextInput.Count > 0)
+                            TextInput.RemoveAt(TextInput.Count - 1);
+                    }
+
+                    if(c == 22) // ctrl+v
+                    {
+                        // cannot read clipboard, would be a security problem.
+                    }
+
+                    continue;
+                }
+
+                TextInput.Add(c);
+            }
+
+            StringBuilder sb = SearchBar.TextStringBuilder.Clear();
+            sb.Append("Searching for: '");
+            foreach(char c in TextInput)
+                sb.Append(c);
+            sb.Append("'");
+
+            if(TextInput.Count < MinCharsToSearch)
+                sb.Append(" <color=gray>(min ").Append(MinCharsToSearch).Append(")");
+
+            SearchBar.Visible = true;
+            SearchBar.UpdateBackgroundSize();
+
+            SearchText();
+        }
+
+        void SearchBarClosed()
+        {
+            TextInput.Clear();
+
+            if(SearchBar != null)
+                SearchBar.Visible = false;
+        }
+
+        void HideHighlighters()
+        {
+            for(int i = 0; i <= HighlighterIndex; i++)
+            {
+                Highlighters[i].Visible = false;
+            }
+
+            HighlighterIndex = -1;
+        }
+
+        void SearchText()
+        {
+            HideHighlighters();
+
+            if(WindowBG == null)
+                return;
+
+            if(TextInput.Count < MinCharsToSearch)
+                return;
+
+            LinesHighlighted.Clear();
+
+            string findTextUpper = string.Join("", TextInput).ToUpperInvariant();
+            int findLength = findTextUpper.Length;
+
+            foreach(var scrollable in ScrollableSections)
+            {
+                scrollable.SearchAndScroll(findTextUpper, LinesHighlighted);
+            }
+
+            for(int columnIdx = 0; columnIdx < Columns.Length; columnIdx++)
+            {
+                Column column = Columns[columnIdx];
+
+                // search content
+                {
+                    StringBuilder sb = column.Render.TextStringBuilder;
+
+                    int line = 0;
+                    int maxSearchLength = (sb.Length - findLength) + 1;
+
+                    for(int i = 0; i < maxSearchLength; i++)
+                    {
+                        char chr = sb[i];
+
+                        if(chr == '\n')
+                        {
+                            line++;
+                            continue;
+                        }
+
+                        #region skip over TextAPI formatting
+                        if(chr == '<')
+                        {
+                            int x = i;
+
+                            if(i + 6 <= sb.Length)
+                            {
+                                if(sb[++x] == 'c'
+                                && sb[++x] == 'o'
+                                && sb[++x] == 'l'
+                                && sb[++x] == 'o'
+                                && sb[++x] == 'r'
+                                && sb[++x] == '=')
+                                {
+                                    // seek ahead for end char
+                                    int endChar = -1;
+                                    for(int s = i + 6; s < sb.Length; s++)
+                                    {
+                                        if(sb[s] == '>')
+                                        {
+                                            endChar = s;
+                                            break;
+                                        }
+                                    }
+
+                                    if(endChar != -1)
+                                    {
+                                        i = endChar;
+                                        continue;
+                                    }
+                                }
+                            }
+
+                            if(SkipOverString(sb, ref i, "<reset>")
+                            || SkipOverString(sb, ref i, "<i>")
+                            || SkipOverString(sb, ref i, "</i>"))
+                                continue;
+                        }
+                        #endregion
+
+                        if(char.ToUpperInvariant(chr) == findTextUpper[0])
+                        {
+                            int foundChars = 1;
+                            while(foundChars < findLength)
+                            {
+                                if(char.ToUpperInvariant(sb[i + foundChars]) != findTextUpper[foundChars])
+                                    break;
+
+                                foundChars++;
+                            }
+
+                            if(foundChars == findLength)
+                            {
+                                LinesHighlighted.Add(new Vector2I(columnIdx, line));
+                                HighlightLine(column, line);
+
+                                // we got a match on this line, now skip to next line to avoid re-highlighting this one
+                                int lineEnd = sb.IndexOf('\n', i);
+                                if(lineEnd == -1)
+                                    break;
+
+                                // -1 required so that the next iteration lands on \n and executes the new line condition
+                                i = lineEnd - 1;
+                                continue;
+                            }
+                        }
+                    }
+                }
+
+                // search tooltips too
+                foreach(KeyValuePair<int, Column.Tooltip> kv in column.Tooltips)
+                {
+                    int line = kv.Key;
+                    Vector2I id = new Vector2I(columnIdx, line);
+                    if(LinesHighlighted.Contains(id))
+                        continue;
+
+                    string tooltipText = kv.Value.Text;
+
+                    if(tooltipText.IndexOf(findTextUpper, StringComparison.OrdinalIgnoreCase) != -1)
+                    {
+                        LinesHighlighted.Add(id);
+                        HighlightLine(column, line);
+                    }
+                }
+            }
+        }
+
+        static bool SkipOverString(StringBuilder sb, ref int i, string str)
+        {
+            if(sb.IndexOf(str, i, i + str.Length - 1, true) != -1)
+            {
+                i += str.Length - 1;
+                return true;
+            }
+
+            return false;
+        }
+
+        void HighlightLine(Column column, int line)
+        {
+            Vector2D columnMin = column.Render.Text.Origin + column.Render.Text.Offset;
+            Vector2D columnMax = columnMin + column.TextSize;
+            BoundingBox2D columnBB = new BoundingBox2D(Vector2D.Min(columnMin, columnMax), Vector2D.Max(columnMin, columnMax));
+
+            Vector2D start = new Vector2D(columnBB.Min.X, columnBB.Max.Y - ((line + 1) * LineHeight));
+            var area = new BoundingBox2D(start, start + new Vector2D(columnBB.Size.X, LineHeight));
+
+            HudAPIv2.BillBoardHUDMessage hl;
+
+            HighlighterIndex++;
+            if(Highlighters.Count <= HighlighterIndex)
+            {
+                hl = new HudAPIv2.BillBoardHUDMessage(Constants.MatUI_Square, Vector2D.Zero, Color.Yellow * 0.25f);
+                Highlighters.Add(hl);
+            }
+            else
+            {
+                hl = Highlighters[HighlighterIndex];
+            }
+
+            hl.Origin = area.Center;
+            hl.Width = (float)area.Width;
+            hl.Height = (float)area.Height;
+            hl.Visible = true;
+        }
+        #endregion
+
+        void UpdateTooltip(Vector2D mousePos)
+        {
+            BoundingBox2D highlightArea = default(BoundingBox2D);
+
+            for(int i = 0; i < Columns.Length; i++)
+            {
+                Column column = Columns[i];
+                Vector2D columnMin = column.Render.Text.Origin + column.Render.Text.Offset;
+                Vector2D columnMax = columnMin + column.TextSize;
+                BoundingBox2D columnBB = new BoundingBox2D(Vector2D.Min(columnMin, columnMax), Vector2D.Max(columnMin, columnMax));
+
+                if(columnBB.Contains(mousePos) == ContainmentType.Disjoint)
+                    continue;
+
+                int line = (int)Math.Ceiling(Math.Abs(mousePos.Y - columnMin.Y) / LineHeight) - 1;
+
+                Column.Tooltip tooltip;
+                if(column.Tooltips.TryGetValue(line, out tooltip))
+                {
+                    HoveredTooltip = tooltip;
+
+                    Vector2D start = new Vector2D(columnBB.Min.X, columnBB.Max.Y - ((line + 1) * LineHeight));
+                    highlightArea = new BoundingBox2D(start, start + new Vector2D(columnBB.Size.X, LineHeight));
+
+                    break;
+                }
+            }
+
+            if(HoveredTooltip == null && SearchBar != null && SearchBar.Visible)
+            {
+                Vector2D center = SearchBar.Background.Origin + SearchBar.Background.Offset;
+                Vector2D halfExtent = new Vector2D(SearchBar.Background.Width, SearchBar.Background.Height) * 0.5;
+                BoundingBox2D bb = new BoundingBox2D(center - halfExtent, center + halfExtent);
+
+                if(bb.Contains(mousePos) != ContainmentType.Disjoint)
+                {
+                    HoveredTooltip = new Column.Tooltip()
+                    {
+                        Text = "See exactly what is searched for when using chat.\nThis does not match 1:1 with chat because I'd have to reimplement all the textbox input features like arrows, clicking, etc.",
+                    };
+
+                    highlightArea = bb;
+                }
+            }
+
+            //if(HoveredTooltip == null)
+            //{
+            //    HoveredTooltip = new Tooltip()
+            //    {
+            //        Text = "Random tooltip\nWith newlines\nAnd really long lines or whatever else we might think of here to write to make it long yes.",
+            //    };
+            //}
+
+            if(HoveredTooltip != null)
+            {
+                TooltipSelectionBox.Origin = highlightArea.Center;
+                TooltipSelectionBox.Width = (float)highlightArea.Width;
+                TooltipSelectionBox.Height = (float)highlightArea.Height;
+                TooltipSelectionBox.Visible = true;
+
+                TooltipHandler.Hover(HoveredTooltip.Value.Text);
+                TooltipHandler.Draw(mousePos, drawNow: false);
+                TooltipHandler.SetVisible(true);
+            }
+            else
+            {
+                TooltipSelectionBox.Visible = false;
+
+                TooltipHandler.HoverEnd();
+                TooltipHandler.SetVisible(false);
+            }
+        }
+
+        void CheckSettings()
+        {
+            Log.Info("[DEV] Checking world settings for new settings...");
+
+            TestRun = true;
+            AppendSettings();
+            TestRun = false;
+
+            // ignored members
+            KnownFields.Add("SubtypeId");
+            KnownFields.Add("SubtypeName");
+            KnownFields.Add("TypeId");
+
+            IEnumerable<MemberInfo> members = TypeExtensions.GetDataMembers(typeof(MyObjectBuilder_SessionSettings), true, true, false, true, false, true, true, false);
+
+            bool foundNewSettings = false;
+
+            foreach(MemberInfo member in members)
+            {
+                if(!KnownFields.Contains(member.Name))
+                {
+                    foundNewSettings = true;
+                    Log.Info($"New setting: {member.Name}");
+                }
+            }
+
+            string trashFlagPrefix = nameof(MyTrashRemovalFlags) + ".";
+
+            foreach(MyTrashRemovalFlags flag in MyEnum<MyTrashRemovalFlags>.Values)
+            {
+                switch(flag)
+                {
+                    case MyTrashRemovalFlags.Default:
+                    case MyTrashRemovalFlags.None:
+                    // used by the trash collection to flag grids, not as settings...
+                    case MyTrashRemovalFlags.WithBlockCount:
+                    case MyTrashRemovalFlags.DistanceFromPlayer:
+                    case MyTrashRemovalFlags.Indestructible:
+                        continue;
+                }
+
+                string flagName = MyEnum<MyTrashRemovalFlags>.GetName(flag);
+                if(!KnownFields.Contains(trashFlagPrefix + flagName))
+                {
+                    foundNewSettings = true;
+                    Log.Info($"new TrashFlag: {flagName}");
+                }
+            }
+
+            if(foundNewSettings)
+                Log.Error($"[DEV] Found new server setting(s)! See log.", Log.PRINT_MESSAGE);
+            else
+                Log.Info("[DEV] Done, found nothing new.");
+        }
 
         class Column
         {
