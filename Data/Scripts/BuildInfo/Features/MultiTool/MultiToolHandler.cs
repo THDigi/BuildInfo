@@ -158,7 +158,11 @@ namespace Digi.BuildInfo.Features.MultiTool
 
                     if(block != null)
                     {
-                        if(Vector3D.DistanceSquared(MyAPIGateway.Session.Camera.Position, block.PositionComp.GetPosition()) < 100 * 100)
+                        if(block.PositionComp == null)
+                        {
+                            Log.Error($"Multitool's block was able to be placed nearby but also has null PositionComp?! please report the way to reproduce! grid: {gridInfo}");
+                        }
+                        else if(Vector3D.DistanceSquared(MyAPIGateway.Session.Camera.Position, block.PositionComp.GetPosition()) < 100 * 100)
                         {
                             Log.Error($"Multitool's block was able to be placed nearby, how?! please report the way to reproduce! grid: {gridInfo}");
                         }

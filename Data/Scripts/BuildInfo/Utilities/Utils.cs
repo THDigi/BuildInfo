@@ -269,6 +269,9 @@ namespace Digi.BuildInfo.Utilities
         {
             ulong steamId = MyAPIGateway.Session?.Player?.SteamUserId ?? 0;
             MyCubeGrid grid = (MyCubeGrid)block.CubeGrid;
+            if(grid.MarkedForClose)
+                return false;
+
             BoundingBoxD box = new BoundingBoxD(block.Min * grid.GridSize - grid.GridSizeHalfVector,
                                                 block.Max * grid.GridSize + grid.GridSizeHalfVector);
             box = box.TransformFast(grid.PositionComp.WorldMatrixRef);

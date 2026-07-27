@@ -35,6 +35,9 @@ namespace Digi.BuildInfo.Features.LiveData
             {
                 foreach(KeyValuePair<string, MyEntitySubpart> kv in internalBlock.Subparts)
                 {
+                    if(kv.Value?.PositionComp == null)
+                        continue;
+
                     MyTargetDummyBlockDefinition.MyDummySubpartDescription subpartDesc;
                     if(dummyDef.SubpartDefinitions.TryGetValue(kv.Key, out subpartDesc))
                     {

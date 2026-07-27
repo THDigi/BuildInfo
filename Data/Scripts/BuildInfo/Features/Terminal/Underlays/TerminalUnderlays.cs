@@ -92,6 +92,9 @@ namespace Digi.BuildInfo.Features.Terminal.Underlays
 
             foreach(IMyTerminalBlock block in blocks)
             {
+                if(block.MarkedForClose)
+                    continue;
+
                 if(!oneSelection)
                 {
                     BoundingBoxD blockBB = block.WorldAABB;

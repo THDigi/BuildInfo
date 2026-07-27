@@ -439,6 +439,9 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                 Conveyor conveyor = runParams.Conveyor;
                 MyCubeBlock block = runParams.Block;
 
+                if(block.MarkedForClose || block.PositionComp == null)
+                    continue;
+
                 if(block.CubeGrid != CurrentGridRender?.Grid)
                 {
                     if(!SelectGrid(block.CubeGrid))

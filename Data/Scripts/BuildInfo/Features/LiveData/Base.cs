@@ -274,8 +274,11 @@ namespace Digi.BuildInfo.Features.LiveData
         {
             foreach(KeyValuePair<string, MyEntitySubpart> kv in entity.Subparts)
             {
-                string dummyName = "subpart_" + kv.Key;
                 MyEntitySubpart subpart = kv.Value;
+                if(subpart.PositionComp == null)
+                    continue;
+
+                string dummyName = "subpart_" + kv.Key;
                 IMyModel model = (IMyModel)subpart.Model;
 
                 Matrix localMatrix = subpart.PositionComp.LocalMatrixRef;

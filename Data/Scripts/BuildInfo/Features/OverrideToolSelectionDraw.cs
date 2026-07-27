@@ -90,7 +90,7 @@ namespace Digi.BuildInfo.Features
             try
             {
                 // disable vanilla selection box
-                if(ent is IMyEngineerToolBase && ent.Render.GetType().Name == "MyRenderComponentEngineerTool")
+                if(ent is IMyEngineerToolBase && ent?.Render?.GetType().Name == "MyRenderComponentEngineerTool")
                 {
                     ent.Components.Remove<MyRenderComponentBase>();
                     ent.Render = new MyRenderComponent();
@@ -115,7 +115,7 @@ namespace Digi.BuildInfo.Features
                 return;
 
             IMySlimBlock aimedBlock = Main.EquipmentMonitor.AimedBlock;
-            if(aimedBlock == null)
+            if(aimedBlock == null || (aimedBlock.FatBlock != null && aimedBlock.FatBlock.MarkedForClose))
                 return;
 
             MyCubeBlockDefinition def = Main.EquipmentMonitor.BlockDef;
@@ -220,6 +220,9 @@ namespace Digi.BuildInfo.Features
         public void GetBlockModelBB(IMySlimBlock block, BlockSelectInfo fillData, double inflate = 0)
         {
             MyCubeBlock fatBlock = block.FatBlock as MyCubeBlock;
+            if(fatBlock != null && fatBlock.MarkedForClose)
+                return;
+
             MyCubeBlockDefinition def = (MyCubeBlockDefinition)block.BlockDefinition;
             MyCubeGrid grid = (MyCubeGrid)block.CubeGrid;
 
@@ -263,7 +266,7 @@ namespace Digi.BuildInfo.Features
                             {
                                 foreach(MyEntitySubpart subpart in entity.Subparts.Values)
                                 {
-                                    bool visible = subpart.Render.Visible;
+                                    bool visible = subpart.Render?.Visible ?? false;
 
                                     if(DebugDrawSubparts)
                                     {

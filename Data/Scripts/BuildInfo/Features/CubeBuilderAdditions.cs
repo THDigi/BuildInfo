@@ -126,7 +126,7 @@ namespace Digi.BuildInfo.Features
                 return; // ignore drag-to-build/drag-to-remove
 
             IMySlimBlock aimedBlock = Main.EquipmentMonitor.BuilderAimedBlock;
-            if(aimedBlock == null)
+            if(aimedBlock == null || (aimedBlock.FatBlock != null && aimedBlock.FatBlock.MarkedForClose))
                 return;
 
             bool showMessage = false;

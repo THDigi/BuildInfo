@@ -84,12 +84,20 @@ namespace Digi.BuildInfo.Features.ModderHelp
                         if(ent == null)
                         {
                             sb.AppendLine("    null entry!! this can crash the game as it's unexpected.");
+                            continue;
                         }
-                        else
+
+                        if(ent.MarkedForClose)
+                            continue;
+
+                        if(ent.PositionComp == null)
                         {
-                            Vector3D p = ent.PositionComp.WorldVolume.Center;
-                            sb.AppendLine($"    GPS:{ent.GetType().Name}:{p.X:0.##}:{p.Y:0.##}:{p.Z:0.##}:#FF0000:");
+                            sb.AppendLine($"    {ent.GetType().Name} has null PositionComp!");
+                            continue;
                         }
+
+                        Vector3D p = ent.PositionComp.WorldVolume.Center;
+                        sb.AppendLine($"    GPS:{ent.GetType().Name}:{p.X:0.##}:{p.Y:0.##}:{p.Z:0.##}:#FF0000:");
                     }
 
                     if(Entities.Count > 30)

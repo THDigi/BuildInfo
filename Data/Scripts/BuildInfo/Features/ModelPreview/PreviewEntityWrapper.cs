@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
@@ -44,6 +45,10 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
             Entity.Init(null, ModelFullPath, null, null, null);
             Entity.DisplayName = $"BuildInfo_PreviewModel:{Path.GetFileName(ModelFullPath)}";
+
+            if(Entity.Render == null)
+                throw new Exception($"Entity.Render is null for preview entity; model: {ModelFullPath}; source:{Source}");
+
             Entity.Render.EnableColorMaskHsv = true;
             Entity.Render.CastShadows = false;
 
@@ -75,7 +80,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             Entity.Close(); // should close its subparts too
         }
 
-        static void RecursiveSubpartInit(MyEntity entity, List<MyEntitySubpart> addTo)
+        void RecursiveSubpartInit(MyEntity entity, List<MyEntitySubpart> addTo)
         {
             foreach(MyEntitySubpart subpart in entity.Subparts.Values)
             {
@@ -83,6 +88,10 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
                 subpart.SyncFlag = false;
                 subpart.IsPreview = true;
+
+                if(subpart.Render == null)
+                    throw new Exception($"subpart.Render is null; main entity model:{ModelFullPath}; source:{Source}");
+
                 subpart.Render.EnableColorMaskHsv = true;
                 subpart.Render.CastShadows = false;
 
@@ -93,8 +102,8 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
         public void Update(ref MatrixD matrix, float? customTransparency = null)
         {
-            if(!Entity.Render.Visible)
-                Entity.Render.Visible = true;
+            if(Entity.Render == null || Entity.PositionComp == null)
+                return; // entity was removed?
 
             float transparency = (MyCubeBuilder.Static == null || MyCubeBuilder.Static.UseTransparency ? customTransparency ?? Hardcoded.CubeBuilderTransparency : 0f);
             if(Transparency != transparency)

@@ -104,6 +104,9 @@ namespace Digi.BuildInfo.Features.Overlays
                 if(def == null)
                     throw new Exception("blockDef must not be null!");
 
+                if(block?.FatBlock != null && block.FatBlock.MarkedForClose)
+                    return;
+
                 #region block changed
                 if(LastDef != def)
                 {

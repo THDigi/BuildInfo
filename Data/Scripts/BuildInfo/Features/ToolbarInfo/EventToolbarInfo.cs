@@ -545,9 +545,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         public override void UpdateDraw()
         {
-            if(TargetBlock == null) // redundancy
+            if(TargetBlock == null || TargetBlock.MarkedForClose) // redundancy
             {
                 SetUpdateMethods(UpdateFlags.UPDATE_DRAW, false);
+                TargetBlock = null;
                 DrawingOverlays = false;
                 return;
             }

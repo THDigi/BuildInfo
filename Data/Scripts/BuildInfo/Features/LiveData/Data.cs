@@ -16,7 +16,10 @@ namespace Digi.BuildInfo.Features.LiveData
 
         public void AssignData(MyCubeBlock block, MyEntity subpartYaw, MyEntity subpartPitch)
         {
-            if(subpartYaw != null)
+            if(block.PositionComp == null)
+                return;
+
+            if(subpartYaw?.PositionComp != null)
             {
                 YawLocalPos = (Vector3)Vector3D.Transform(subpartYaw.WorldMatrix.Translation, block.PositionComp.WorldMatrixInvScaled);
                 YawModelCenter = (Vector3)Vector3D.Transform(subpartYaw.PositionComp.WorldAABB.Center, block.PositionComp.WorldMatrixInvScaled);
@@ -28,7 +31,7 @@ namespace Digi.BuildInfo.Features.LiveData
                     YawLocalPos += new Vector3(0, 0.05f, 0);
             }
 
-            if(subpartPitch != null)
+            if(subpartPitch?.PositionComp != null)
             {
                 PitchLocalPos = (Vector3)Vector3D.Transform(subpartPitch.WorldMatrix.Translation, block.PositionComp.WorldMatrixInvScaled);
             }
@@ -49,7 +52,7 @@ namespace Digi.BuildInfo.Features.LiveData
         /// <param name="offsetUp">Only used if the dummy is not found</param>
         public void AssignData(MyCubeBlock block, MyEntity subpart, string dummyName, float offsetForward = 0, float offsetUp = 0)
         {
-            if(subpart?.Model != null)
+            if(subpart?.Model != null && subpart.PositionComp != null)
             {
                 Matrix local;
                 IMyModelDummy cameraDummy = subpart.Model.GetDummies().GetValueOrDefault(dummyName, null);

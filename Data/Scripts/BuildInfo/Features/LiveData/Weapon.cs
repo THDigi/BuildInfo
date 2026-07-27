@@ -56,6 +56,9 @@ namespace Digi.BuildInfo.Features.LiveData
 
         protected void AddMuzzle(MyCubeBlock block, MyAmmoType ammoType, Matrix localMatrix, string dummyName = "")
         {
+            if(block.PositionComp == null)
+                throw new Exception($"block.PositionComp is null for defId:{block?.BlockDefinition?.Id}");
+
             if(Muzzles == null)
                 Muzzles = new List<MuzzleData>();
 
