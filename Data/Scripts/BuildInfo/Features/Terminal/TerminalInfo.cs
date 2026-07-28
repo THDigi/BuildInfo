@@ -25,6 +25,7 @@ using VRage;
 using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
+using VRage.Game.ObjectBuilders.Components;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
 using VRage.Utils;
@@ -159,6 +160,8 @@ namespace Digi.BuildInfo.Features.Terminal
             Add(typeof(MyObjectBuilder_InteriorTurret), action);
             Add(typeof(MyObjectBuilder_LargeGatlingTurret), action);
             Add(typeof(MyObjectBuilder_LargeMissileTurret), action);
+
+            Add(typeof(MyObjectBuilder_Warhead), Format_Warhead);
 
             Add(typeof(MyObjectBuilder_TurretControlBlock), Format_CTC);
 
@@ -758,6 +761,22 @@ namespace Digi.BuildInfo.Features.Terminal
 
             info.Append('\n');
             */
+        }
+
+        void Format_Warhead(IMyTerminalBlock block, StringBuilder info)
+        {
+            // Vanilla info in 1.210:
+            //      (nothing)
+
+            // this includes the next check but doing it like this to differentiate between global permissions and localized safezone
+            if(!MySessionComponentSafeZones.IsActionAllowedGlobally(MySafeZoneAction.Damage))
+            {
+                info.Append("[color=#FFFFFF00]Global permissions disables damage which prevents warheads from exploding.[/color]\n");
+            }
+            else if(!MySessionComponentSafeZones.IsActionAllowed(block.WorldMatrix.Translation, MySafeZoneAction.Damage)) // same check that MyWarhead.Explode() does
+            {
+                info.Append("[color=#FFFFFF00]Damage is disabled inside this safezone which prevents warheads from detonating.[/color]\n");
+            }
         }
 
         void Format_CTC(IMyTerminalBlock block, StringBuilder info)
