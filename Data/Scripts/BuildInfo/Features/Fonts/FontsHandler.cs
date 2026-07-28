@@ -199,6 +199,38 @@ namespace Digi.BuildInfo.Features
                         font.AddKerning(kp.Adjust, kp.Right, kp.Left);
                     }
 
+                    /* White font characters grouped by width
+                    if(fontInfo.Name == BI_SEOutlined)
+                    {
+                        Dictionary<float, List<char>> perSize = new Dictionary<float, List<char>>();
+
+                        foreach(FontParser.Glyph glyph in data.Glyphs)
+                        {
+                            Vector2 px = MyFontDefinition.MeasureStringRaw("White", glyph.Ch.ToString(), 1f);
+
+                            perSize.GetValueOrNew(px.X).Add(glyph.Ch);
+                        }
+
+                        var sb = new StringBuilder(1024);
+                        sb.Append("[DEBUG] White font characters per size:\n");
+
+                        foreach(var kv in perSize)
+                        {
+                            sb.Append($"  {kv.Key} -- ");
+
+                            foreach(var ch in kv.Value)
+                            {
+                                sb.Append($"'{ch}' ({(int)ch:x2}), ");
+                            }
+
+                            sb.Length -= 2;
+                            sb.Append('\n');
+                        }
+
+                        Log.Info(sb.ToString());
+                    }
+                    */
+
                     FontAdded(font, fontInfo);
                 }
                 catch(Exception e)

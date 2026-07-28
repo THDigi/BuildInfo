@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<Definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Definition xsi:type="MyObjectBuilder_GuiTextureAtlasDefinition">
+    <Id Type="MyObjectBuilder_GuiTextureAtlasDefinition" Subtype="BuildInfo"/>
+    <Textures>
+      <Texture>
+        <SubtypeName>bi_shipInventoryIcon</SubtypeName>
+        <Path>Textures\HUD\ShipContainers.dds</Path>
+      </Texture>
+    </Textures>
+  </Definition>
+</Definitions>

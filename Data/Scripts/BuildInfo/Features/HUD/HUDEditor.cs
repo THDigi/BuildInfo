@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Digi.BuildInfo.Features.HUD;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Utilities;
@@ -41,6 +42,7 @@ namespace Digi.BuildInfo.Features
             Main.Config.ToolbarStatusFontOverride.ValueAssigned += ConfigValueChanged_Bool;
             Main.Config.ToolbarStatusTextScaleOverride.ValueAssigned += ConfigValueChanged_Float;
             Main.Config.HudFontOverride.ValueAssigned += ConfigValueChanged_Bool;
+            Main.Config.BackpackBarOverride.ValueAssigned += ConfigValueChanged_Bool;
             Main.Config.MassOverride.ValueAssigned += ConfigValueChanged_Enum;
 
             RefreshHudHandler = new RefreshHudHandler();
@@ -60,6 +62,7 @@ namespace Digi.BuildInfo.Features
             Main.Config.ToolbarStatusFontOverride.ValueAssigned -= ConfigValueChanged_Bool;
             Main.Config.ToolbarStatusTextScaleOverride.ValueAssigned -= ConfigValueChanged_Float;
             Main.Config.HudFontOverride.ValueAssigned -= ConfigValueChanged_Bool;
+            Main.Config.BackpackBarOverride.ValueAssigned -= ConfigValueChanged_Bool;
             Main.Config.MassOverride.ValueAssigned -= ConfigValueChanged_Enum;
 
             RefreshHudHandler?.Dispose();
@@ -128,6 +131,11 @@ namespace Digi.BuildInfo.Features
                 if(Main.Config.HudFontOverride.Value)
                 {
                     ModifyFonts(hudDef);
+                }
+
+                if(Main.Config.BackpackBarOverride.Value)
+                {
+                    ModifyBackpackIcon(hudDef);
                 }
             }
 
@@ -260,10 +268,8 @@ namespace Digi.BuildInfo.Features
                             if(textStyle.Text != null && textStyle.Text.EndsWith("Kg"))
                             {
                                 ShipMassStat.ShowCustomSuffix = true;
-
-                                DefEdits.MakeEdit(hudDef, (d, v) => textStyle.Text = v, textStyle.Text, Format);
-
-                                //DefEdits.MakeEdit(hudDef, (d, v) => textStyle.ColorMask = v, textStyle.ColorMask, null);
+                                DefEdits.MakeEdit(textStyle, (o, v) => o.Text = v, textStyle.Text, Format);
+                                //DefEdits.MakeEdit(textStyle, (o, v) => o.ColorMask = v, textStyle.ColorMask, null);
                                 return;
                             }
                         }
@@ -315,8 +321,116 @@ namespace Digi.BuildInfo.Features
                 var styleText = style as MyObjectBuilder_TextStatVisualStyle; // gets captured
                 if(styleText != null)
                 {
-                    DefEdits.MakeEdit(hudDef, (d, v) => styleText.Font = v, styleText.Font, FontsHandler.BI_Monospace);
+                    DefEdits.MakeEdit(styleText, (o, v) => o.Font = v, styleText.Font, FontsHandler.BI_Monospace);
                 }
+            }
+        }
+
+        void ModifyBackpackIcon(MyHudDefinition hudDef)
+        {
+            try
+            {
+                if(hudDef.StatControls != null)
+                {
+                    var texture = MyStringHash.GetOrCompute("BackpackIcon");
+
+                    foreach(MyObjectBuilder_StatControls control in hudDef.StatControls)
+                    {
+                        if(control.StatStyles == null)
+                            continue;
+
+                        foreach(MyObjectBuilder_StatVisualStyle style in control.StatStyles)
+                        {
+                            var image = style as MyObjectBuilder_ImageStatVisualStyle; // gets captured
+                            if(image == null || image.Texture != texture)
+                                continue;
+
+                            // clone before we do any changes to it
+                            var imageNew = MyAPIGateway.Utilities.SerializeFromXML<MyObjectBuilder_ImageStatVisualStyle>(MyAPIGateway.Utilities.SerializeToXML(image));
+                            imageNew.Texture = MyStringHash.GetOrCompute("bi_shipInventoryIcon");
+
+                            if(image.SizePx.Y > image.SizePx.X)
+                                imageNew.OffsetPx.X -= (image.SizePx.Y - image.SizePx.X) / 2f; // center horizontally
+                            else if(image.SizePx.X > image.SizePx.Y)
+                                imageNew.OffsetPx.Y -= (image.SizePx.X - image.SizePx.Y) / 2f; // center vertically
+
+                            imageNew.SizePx = new Vector2(Math.Max(image.SizePx.X, image.SizePx.Y)); // make square of the largest length
+
+                            #region visible conditions
+                            ConditionBase imageNewCondition = new StatCondition()
+                            {
+                                StatId = MyStringHash.GetOrCompute("controlled_is_grid"),
+                                Operator = StatConditionOperator.Below,
+                                Value = 1f,
+                            };
+
+                            ConditionBase cloneNewCondition = new StatCondition()
+                            {
+                                StatId = MyStringHash.GetOrCompute("controlled_is_grid"),
+                                Operator = StatConditionOperator.Above,
+                                Value = 0f,
+                            };
+
+                            var originalCondition = image.VisibleCondition;
+
+                            if(originalCondition != null)
+                            {
+                                imageNewCondition = new Condition()
+                                {
+                                    Operator = StatLogicOperator.And,
+                                    Terms = new ConditionBase[]
+                                    {
+                                        imageNewCondition,
+                                        originalCondition,
+                                    },
+                                };
+
+                                cloneNewCondition = new Condition()
+                                {
+                                    Operator = StatLogicOperator.And,
+                                    Terms = new ConditionBase[]
+                                    {
+                                        imageNewCondition,
+                                        originalCondition,
+                                    },
+                                };
+                            }
+
+                            DefEdits.MakeEdit(image, (o, v) => o.VisibleCondition = v, image.VisibleCondition, imageNewCondition);
+
+                            imageNew.VisibleCondition = cloneNewCondition;
+                            #endregion
+
+                            #region add new image
+                            var styles = control.StatStyles.ToList();
+                            styles.Add(imageNew);
+
+                            //DefEdits.MakeEdit(hudDef, (d, v) => control.StatStyles = v, control.StatStyles, styles.ToArray());
+
+                            string hudId = hudDef.Id.SubtypeName;
+                            control.StatStyles = styles.ToArray();
+                            DefEdits.CustomUndoAction(control, (c) =>
+                            {
+                                var list = c.StatStyles.ToList();
+                                if(list.Remove(imageNew))
+                                {
+                                    c.StatStyles = list.ToArray();
+                                }
+                                else
+                                {
+                                    Log.Error($"Failed to undo cargo icon edit of {hudId}");
+                                }
+                            });
+                            #endregion
+
+                            return;
+                        }
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error($"Failed to modify backpack icon for {hudDef.Id.SubtypeName}\n{e}");
             }
         }
     }

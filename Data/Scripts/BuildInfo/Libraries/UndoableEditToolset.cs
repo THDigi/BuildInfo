@@ -44,6 +44,19 @@ namespace Digi
         }
 
         /// <summary>
+        /// A custom callback to trigger upon undo for custom rollback behaviors.
+        /// <para>NOTE: this deos not make an edit upon calling it, it only schedules the undo action!</para>
+        /// </summary>
+        /// <typeparam name="TObj">The object type, no need to enter this manually.</typeparam>
+        /// <param name="editObject">the relevant object, can be null if not applicable</param>
+        /// <param name="undo">the callback that gets called when <see cref="UndoAll"/> is called.</param>
+        public void CustomUndoAction<TObj>(TObj editObject, Action<TObj> undo)
+               where TObj : class
+        {
+            Edits.Add(new UndoableAction<TObj>(editObject, undo));
+        }
+
+        /// <summary>
         /// Reverts all edits made so far then removes them from the internal list.
         /// <para>The edits are reverted in from last to first to properly undo multiple edits on the same thing.</para>
         /// <para>Always call this before making new changes and when mod unloads.</para>
@@ -98,6 +111,23 @@ namespace Digi
             public void Restore()
             {
                 Setter.Invoke(OriginalValue);
+            }
+        }
+
+        private class UndoableAction<TObj> : IUndoableEdit where TObj : class
+        {
+            readonly TObj EditObject;
+            readonly Action<TObj> Undo;
+
+            public UndoableAction(TObj editObject, Action<TObj> undo)
+            {
+                EditObject = editObject;
+                Undo = undo;
+            }
+
+            public void Restore()
+            {
+                Undo.Invoke(EditObject);
             }
         }
     }
