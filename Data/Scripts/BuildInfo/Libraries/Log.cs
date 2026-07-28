@@ -491,6 +491,10 @@ namespace Digi
                         else
                             printText = $"[{modName} WARNING: {message}]";
                     }
+                    else
+                    {
+                        printText = $"[{modName}: {message}]";
+                    }
 
                     if(notify == null)
                     {
