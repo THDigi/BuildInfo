@@ -86,31 +86,8 @@ namespace Digi.BuildInfo.Features.Tooltips
             }
         }
 
-        int NoRefreshMessageUntilTick = 0;
-        bool PrevItemTooltipAdditions;
-
         void Setup(bool generate)
         {
-            if(generate) // mostly means first call, any false values would be config reloads/changes
-            {
-                PrevItemTooltipAdditions = Main.Config.ItemTooltipAdditions.Value;
-            }
-            else
-            {
-                if(PrevItemTooltipAdditions != Main.Config.ItemTooltipAdditions.Value)
-                {
-                    PrevItemTooltipAdditions = Main.Config.ItemTooltipAdditions.Value;
-
-                    if(NoRefreshMessageUntilTick <= Main.Tick)
-                    {
-                        NoRefreshMessageUntilTick = Main.Tick + Constants.TicksPerSecond * 60;
-
-                        // HACK...
-                        Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "Because of a game change, tooltips cannot be refreshed for blueprints (seen in production tab), it will apply after a world reload/rejoin.", FontsHandler.YellowSh, Color.Yellow);
-                    }
-                }
-            }
-
             foreach(MyBlueprintDefinitionBase bpBaseDef in MyDefinitionManager.Static.GetBlueprintDefinitions())
             {
                 try
